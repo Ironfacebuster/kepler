@@ -24,4 +24,4 @@ test:
 	echo -e "\u001b[36m"; \
 	echo -e "Testing latest build..."; \
 	echo -e "\e[0m"; \
-	./$(output_location)/KeplerCompiler --file "./$(output_location)/examples/$(test_file)" || (echo -e "\e[1;31mTest failed (code: $$?)\e[0m"; exit 1)
+	./$(output_location)/kepler --file "./$(output_location)/examples/$(test_file)" || (echo -e "\e[1;31mTest failed (code: $$?)\e[0m"; exit 1)
