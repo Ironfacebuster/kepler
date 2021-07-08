@@ -1,0 +1,5 @@
+/.vscode
+/bin
+/BUILD_OUTPUT
+/obj
+*/temp
