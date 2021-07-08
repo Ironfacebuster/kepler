@@ -11,11 +11,10 @@ Interpretation allows for faster prototyping and development. There's no having 
 In order to build (and use) the compiler, you must have [.NET](https://dotnet.microsoft.com/download) installed.
 
 After ensuring .NET is installed, you can use the following steps:
-> **NOTICE:** If you're using Windows you might want to have `make` installed in some form.
 
 #### **Windows** (with `make`)
 1. Open a command prompt and navigate to the root of your local repository.
-2. In the command prompt, simply type `make`
+2. In the command prompt, simply type `make`.
 3. Wait for the build and test to complete.
 4. Navigate your command prompt to the `BUILD_OUTPUT` folder.
 5. Finally, you can run `./KeplerCompiler` to enter a live interpretation mode.
