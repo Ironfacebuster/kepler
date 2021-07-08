@@ -1,5 +1,6 @@
 /.vscode
 /bin
-/BUILD_OUTPUT
 /obj
+!/BUILD_OUTPUT/examples
+/BUILD_OUTPUT/*
 */temp
