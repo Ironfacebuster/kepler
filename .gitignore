@@ -4,3 +4,4 @@
 !/BUILD_OUTPUT/examples
 /BUILD_OUTPUT/*
 */temp
+.DS_Store
