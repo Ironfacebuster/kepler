@@ -12,6 +12,13 @@ namespace KeplerTokens
             public TokenType type;
             public int start;
             public string token_string;
+
+            // only for GenericOperation
+            public Token a;
+            public Token b;
+            public DataTypes.OperationType operation;
+            // 
+
             public Token(TokenType type, int index, string token_string)
             {
                 this.type = type;
@@ -21,6 +28,8 @@ namespace KeplerTokens
 
             public override string ToString()
             {
+                // if(this.type == TokenType.GenericOperation)
+                //     return string.Format("{0} {1} {2}", token_string, type, start);
                 return string.Format("{0} => {1} [{2}]", token_string, type, start);
             }
         }
@@ -32,6 +41,7 @@ namespace KeplerTokens
             public string peek;
             public string prev;
             public int increment = 1;
+
             public TokenMatch(TokenType type, string string_token, string peek, string prev, int increment)
             {
                 this.type = type;
@@ -113,6 +123,7 @@ namespace KeplerTokens
             // operations
             GenericAdd,
             GenericSubtract,
+            GenericOperation,
 
             AssignNonPositionalArgument,
             PositionalArgument,
@@ -135,6 +146,11 @@ namespace KeplerTokens
             StartStaticList,
             EndStaticList,
             DoubleQuote, // signifies the toggling of string handling
+
+            // TODO: make StringText a FULL string token
+            // rather than toggling modes during interpretation,
+            // just create an entire StringText token that contains the
+            // string during TOKENIZATION!
             StringText, // text that's inside of a string
 
             // linking things
@@ -163,6 +179,14 @@ namespace KeplerTokens
             List,
             Array,
             Boolean
+        }
+        public enum OperationType
+        {
+            Add,
+            Subtract,
+            Divide,
+            Multiply
+            // TODO: add more operations (exp, mod, etc...)
         }
         public class Float
         {

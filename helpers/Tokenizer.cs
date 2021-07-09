@@ -160,6 +160,63 @@ namespace KeplerTokenizer
                     // throw new Exception(string.Format("Unable to tokenize line {0}: unrecognizable token!\r\nToken: {1}", this.line, tokenized));
                 }
 
+                // clean up and combine tokens
+
+                // TODO: combine (old)StringText and DoubleQuote into single (new)StringText
+
+                for (int i = 0; i < m_tokens.Count;)
+                {
+                    if (i == m_tokens.Count - 2 || i == m_tokens.Count - 1)
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    Token peek = m_tokens[i + 1];
+                    Token far_peek = m_tokens[i + 2];
+
+                    Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
+                    operation_token.start = i;
+                    operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
+
+                    switch (peek.type)
+                    {
+                        case TokenType.GenericAdd:
+                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Add;
+
+                            // assign tokens
+                            operation_token.a = m_tokens[i];
+                            operation_token.b = m_tokens[i + 2];
+
+                            // remove combined tokens
+                            m_tokens.RemoveAt(i + 1);
+                            m_tokens.RemoveAt(i + 1);
+
+                            // assign combined token
+                            m_tokens[i] = operation_token;
+
+                            break;
+                        case TokenType.GenericSubtract:
+                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Subtract;
+
+                            // assign tokens
+                            operation_token.a = m_tokens[i];
+                            operation_token.b = m_tokens[i + 2];
+
+                            // remove combined tokens
+                            m_tokens.RemoveAt(i + 1);
+                            m_tokens.RemoveAt(i + 1);
+
+                            // assign combined token
+                            m_tokens[i] = operation_token;
+
+                            break;
+                        default:
+                            i++;
+                            break;
+                    }
+                }
+
                 this.tokens = m_tokens;
             }
             catch (SystemException e)
@@ -269,7 +326,7 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0)
                 // since these "pairs" are checked from top to bottom, this final DeclareVariable is JIC (just in case)
         };
 

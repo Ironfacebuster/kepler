@@ -25,20 +25,23 @@ namespace KeplerVariables
             return n_var;
         }
 
-        public KeplerVariable GetVariable(string name) {
-            if (list.ContainsKey(name)) {
+        public KeplerVariable GetVariable(string name)
+        {
+            if (list.ContainsKey(name))
+            {
                 KeplerVariable found = list[name];
-                
-                if(found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[154] {0} does not have a defined type",name));
-                
+
+                if (found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[154] {0} does not have a defined type", name));
+
                 return list[name];
             }
 
-            throw new InterpreterException(string.Format("[154] {0} has not yet been declared",name));
+            throw new InterpreterException(string.Format("[154] {0} has not yet been declared", name));
         }
 
         // allow copying of global for "scoping"
-        public KeplerVariableManager Copy() {
+        public KeplerVariableManager Copy()
+        {
             KeplerVariableManager copy = new KeplerVariableManager();
             copy.list = new Dictionary<string, KeplerVariable>(this.list);
             return copy;
@@ -111,13 +114,40 @@ namespace KeplerVariables
             StringValue = /* ToLiteral(value); */ value;
         }
 
-        public KeplerVariable Clone() {
+        public void AssignValue(KeplerVariable variable)
+        {
+            ValidateConstant();
+
+            this.type = variable.type;
+
+            switch (this.type)
+            {
+                case KeplerType.Float:
+                    this.SetFloatValue(variable.FloatValue);
+                    break;
+                case KeplerType.Int:
+                    this.SetIntValue(variable.IntValue);
+                    break;
+                case KeplerType.uInt:
+                    this.SetUnsignedIntValue(variable.uIntValue);
+                    break;
+                case KeplerType.Boolean:
+                    this.SetBoolValue(variable.BoolValue);
+                    break;
+                case KeplerType.String:
+                    this.SetStringValue(variable.StringValue);
+                    break;
+            }
+        }
+
+        public KeplerVariable Clone()
+        {
             KeplerVariable clone = new KeplerVariable();
 
             clone.type = type;
 
             clone.FloatValue = FloatValue;
-            clone.IntValue =IntValue;
+            clone.IntValue = IntValue;
             clone.uIntValue = uIntValue;
             clone.BoolValue = BoolValue;
             clone.StringValue = StringValue;
@@ -127,7 +157,7 @@ namespace KeplerVariables
 
         private static string ToLiteral(string input)
         {
-            return input.Replace("\\n", "\n").Replace("\\r","\r").Replace("\\t","\t").Replace("\\'","\'").Replace("\\\"","\"").Replace("\\","\\");
+            return input.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t").Replace("\\'", "\'").Replace("\\\"", "\"").Replace("\\", "\\");
         }
 
         public void ValidateType(KeplerType type)
@@ -168,7 +198,8 @@ namespace KeplerVariables
             return output;
         }
 
-        public string GetValueAsString() {
+        public string GetValueAsString()
+        {
             switch (type)
             {
                 case KeplerType.Float:
@@ -203,15 +234,17 @@ namespace KeplerVariables
             return n_funct;
         }
 
-        public KeplerFunction GetFunction(string name) {
+        public KeplerFunction GetFunction(string name)
+        {
             if (list.ContainsKey(name)) return list[name];
 
-            throw new InterpreterException(string.Format("[154] {0} has not yet been declared",name));
+            throw new InterpreterException(string.Format("[154] {0} has not yet been declared", name));
         }
 
-        public KeplerFunctionManager Copy() {
+        public KeplerFunctionManager Copy()
+        {
             KeplerFunctionManager copy = new KeplerFunctionManager();
-            copy.list = new Dictionary<string,KeplerFunction>(this.list);
+            copy.list = new Dictionary<string, KeplerFunction>(this.list);
             return copy;
         }
 
@@ -230,16 +263,17 @@ namespace KeplerVariables
     public class KeplerFunction
     {
         public List<LineIterator> lines = new List<LineIterator>();
-        public IDictionary<string,KeplerType> positional_arguments = new Dictionary<string,KeplerType>(); // name = type, assigned by position
-        public IDictionary<string,KeplerType> non_positional_arguments = new Dictionary<string,KeplerType>(); // name = type, assigned by name ref
+        public IDictionary<string, KeplerType> positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by position
+        public IDictionary<string, KeplerType> non_positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by name ref
         public IDictionary<string, KeplerVariable> arguments = new Dictionary<string, KeplerVariable>();
         public KeplerVariable target = new KeplerVariable();
         bool has_target = false;
         public KeplerType type;
         public string name;
 
-        public KeplerFunction (string name) {
-            this.name= name;
+        public KeplerFunction(string name)
+        {
+            this.name = name;
         }
 
         public void SetType(KeplerType type)
@@ -247,29 +281,34 @@ namespace KeplerVariables
             this.type = type;
         }
 
-        public bool HasArguments() {
-            if(positional_arguments.Count > 0) return true;
-            if(non_positional_arguments.Count > 0) return true;
+        public bool HasArguments()
+        {
+            if (positional_arguments.Count > 0) return true;
+            if (non_positional_arguments.Count > 0) return true;
 
             return false;
         }
 
-        public void AddNonPositional(string name) {
+        public void AddNonPositional(string name)
+        {
             AssertNPArgumentNotExists(name);
 
             non_positional_arguments[name] = KeplerType.Unassigned;
         }
 
-        public void AssignNonPositional(string name, KeplerType type) {
+        public void AssignNonPositional(string name, KeplerType type)
+        {
             AssertNPArgument(name);
 
             non_positional_arguments[name] = type;
         }
 
-        public void ResetLines() {
-            for(int i = 0; i < this.lines.Count; ++i) this.lines[i].m_num = 0;
+        public void ResetLines()
+        {
+            for (int i = 0; i < this.lines.Count; ++i) this.lines[i].m_num = 0;
         }
-        public void Reset() {
+        public void Reset()
+        {
             ResetLines();
             // foreach(LineIterator line in lines) line.m_num = 0;
             arguments = new Dictionary<string, KeplerVariable>(); // reset assigned arguments
@@ -277,25 +316,30 @@ namespace KeplerVariables
             has_target = true;
         }
 
-        public void SetTarget(KeplerVariable target) {
+        public void SetTarget(KeplerVariable target)
+        {
             this.target = target;
             has_target = true;
         }
 
-        public KeplerVariable GetTarget() {
+        public KeplerVariable GetTarget()
+        {
             return this.target;
         }
 
-        public bool HasTarget() {
+        public bool HasTarget()
+        {
             return this.has_target;
         }
 
-        void AssertNPArgumentNotExists(string name) {
-            if(non_positional_arguments.ContainsKey(name)) throw new InterpreterException(string.Format("{0} already has a non-positional argument named {1}",this.name,name));
+        void AssertNPArgumentNotExists(string name)
+        {
+            if (non_positional_arguments.ContainsKey(name)) throw new InterpreterException(string.Format("{0} already has a non-positional argument named {1}", this.name, name));
         }
 
-        void AssertNPArgument(string name) {
-            if(!non_positional_arguments.ContainsKey(name)) throw new InterpreterException(string.Format("{0} does not have a non-positional argument named {1}",this.name,name));
+        void AssertNPArgument(string name)
+        {
+            if (!non_positional_arguments.ContainsKey(name)) throw new InterpreterException(string.Format("{0} does not have a non-positional argument named {1}", this.name, name));
         }
 
         public override string ToString()

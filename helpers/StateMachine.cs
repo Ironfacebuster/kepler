@@ -84,6 +84,9 @@ namespace StateMachine
             TokenState AssignFunction = new TokenState(TokenType.DeclareFunction, HandleDeclareFunctionAndAssign);    // level 1 declare function is always assigning a static type
             TokenState ConsolePrint = new TokenState(TokenType.ConsolePrint, HandleConsolePrint);
 
+            TokenState GenericOperation = new TokenState(TokenType.GenericOperation, HandleGenericOperation);
+            GenericOperation.child_states = new TokenState[] { GenericOperation, EOL };
+
             // function argument stuff
             TokenState AssignNonPositionalArgument = new TokenState(TokenType.AssignNonPositionalArgument, HandleAssignNonPositionalArgument);
             TokenState PositionalArgumentAssignment = new TokenState(TokenType.PositionalArgumentAssignment, HandlePositionalArgumentAssignment);
@@ -99,7 +102,7 @@ namespace StateMachine
             level1.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));       // end function token
 
             // ASSIGN RECURSIVE CHILD STATES
-            GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, EnterDoubleQuote };
+            GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, EnterDoubleQuote, GenericOperation };
             GenericAdd.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, EnterDoubleQuote };
             AssignFunction.child_states = new TokenState[] { AssignFunctionType, AssignNonPositionalArgument };
             AssignFunctionType.child_states = new TokenState[] { StaticVariableType };
@@ -156,6 +159,81 @@ namespace StateMachine
         {
             state.strings["print_string"] = ""; // clear print_string
             state.booleans["console_print"] = true;
+        }
+        void HandleGenericOperation(Token token, TokenState state)
+        {
+            if (verbose_debug)
+            {
+                Console.WriteLine("Doing generic operation");
+                Console.WriteLine(token.a);
+                Console.WriteLine(token.b);
+            }
+
+            KeplerVariable result = DoGenericOperation(token);
+
+            state.left_side_operator.AssignValue(result);
+        }
+
+        KeplerVariable DoGenericOperation(Token token)
+        {
+            if (verbose_debug)
+            {
+                Console.WriteLine(String.Format("Doing Generic Operation \"{0}\"", token.operation));
+            }
+            KeplerVariable result = new KeplerVariable();
+
+            KeplerVariable a_operand = CreateTemporaryVariable(token.a);
+            KeplerVariable b_operand = CreateTemporaryVariable(token.b);
+
+            if (verbose_debug)
+            {
+                Console.WriteLine(a_operand);
+                Console.WriteLine(b_operand);
+            }
+
+            if (a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Cannot \"{0}\" mismatched types! ({1} and {2})", token.operation, a_operand.type, b_operand.type));
+
+            switch (token.operation)
+            {
+                case KeplerTokens.DataTypes.OperationType.Add:
+                    switch (a_operand.type)
+                    {
+                        case KeplerType.Float:
+                            result.SetFloatValue(a_operand.FloatValue + b_operand.FloatValue);
+                            break;
+                        case KeplerType.Int:
+                            result.SetIntValue(a_operand.IntValue + b_operand.IntValue);
+                            break;
+                        case KeplerType.uInt:
+                            result.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
+                            break;
+                            // TODO: NEW StringText!!!
+                            // case TokenType.StringText:
+                            //     state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
+                            //     break;
+                    }
+                    break;
+                case KeplerTokens.DataTypes.OperationType.Subtract:
+                    switch (a_operand.type)
+                    {
+                        case KeplerType.Float:
+                            result.SetFloatValue(a_operand.FloatValue - b_operand.FloatValue);
+                            break;
+                        case KeplerType.Int:
+                            result.SetIntValue(a_operand.IntValue - b_operand.IntValue);
+                            break;
+                        case KeplerType.uInt:
+                            result.SetUnsignedIntValue(a_operand.uIntValue - b_operand.uIntValue);
+                            break;
+                            // TODO: NEW StringText!!!
+                            // case TokenType.StringText:
+                            //     state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
+                            //     break;
+                    }
+                    break;
+            }
+
+            return result;
         }
         void HandleLinkFile(Token token, TokenState state)
         {
@@ -447,6 +525,35 @@ namespace StateMachine
             function.Reset(); // reset target, argument assignments
         }
 
+        KeplerVariable CreateTemporaryVariable(Token token)
+        {
+            KeplerVariable var = new KeplerVariable();
+
+            switch (token.type)
+            {
+                case TokenType.GenericOperation:
+                    // it's another operation!
+                    return DoGenericOperation(token);
+                case TokenType.DeclareVariable:
+                    // it's already a variable
+                    return variables.GetVariable(token.token_string);
+                case TokenType.StaticInt:
+                    var.SetIntValue(int.Parse(token.token_string));
+                    break;
+                case TokenType.StaticUnsignedInt:
+                    var.SetUnsignedIntValue(uint.Parse(token.token_string.Substring(1)));
+                    break;
+                case TokenType.StaticFloat:
+                    var.SetFloatValue(float.Parse(token.token_string));
+                    break;
+                default:
+                    throw new Exception(String.Format("Unable to create temporary variable for TokenType {0}", token.type));
+            }
+
+
+
+            return var;
+        }
     }
 
     public class TokenState
