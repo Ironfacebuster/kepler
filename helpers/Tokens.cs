@@ -123,6 +123,8 @@ namespace KeplerTokens
             // operations
             GenericAdd,
             GenericSubtract,
+            GenericMultiply,
+            GenericDivide,
             GenericOperation,
 
             AssignNonPositionalArgument,

@@ -231,6 +231,34 @@ namespace StateMachine
                             //     break;
                     }
                     break;
+                case KeplerTokens.DataTypes.OperationType.Multiply:
+                    switch (a_operand.type)
+                    {
+                        case KeplerType.Float:
+                            result.SetFloatValue(a_operand.FloatValue * b_operand.FloatValue);
+                            break;
+                        case KeplerType.Int:
+                            result.SetIntValue(a_operand.IntValue * b_operand.IntValue);
+                            break;
+                        case KeplerType.uInt:
+                            result.SetUnsignedIntValue(a_operand.uIntValue * b_operand.uIntValue);
+                            break;
+                    }
+                    break;
+                case KeplerTokens.DataTypes.OperationType.Divide:
+                    switch (a_operand.type)
+                    {
+                        case KeplerType.Float:
+                            result.SetFloatValue(a_operand.FloatValue / b_operand.FloatValue);
+                            break;
+                        case KeplerType.Int:
+                            result.SetIntValue(a_operand.IntValue / b_operand.IntValue);
+                            break;
+                        case KeplerType.uInt:
+                            result.SetUnsignedIntValue(a_operand.uIntValue / b_operand.uIntValue);
+                            break;
+                    }
+                    break;
             }
 
             return result;

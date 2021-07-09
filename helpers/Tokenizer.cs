@@ -211,6 +211,36 @@ namespace KeplerTokenizer
                             m_tokens[i] = operation_token;
 
                             break;
+                        case TokenType.GenericMultiply:
+                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Multiply;
+
+                            // assign tokens
+                            operation_token.a = m_tokens[i];
+                            operation_token.b = m_tokens[i + 2];
+
+                            // remove combined tokens
+                            m_tokens.RemoveAt(i + 1);
+                            m_tokens.RemoveAt(i + 1);
+
+                            // assign combined token
+                            m_tokens[i] = operation_token;
+
+                            break;
+                        case TokenType.GenericDivide:
+                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Divide;
+
+                            // assign tokens
+                            operation_token.a = m_tokens[i];
+                            operation_token.b = m_tokens[i + 2];
+
+                            // remove combined tokens
+                            m_tokens.RemoveAt(i + 1);
+                            m_tokens.RemoveAt(i + 1);
+
+                            // assign combined token
+                            m_tokens[i] = operation_token;
+
+                            break;
                         default:
                             i++;
                             break;
@@ -315,6 +345,8 @@ namespace KeplerTokenizer
                 // operations
                 new TokenMatch(TokenType.GenericAdd, "+", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericSubtract, "-", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericMultiply, "*", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 new TokenMatch(TokenType.CallFunction, "call", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "call", 0),
