@@ -95,6 +95,8 @@ namespace KeplerCompiler
             Console.WriteLine("Live Interpretation");
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("");
+            Console.WriteLine("Type \".help\" for help");
+            Console.WriteLine("");
 
             Interpreter interpreter = new Interpreter();
             interpreter.verbose_debug = arguments.HasArgument("debug");
@@ -102,16 +104,26 @@ namespace KeplerCompiler
             int line = 1;
             while (true)
             {
-
-                Console.Write(string.Format("{0}: ", line));
+                Console.Write("> ");
                 string input = Console.ReadLine();
 
                 if (input.StartsWith("."))
                 {
-                    switch (input.Substring(1))
+                    switch (input.Substring(1).ToLower())
                     {
-                        case "DUMP":
+                        case "help":
+                            Console.WriteLine(" "); // padding
+                            Console.WriteLine(".HELP    show this help menu");
+                            // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
+                            Console.WriteLine(".EXIT    exit immediately");
+                            Console.WriteLine(" "); // padding
+                            break;
+                        case "dump":
                             interpreter.DUMP();
+                            break;
+                        case "exit":
+                            Console.Write("Exiting live interpretation...");
+                            Environment.Exit(0); // exit without error
                             break;
                     }
                 }
