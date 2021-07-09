@@ -2,7 +2,7 @@
 ! but as new features are added, they will be included in this file.
 
 print "Test File v1"
-print "Updated 7/7/21"
+print "Updated 7/9/21"
 print ""
 
 start Header
@@ -46,6 +46,12 @@ end funct1
 print "Calling a declared function..."
 funct_result is call funct1
 ! print funct_result
+
+print "Validating basic operations..."
+add is 2 + 2
+subtract is 10 - 5
+divide is 1 / 2
+multiply is 2 * 8
 
 print ""
 print "All tests were successful."
