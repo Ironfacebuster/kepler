@@ -40,7 +40,7 @@ namespace StateMachine
             TokenState EOP = new TokenState(TokenType.EOP, HandleEOP);
 
             // level 3 states
-            TokenState StringText = new TokenState(TokenType.StringText, HandleStringText);
+            // TokenState StringText = new TokenState(TokenType.StringText, HandleStringText);
             TokenState StaticModifier = new TokenState(TokenType.StaticModifier, HandleStaticModifier);
             StaticModifier.booleans["declared_variable"] = true;
             StaticModifier.booleans["variable_assign"] = true;
@@ -54,8 +54,8 @@ namespace StateMachine
             // level n states
             TokenState GenericAssign = new TokenState(TokenType.GenericAssign, HandleGenericAssign);
             TokenState BooleanOperator = new TokenState(TokenType.BooleanOperator, NullHandle);
-            TokenState EnterDoubleQuote = new TokenState(TokenType.DoubleQuote, HandleEnterDoubleQuote);
-            TokenState ExitDoubleQuote = new TokenState(TokenType.DoubleQuote, HandleExitDoubleQuote);
+            // TokenState EnterDoubleQuote = new TokenState(TokenType.DoubleQuote, HandleEnterDoubleQuote);
+            // TokenState ExitDoubleQuote = new TokenState(TokenType.DoubleQuote, HandleExitDoubleQuote);
             TokenState StaticVariableType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StaticFunctionType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState GenericAdd = new TokenState(TokenType.GenericAdd, HandleGenericAdd);
@@ -63,6 +63,7 @@ namespace StateMachine
             // static values
             TokenState StaticFloat = new TokenState(TokenType.StaticFloat, new TokenState[] { BooleanOperator, EOL }, HandleStaticFloat);
             TokenState StaticInt = new TokenState(TokenType.StaticInt, new TokenState[] { BooleanOperator, EOL }, HandleStaticInt);
+            TokenState StaticString = new TokenState(TokenType.StaticString, new TokenState[] { BooleanOperator, EOL }, HandleStaticString);
             // TokenState StaticUnsignedFloat = new TokenState(TokenType.StaticUnsignedFloat, new TokenState[] { BooleanOperator, EOL }, HandleStaticUnsignedFloat);
             TokenState StaticUnsignedInt = new TokenState(TokenType.StaticUnsignedInt, new TokenState[] { BooleanOperator, EOL }, HandleStaticUnsignedInt);
             TokenState StaticBool = new TokenState(TokenType.StaticBoolean, new TokenState[] { BooleanOperator, EOL }, HandleStaticBool);
@@ -92,7 +93,8 @@ namespace StateMachine
             TokenState PositionalArgumentAssignment = new TokenState(TokenType.PositionalArgumentAssignment, HandlePositionalArgumentAssignment);
 
             // linking stuff
-            TokenState LinkFile = new TokenState(TokenType.LinkFile, new TokenState[] { EnterDoubleQuote }, HandleLinkFile);
+            // TokenState LinkFile = new TokenState(TokenType.LinkFile, new TokenState[] { EnterDoubleQuote }, HandleLinkFile);
+            TokenState LinkFile = new TokenState(TokenType.LinkFile, new TokenState[] { StaticString }, HandleLinkFile);
 
             level1.Add(new TokenState(TokenType.StartHeader, new TokenState[] { DeclareHeader }, HandleStartHeader));    // start header token
             level1.Add(new TokenState(TokenType.EndHeader, new TokenState[] { DeclareHeader }, HandleEndHeader));        // end header token
@@ -102,11 +104,12 @@ namespace StateMachine
             level1.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));       // end function token
 
             // ASSIGN RECURSIVE CHILD STATES
-            GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, EnterDoubleQuote, GenericOperation };
-            GenericAdd.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, EnterDoubleQuote };
+            GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, GenericOperation };
+            GenericAdd.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType };
             AssignFunction.child_states = new TokenState[] { AssignFunctionType, AssignNonPositionalArgument };
             AssignFunctionType.child_states = new TokenState[] { StaticVariableType };
-            ConsolePrint.child_states = new TokenState[] { EnterDoubleQuote, DeclareVariable };
+            // ConsolePrint.child_states = new TokenState[] { EnterDoubleQuote, DeclareVariable };
+            ConsolePrint.child_states = new TokenState[] { GenericOperation, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType };
 
             DeclareVariable.child_states = new TokenState[] { PositionalArgumentAssignment, GenericAdd, EOL };
             PositionalArgumentAssignment.child_states = new TokenState[] { StaticVariableType };
@@ -117,9 +120,9 @@ namespace StateMachine
             StaticModifier.child_states = new TokenState[] { BooleanOperator, /*StaticVariableType,*/ EOL };
 
             // string handling
-            EnterDoubleQuote.child_states = new TokenState[] { StringText, ExitDoubleQuote };  // String
-            StringText.child_states = new TokenState[] { StringText, ExitDoubleQuote };        // String
-            ExitDoubleQuote.child_states = new TokenState[] { BooleanOperator, EOL };          // String
+            // EnterDoubleQuote.child_states = new TokenState[] { StringText, ExitDoubleQuote };  // String
+            // StringText.child_states = new TokenState[] { StringText, ExitDoubleQuote };        // String
+            // ExitDoubleQuote.child_states = new TokenState[] { BooleanOperator, EOL };          // String
 
             // handle "and is" & assigning arguments
             BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable };
@@ -171,9 +174,11 @@ namespace StateMachine
 
             KeplerVariable result = DoGenericOperation(token);
 
-            state.left_side_operator.AssignValue(result);
+            if (state.booleans["variable_assign"])
+                state.left_side_operator.AssignValue(result);
+            if (state.booleans["console_print"])
+                state.strings["print_string"] = state.strings["print_string"] + result.AsString();
         }
-
         KeplerVariable DoGenericOperation(Token token)
         {
             if (verbose_debug)
@@ -189,6 +194,14 @@ namespace StateMachine
             {
                 Console.WriteLine(a_operand);
                 Console.WriteLine(b_operand);
+            }
+
+            // string handling
+            // cast both operands to String
+            if (a_operand.type == KeplerType.String || b_operand.type == KeplerType.String)
+            {
+                result.SetStringValue(a_operand.AsString() + b_operand.AsString());
+                return result;
             }
 
             if (a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Cannot \"{0}\" mismatched types! ({1} and {2})", token.operation, a_operand.type, b_operand.type));
@@ -207,10 +220,9 @@ namespace StateMachine
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
                             break;
-                            // TODO: NEW StringText!!!
-                            // case TokenType.StringText:
-                            //     state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
-                            //     break;
+                        case KeplerType.String:
+                            result.SetStringValue(a_operand.StringValue + b_operand.StringValue);
+                            break;
                     }
                     break;
                 case KeplerTokens.DataTypes.OperationType.Subtract:
@@ -225,10 +237,8 @@ namespace StateMachine
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue - b_operand.uIntValue);
                             break;
-                            // TODO: NEW StringText!!!
-                            // case TokenType.StringText:
-                            //     state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
-                            //     break;
+                        case KeplerType.String:
+                            break;
                     }
                     break;
                 case KeplerTokens.DataTypes.OperationType.Multiply:
@@ -243,6 +253,8 @@ namespace StateMachine
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue * b_operand.uIntValue);
                             break;
+                        case KeplerType.String:
+                            break;
                     }
                     break;
                 case KeplerTokens.DataTypes.OperationType.Divide:
@@ -256,6 +268,8 @@ namespace StateMachine
                             break;
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue / b_operand.uIntValue);
+                            break;
+                        case KeplerType.String:
                             break;
                     }
                     break;
@@ -307,49 +321,42 @@ namespace StateMachine
         {
             if (state.booleans["variable_assign"])
                 state.left_side_operator.SetFloatValue(double.Parse(token.token_string));
+            if (state.booleans["console_print"])
+                state.strings["print_string"] = state.strings["print_string"] + token.token_string;
         }
         void HandleStaticInt(Token token, TokenState state)
         {
             if (state.booleans["variable_assign"])
                 state.left_side_operator.SetIntValue(int.Parse(token.token_string));
+            if (state.booleans["console_print"])
+                state.strings["print_string"] = state.strings["print_string"] + token.token_string;
         }
         void HandleStaticUnsignedInt(Token token, TokenState state)
         {
             if (state.booleans["variable_assign"])
                 state.left_side_operator.SetUnsignedIntValue(uint.Parse(token.token_string.Substring(1)));
+            if (state.booleans["console_print"])
+                state.strings["print_string"] = state.strings["print_string"] + token.token_string;
         }
         void HandleStaticBool(Token token, TokenState state)
         {
             if (state.booleans["variable_assign"])
                 state.left_side_operator.SetBoolValue(bool.Parse(token.token_string));
-        }
-        void HandleStaticModifier(Token token, TokenState state)
-        {
-            Enum.TryParse(token.token_string, out KeplerModifier m_type);
-            state.left_side_operator.SetModifier(m_type);
-        }
-        void HandleEnterDoubleQuote(Token token, TokenState state)
-        {
-            state.booleans["inside_string"] = true;
-            state.strings["build_string"] = "";
-        }
-        void HandleExitDoubleQuote(Token token, TokenState state)
-        {
-            state.booleans["inside_string"] = false;
-
             if (state.booleans["console_print"])
+                state.strings["print_string"] = state.strings["print_string"] + bool.Parse(token.token_string);
+        }
+        void HandleStaticString(Token token, TokenState state)
+        {
+            string string_value = token.token_string.Substring(1, token.token_string.Length - 2);
+            if (state.booleans["variable_assign"])
+                state.left_side_operator.SetStringValue(string_value);
+            if (state.booleans["link_file"])
             {
-
-                state.strings["print_string"] = state.strings["print_string"] + state.strings["build_string"];
-
-            }
-            else if (inside_header && state.booleans["link_file"])
-            {
-                if (verbose_debug) Console.WriteLine(string.Format("LINKING \"{0}\"", state.strings["build_string"]));
+                if (verbose_debug) Console.WriteLine(string.Format("LINKING \"{0}\"", string_value));
 
                 // load file and interpret
                 Tokenizer m_tokenizer = new Tokenizer();
-                m_tokenizer.Load(state.strings["build_string"]);
+                m_tokenizer.Load(string_value);
 
                 Interpreter m_interpreter = new Interpreter();
                 m_interpreter.verbose_debug = verbose_debug;
@@ -368,15 +375,64 @@ namespace StateMachine
                 linked_functions = m_interpreter.levels.functions;
 
                 has_linked_file = true;
-
             }
-            else state.c_variable.SetStringValue(state.strings["build_string"]);
+            if (state.booleans["console_print"])
+                state.strings["print_string"] = state.strings["print_string"] + string_value;
         }
-        void HandleStringText(Token token, TokenState state)
+        void HandleStaticModifier(Token token, TokenState state)
         {
-            state.strings["build_string"] = state.strings["build_string"].Length == 0 ? token.token_string : state.strings["build_string"] + " " + token.token_string;
-            state.booleans["inside_string"] = true;
+            Enum.TryParse(token.token_string, out KeplerModifier m_type);
+            state.left_side_operator.SetModifier(m_type);
         }
+        // void HandleEnterDoubleQuote(Token token, TokenState state)
+        // {
+        //     state.booleans["inside_string"] = true;
+        //     state.strings["build_string"] = "";
+        // }
+        // void HandleExitDoubleQuote(Token token, TokenState state)
+        // {
+        //     state.booleans["inside_string"] = false;
+
+        //     if (state.booleans["console_print"])
+        //     {
+
+        //         state.strings["print_string"] = state.strings["print_string"] + state.strings["build_string"];
+
+        //     }
+        //     else if (inside_header && state.booleans["link_file"])
+        //     {
+        //         if (verbose_debug) Console.WriteLine(string.Format("LINKING \"{0}\"", state.strings["build_string"]));
+
+        //         // load file and interpret
+        //         Tokenizer m_tokenizer = new Tokenizer();
+        //         m_tokenizer.Load(state.strings["build_string"]);
+
+        //         Interpreter m_interpreter = new Interpreter();
+        //         m_interpreter.verbose_debug = verbose_debug;
+        //         m_interpreter.levels.linked_file = true;
+
+        //         // do interpretation
+        //         while (m_tokenizer.HasNext())
+        //         {
+        //             m_interpreter.Interpret(m_tokenizer.CurrentLine());
+
+        //             m_tokenizer++;
+        //         }
+
+        //         // transfer all global variables and functions
+        //         linked_variables = m_interpreter.levels.variables;
+        //         linked_functions = m_interpreter.levels.functions;
+
+        //         has_linked_file = true;
+
+        //     }
+        //     else state.c_variable.SetStringValue(state.strings["build_string"]);
+        // }
+        // void HandleStringText(Token token, TokenState state)
+        // {
+        //     state.strings["build_string"] = state.strings["build_string"].Length == 0 ? token.token_string : state.strings["build_string"] + " " + token.token_string;
+        //     state.booleans["inside_string"] = true;
+        // }
         void HandleStaticVariableType(Token token, TokenState state)
         {
             Enum.TryParse(token.token_string, out KeplerType m_type);
@@ -534,7 +590,6 @@ namespace StateMachine
             if (verbose_debug) Console.WriteLine("EXIT HEADER");
             inside_header = false;
         }
-
         void ExecuteFunction(KeplerFunction function)
         {
             if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("Cannot assign to {1} as {0} does not have a defined return type", function.name, function.GetTarget()));
@@ -552,7 +607,6 @@ namespace StateMachine
 
             function.Reset(); // reset target, argument assignments
         }
-
         KeplerVariable CreateTemporaryVariable(Token token)
         {
             KeplerVariable var = new KeplerVariable();
@@ -573,6 +627,9 @@ namespace StateMachine
                     break;
                 case TokenType.StaticFloat:
                     var.SetFloatValue(float.Parse(token.token_string));
+                    break;
+                case TokenType.StaticString:
+                    var.SetStringValue(token.token_string.Substring(1, token.token_string.Length - 2));
                     break;
                 default:
                     throw new Exception(String.Format("Unable to create temporary variable for TokenType {0}", token.type));

@@ -147,13 +147,14 @@ namespace KeplerTokens
             EndStaticArray,
             StartStaticList,
             EndStaticList,
-            DoubleQuote, // signifies the toggling of string handling
+            // DoubleQuote, // signifies the toggling of string handling
 
             // TODO: make StringText a FULL string token
             // rather than toggling modes during interpretation,
             // just create an entire StringText token that contains the
             // string during TOKENIZATION!
-            StringText, // text that's inside of a string
+            StaticString,
+            // StringText, // text that's inside of a string
 
             // linking things
             LinkFile,

@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using KeplerTokens;
 using KeplerTokens.Tokens;
 using System.Text.RegularExpressions;
 
@@ -105,11 +103,12 @@ namespace KeplerTokenizer
             this.line = index;
             this.indentation = indentation;
 
-            // TODO: preserve spaces within quotation marks, but separate quotation marks from string
-            string[] m_split = line.Replace("\"", " \" ").Split(' ');
+            // split by spaces, unless inside quotation marks.
+            string[] m_split = Regex.Split(line, "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
             List<string> final_split = new List<string>();
 
-            // clean up the line (remove empty indices)
+            // clean up the line(remove empty indices)
             foreach (var m_line in m_split)
             {
                 if (m_line.Length == 0) continue;
@@ -144,7 +143,8 @@ namespace KeplerTokenizer
                             pair = GetTokenType(tokenized, null, final_split[i - 1]);
                     }
 
-                    if (pair.type == TokenType.DoubleQuote) in_string = !in_string;
+                    // if (pair.type == TokenType.DoubleQuote) in_string = !in_string;
+                    if (tokenized.StartsWith("\"")) in_string = true;
 
                     int count = 1;
                     while (count <= pair.increment)
@@ -154,16 +154,43 @@ namespace KeplerTokenizer
                         count++;
                     }
 
-                    if (in_string && pair.type != TokenType.DoubleQuote) m_tokens.Add(new Token(TokenType.StringText, i, tokenized));
+                    if (in_string) m_tokens.Add(new Token(TokenType.StaticString, i, tokenized));
                     else { m_tokens.Add(new Token(pair.type, i, tokenized)); i += pair.increment; }
 
+                    if (tokenized.EndsWith("\"")) in_string = false;
                     // throw new Exception(string.Format("Unable to tokenize line {0}: unrecognizable token!\r\nToken: {1}", this.line, tokenized));
                 }
 
-                // clean up and combine tokens
+                // NOT NEEDED RIGHT NOw, but keeping for the future
+                // Extra passes
 
-                // TODO: combine (old)StringText and DoubleQuote into single (new)StringText
+                // String pass
+                // for (int i = 0; i < m_tokens.Count; i++)
+                // {
+                //     // if this token is a double quote
+                //     if (m_tokens[i].type == TokenType.DoubleQuote)
+                //     {
+                //         Token n_string = new Token(TokenType.StaticString, i, m_tokens[i].token_string);
+                //         bool add_space = false;
 
+                //         while (m_tokens[i + 1].type != TokenType.DoubleQuote)
+                //         {
+                //             if (add_space) n_string.token_string = n_string.token_string + " " + m_tokens[i + 1].token_string;
+                //             else n_string.token_string = n_string.token_string + m_tokens[i + 1].token_string;
+                //             m_tokens.RemoveAt(i + 1);
+
+                //             add_space = true;
+                //         }
+
+                //         // handle final DoubleQuote
+                //         m_tokens.RemoveAt(i + 1);
+                //         n_string.token_string = n_string.token_string + "\"";
+
+                //         m_tokens[i] = n_string;
+                //     }
+                // }
+
+                // Operations pass
                 for (int i = 0; i < m_tokens.Count;)
                 {
                     if (i == m_tokens.Count - 2 || i == m_tokens.Count - 1)
@@ -262,8 +289,8 @@ namespace KeplerTokenizer
             TokenMatch[] tokens = new TokenMatch[] {
                 new TokenMatch(TokenType.EOP, "EOP", "EOP", null, 0), // End of Program token
 
-                new TokenMatch(TokenType.DoubleQuote, "\"", TokenMatch.any_string, TokenMatch.any_string, 0), // handle doublequote
-                new TokenMatch(TokenType.DoubleQuote, "\"", null, TokenMatch.any_string, 0), // handle doublequote at end of line
+                // new TokenMatch(TokenType.DoubleQuote, "\"", TokenMatch.any_string, TokenMatch.any_string, 0), // handle doublequote
+                // new TokenMatch(TokenType.DoubleQuote, "\"", null, TokenMatch.any_string, 0), // handle doublequote at end of line
 
                 new TokenMatch(TokenType.StartHeader, "start", "Header",null, 0),
                 new TokenMatch(TokenType.EndHeader, "end", "Header", null, 0),
