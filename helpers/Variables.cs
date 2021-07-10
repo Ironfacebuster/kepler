@@ -114,6 +114,25 @@ namespace KeplerVariables
             StringValue = /* ToLiteral(value); */ value;
         }
 
+        public string AsString()
+        {
+            switch (this.type)
+            {
+                case KeplerType.Float:
+                    return this.FloatValue.ToString();
+                case KeplerType.Int:
+                    return this.IntValue.ToString();
+                case KeplerType.uInt:
+                    return "u" + this.uIntValue.ToString();
+                case KeplerType.Boolean:
+                    return this.BoolValue.ToString();
+                case KeplerType.String:
+                    return this.StringValue;
+            }
+
+            throw new Exception(string.Format("Unable to convert type {0} to String!", this.type));
+        }
+
         public void AssignValue(KeplerVariable variable)
         {
             ValidateConstant();
