@@ -255,7 +255,17 @@ namespace KeplerInterpreter
                 return;
             }
 
-            if (verbose_debug) Console.WriteLine("\r\nINTERP. " + c_line.GetString());
+            if (verbose_debug)
+            {
+                Console.WriteLine("\r\nINTERP. " + c_line.GetString());
+
+                foreach (Token t in c_line.tokens)
+                {
+                    Console.Write(string.Format("{0} ({1}) ", t.token_string, t.type));
+                }
+
+                Console.Write("\r\n");
+            }
             while (line.HasNext())
             {
                 c_token = line.CurrentToken();
