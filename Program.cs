@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using KeplerTokenizer;
 using Arguments;
 using KeplerInterpreter;
@@ -7,6 +8,8 @@ namespace KeplerCompiler
 {
     class Program
     {
+        static string version = "v1.1";
+        static string release_date = "July 11th, 2021";
         static Tokenizer tokenizer = new Tokenizer();
         static void Main(string[] args)
         {
@@ -15,10 +18,10 @@ namespace KeplerCompiler
 
             if (arguments.HasArgument("help") || arguments.HasArgument("h"))
             {
-                Console.WriteLine("\r\nSCode/Kepler Interpreter and Compiler v1.0");
-                Console.WriteLine("Release date: June 10th, 2021");
+                Console.WriteLine(String.Format("\r\nKepler {0}", version));
+                Console.WriteLine(String.Format("Release date: {0}", release_date));
 
-                Console.WriteLine("\r\n--build     Compile the supplied Kepler file.");
+                // Console.WriteLine("\r\n--build     Compile the supplied Kepler file.");
                 //  Console.WriteLine("--file      Compile the supplied Kepler file.")
                 Console.WriteLine("--file      The directory/filename of the Kepler file.");
                 Console.WriteLine("--help      Show the list of arguments.");
@@ -51,48 +54,46 @@ namespace KeplerCompiler
             // load the file, and tokenize it.
             tokenizer.Load(arguments.GetArgument("file"));
 
-            if (arguments.HasArgument("build"))
+            // if (arguments.HasArgument("build"))
+            // {
+            //     Console.WriteLine(String.Format("\r\nSCode/Kepler Interpreter {0}", version));
+            //     Console.WriteLine("Release date: June 10th, 2021");
+            //     Console.WriteLine("\r\nStarting compilation...");
+            //     DateTime started = DateTime.Now;
+
+            //     // do compilation
+
+            //     TimeSpan time_elapsed = DateTime.Now - started;
+
+            //     Console.ForegroundColor = ConsoleColor.Green;
+            //     Console.WriteLine("\r\nDone!");
+
+            //     Console.ForegroundColor = ConsoleColor.White;
+            //     Console.ResetColor();
+            //     Console.WriteLine(string.Format("Time Elapsed {0}", time_elapsed));
+            // }
+            // else
+            // {
+            Interpreter interpreter = new Interpreter();
+            interpreter.verbose_debug = arguments.HasArgument("debug");
+
+            // load static values from file
+            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
+
+            // do interpretation
+            while (tokenizer.HasNext())
             {
-                Console.WriteLine("\r\nSCode/Kepler Compiler v1.0");
-                Console.WriteLine("Release date: June 10th, 2021");
-                Console.WriteLine("\r\nStarting compilation...");
-                DateTime started = DateTime.Now;
+                interpreter.Interpret(tokenizer.CurrentLine());
 
-                // do compilation
-
-                TimeSpan time_elapsed = DateTime.Now - started;
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("\r\nDone!");
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor();
-                Console.WriteLine(string.Format("Time Elapsed {0}", time_elapsed));
+                tokenizer++;
             }
-            else
-            {
-                Interpreter interpreter = new Interpreter();
-                interpreter.verbose_debug = arguments.HasArgument("debug");
-
-                // load static values from file
-                if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
-
-                // do interpretation
-                while (tokenizer.HasNext())
-                {
-                    interpreter.Interpret(tokenizer.CurrentLine());
-
-                    tokenizer++;
-                }
-
-            }
+            // }
         }
 
         static void LiveInterpret(ArgumentList arguments)
         {
-            Console.WriteLine("");
-            Console.WriteLine("Kepler Interpreter v1.0");
-            Console.WriteLine("Release date: June 10th, 2021");
+            Console.WriteLine(String.Format("\r\nKepler {0}", version));
+            Console.WriteLine(String.Format("Release date: {0}", release_date));
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("Live Interpretation");
             Console.ForegroundColor = ConsoleColor.White;
@@ -147,7 +148,9 @@ namespace KeplerCompiler
             interpreter.levels.end_on_eop = false;
 
             Tokenizer t = new Tokenizer();
-            t.Load("./kepler_static/static_values.sc");
+
+            string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            t.Load(directory + "\\kepler_static\\static_values.sc");
 
             while (t.HasNext())
             {
