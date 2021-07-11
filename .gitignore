@@ -3,5 +3,6 @@
 /obj
 /VS_BUILD_OUTPUT/*
 /VS_PUBLISH_OUTPUT/*
+installer.nsi
 */temp
 .DS_Store
