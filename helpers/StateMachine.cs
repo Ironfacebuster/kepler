@@ -679,7 +679,7 @@ namespace StateMachine
             booleans["declared_variable"] = false;
             booleans["declared_function"] = false;
             booleans["variable_assign"] = false;
-            booleans["inside_string"] = false;
+            // booleans["inside_string"] = false;
             booleans["function_assign"] = false;
             booleans["assigning_function_variables"] = false;
             booleans["assigning_function_variables_type"] = false;
@@ -695,7 +695,7 @@ namespace StateMachine
 
         void AssignDefaultStrings()
         {
-            strings["build_string"] = "";
+            // strings["build_string"] = "";
             strings["nonpositional_variable_name"] = "";
             strings["print_string"] = "";
         }

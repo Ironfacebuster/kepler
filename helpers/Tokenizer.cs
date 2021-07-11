@@ -104,17 +104,7 @@ namespace KeplerTokenizer
             this.indentation = indentation;
 
             // split by spaces, unless inside quotation marks.
-            string[] m_split = Regex.Split(line, "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-
-            List<string> final_split = new List<string>();
-
-            // clean up the line(remove empty indices)
-            foreach (var m_line in m_split)
-            {
-                if (m_line.Length == 0) continue;
-
-                final_split.Add(m_line);
-            }
+            List<string> final_split = new List<string>(Regex.Split(line, "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
 
             List<Token> m_tokens = new List<Token>();
 
