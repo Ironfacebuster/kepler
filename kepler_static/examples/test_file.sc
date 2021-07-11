@@ -27,7 +27,7 @@ start Header
 
     ! files are loaded relative to where the executable is launched from
     print "Testing file linking..."
-    link "./BUILD_OUTPUT/kepler_static/examples/link_test.sc"
+    link "./VS_BUILD_OUTPUT/kepler_static/examples/link_test.sc"
 
 end Header
 
