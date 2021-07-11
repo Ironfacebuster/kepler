@@ -1,4 +1,5 @@
-output_location = BUILD_OUTPUT
+output_location = VS_BUILD_OUTPUT
+publish_location = VS_PUBLISH_OUTPUT
 test_file = test_file.sc
 
 all: clean \
@@ -9,8 +10,15 @@ log:
 	@echo $(test_command) \
 
 build:
-	@dotnet build --output $(output_location); \
-	cp -R ./kepler_static ./$(output_location);
+	@cp -R ./kepler_static ./$(output_location); \
+	dotnet build --output $(output_location); 
+
+pack:
+	@echo "Publishing..."; \
+	cp -R ./kepler_static ./$(publish_location); \
+	dotnet publish --output $(publish_location); \
+	./bin/create_installer.bat; \
+	makensis "./bin/installer.nsi"
 
 clean:
 	@dotnet clean
