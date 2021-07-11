@@ -1,8 +1,7 @@
 /.vscode
 /bin
 /obj
-!/VS_BUILD_OUTPUT/examples
 /VS_BUILD_OUTPUT/*
-/VS_PUBLIC_OUTPUT/*
+/VS_PUBLISH_OUTPUT/*
 */temp
 .DS_Store
