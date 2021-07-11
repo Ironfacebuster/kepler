@@ -8,10 +8,8 @@ print ""
 start Header
 
     print "Testing global variables..."
-    var1 is 0
+    var1 is 3
     var2 is var1 + 1
-    ! print var1
-    ! print var2
 
     print "Testing variable types..."
     string1 is "a string"
@@ -19,10 +17,10 @@ start Header
     uint1 is u1
     float1 is 1.0
 
-    ! print "Expected 'a string', got: " + string1
-    ! print "Expected 1, got: " + int1
-    ! print "Expected u1, got: " + uint1
-    ! print "Expected 1.0, got: " + float1
+    ! print string1 equals "a string"
+    ! print int1 equals 1
+    ! print uint1 equals u1
+    ! print float1 equals 1.0
 
     print "Declaring a static function return type..."
     funct1 returns Int
@@ -36,11 +34,11 @@ end Header
 print "Declaring a function..."
 start funct1
     print "Testing scoped variables..."
-    local_var is 0
+    local_var is 99
     local_var2 is local_var + 1
-    
-    ! print "Expected 0, got: " + local_var
-    ! print "Expected 1, got: " + local_var2
+
+    ! print local_var equals 99
+    ! print local_var2 equals 100
 
     ! return 1
     ! actually return the value once it's added
@@ -56,10 +54,10 @@ subtract is 10 - 5
 divide is 1.0 / 2.0
 multiply is 2 * 8
 
-! print "Expected 4, got: " + add
-! print "Expected 5, got: " + subtract
-! print "Expected 0.5, got: " + divide
-! print "Expected 16, got: " + multiply
+! print add equals 4
+! print subtract equals 5
+! print divide equals 0.5
+! print multiply equals 16
 
 print ""
 print "If you're seeing this, all tests were successful!"
