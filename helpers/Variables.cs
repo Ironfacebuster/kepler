@@ -130,7 +130,7 @@ namespace KeplerVariables
                     return this.StringValue;
             }
 
-            throw new Exception(string.Format("Unable to convert type {0} to String!", this.type));
+            throw new InterpreterException(string.Format("Unable to convert type {0} to String!", this.type));
         }
 
         public void AssignValue(KeplerVariable variable)

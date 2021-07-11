@@ -198,6 +198,39 @@ namespace StateMachine
                 Console.WriteLine(b_operand);
             }
 
+            if (token.operation == OperationType.Equality)
+            {
+
+                if (a_operand.type != b_operand.type)
+                    result.SetBoolValue(false);
+                else
+                {
+                    switch (a_operand.type)
+                    {
+                        case KeplerType.Float:
+                            result.SetBoolValue(a_operand.FloatValue == b_operand.FloatValue);
+                            break;
+                        case KeplerType.Int:
+                            result.SetBoolValue(a_operand.IntValue == b_operand.IntValue);
+                            break;
+                        case KeplerType.uInt:
+                            result.SetBoolValue(a_operand.uIntValue == b_operand.uIntValue);
+                            break;
+                        case KeplerType.Boolean:
+                            result.SetBoolValue(a_operand.BoolValue == b_operand.BoolValue);
+                            break;
+                        case KeplerType.String:
+                            result.SetBoolValue(a_operand.StringValue == b_operand.StringValue);
+                            break;
+                        default:
+                            result.SetBoolValue(false);
+                            break;
+                    }
+                }
+
+                return result;
+            }
+
             // string handling
             // cast both operands to String if adding
             if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) && token.operation == OperationType.Add)
@@ -249,6 +282,20 @@ namespace StateMachine
                             break;
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue * b_operand.uIntValue);
+                            break;
+                    }
+                    break;
+                case OperationType.Power:
+                    switch (a_operand.type)
+                    {
+                        case KeplerType.Float:
+                            result.SetFloatValue(Math.Pow(a_operand.FloatValue, b_operand.FloatValue));
+                            break;
+                        case KeplerType.Int:
+                            result.SetIntValue((int)Math.Pow(a_operand.IntValue, b_operand.IntValue));
+                            break;
+                        case KeplerType.uInt:
+                            result.SetUnsignedIntValue((uint)Math.Pow(a_operand.uIntValue, b_operand.uIntValue));
                             break;
                     }
                     break;
@@ -470,40 +517,44 @@ namespace StateMachine
         }
         void HandleDeclareVariable(Token token, TokenState state)
         {
-            if (state.booleans["assigned_a_operand"])
+            if (state.booleans["variable_assign"])
             {
-                // on the other side of a "GenericOperation"
-                // TODO: check operation type after adding other operations
-                if (verbose_debug) Console.WriteLine(token.token_string);
-                KeplerVariable b_operand = variables.GetVariable(token.token_string);
-
-                if (verbose_debug) Console.WriteLine(state.a_operand);
-                if (verbose_debug) Console.WriteLine(b_operand);
-
-                if (state.a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Mismatched types! ({0} and {1})", state.a_operand.type, b_operand.type));
-                KeplerVariable a_operand = state.a_operand;
-                return_value.SetType(b_operand.type);
-
-                switch (b_operand.type)
-                {
-                    case KeplerType.Float:
-                        state.left_side_operator.SetFloatValue(a_operand.FloatValue + b_operand.FloatValue);
-                        break;
-                    case KeplerType.Int:
-                        state.left_side_operator.SetIntValue(a_operand.IntValue + b_operand.IntValue);
-                        break;
-                    case KeplerType.uInt:
-                        state.left_side_operator.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
-                        break;
-                    case KeplerType.String:
-                        state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
-                        break;
-                }
-
-                state.ResetOperands();
-                // state.a_operand = b_operand; // shift for chained adds
-                // state.booleans["assigned_a_operand"] = true;
+                state.left_side_operator.AssignValue(variables.GetVariable(token.token_string));
             }
+            // if (state.booleans["assigned_a_operand"])
+            // {
+            //     // on the other side of a "GenericOperation"
+            //     // TODO: check operation type after adding other operations
+            //     if (verbose_debug) Console.WriteLine(token.token_string);
+            //     KeplerVariable b_operand = variables.GetVariable(token.token_string);
+
+            //     if (verbose_debug) Console.WriteLine(state.a_operand);
+            //     if (verbose_debug) Console.WriteLine(b_operand);
+
+            //     if (state.a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Mismatched types! ({0} and {1})", state.a_operand.type, b_operand.type));
+            //     KeplerVariable a_operand = state.a_operand;
+            //     return_value.SetType(b_operand.type);
+
+            //     switch (b_operand.type)
+            //     {
+            //         case KeplerType.Float:
+            //             state.left_side_operator.SetFloatValue(a_operand.FloatValue + b_operand.FloatValue);
+            //             break;
+            //         case KeplerType.Int:
+            //             state.left_side_operator.SetIntValue(a_operand.IntValue + b_operand.IntValue);
+            //             break;
+            //         case KeplerType.uInt:
+            //             state.left_side_operator.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
+            //             break;
+            //         case KeplerType.String:
+            //             state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
+            //             break;
+            //     }
+
+            //     state.ResetOperands();
+            //     // state.a_operand = b_operand; // shift for chained adds
+            //     // state.booleans["assigned_a_operand"] = true;
+            // }
             else if (state.booleans["console_print"])
             {
                 state.strings["print_string"] = state.strings["print_string"] + variables.GetVariable(token.token_string).GetValueAsString();

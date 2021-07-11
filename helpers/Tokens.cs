@@ -105,7 +105,6 @@ namespace KeplerTokens
             EndHeader,
 
 
-            GenericEquality, // equality comparison (if type != type, throw TypeError)
             NonToken, // inverter token: invert the result of the following tokens
             GenericAssign, // "is" action dependant on context
 
@@ -124,8 +123,10 @@ namespace KeplerTokens
             GenericAdd,
             GenericSubtract,
             GenericMultiply,
+            GenericPower,
             GenericDivide,
             GenericOperation,
+            GenericEquality, // equality comparison (if type != type, throw TypeError)
 
             AssignNonPositionalArgument,
             PositionalArgument,
@@ -188,7 +189,9 @@ namespace KeplerTokens
             Add,
             Subtract,
             Divide,
-            Multiply
+            Multiply,
+            Power,
+            Equality
             // TODO: add more operations (exp, mod, etc...)
         }
         public class Float

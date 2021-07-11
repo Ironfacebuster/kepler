@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using KeplerTokens.Tokens;
+using KeplerTokens.DataTypes;
 using System.Text.RegularExpressions;
 
 namespace KeplerTokenizer
@@ -195,72 +196,51 @@ namespace KeplerTokenizer
                     Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
                     operation_token.start = i;
                     operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
+                    bool clean_up = false;
 
                     switch (peek.type)
                     {
                         case TokenType.GenericAdd:
-                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Add;
-
-                            // assign tokens
-                            operation_token.a = m_tokens[i];
-                            operation_token.b = m_tokens[i + 2];
-
-                            // remove combined tokens
-                            m_tokens.RemoveAt(i + 1);
-                            m_tokens.RemoveAt(i + 1);
-
-                            // assign combined token
-                            m_tokens[i] = operation_token;
-
+                            operation_token.operation = OperationType.Add;
+                            clean_up = true;
                             break;
                         case TokenType.GenericSubtract:
-                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Subtract;
-
-                            // assign tokens
-                            operation_token.a = m_tokens[i];
-                            operation_token.b = m_tokens[i + 2];
-
-                            // remove combined tokens
-                            m_tokens.RemoveAt(i + 1);
-                            m_tokens.RemoveAt(i + 1);
-
-                            // assign combined token
-                            m_tokens[i] = operation_token;
-
+                            operation_token.operation = OperationType.Subtract;
+                            clean_up = true;
                             break;
                         case TokenType.GenericMultiply:
-                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Multiply;
-
-                            // assign tokens
-                            operation_token.a = m_tokens[i];
-                            operation_token.b = m_tokens[i + 2];
-
-                            // remove combined tokens
-                            m_tokens.RemoveAt(i + 1);
-                            m_tokens.RemoveAt(i + 1);
-
-                            // assign combined token
-                            m_tokens[i] = operation_token;
-
+                            operation_token.operation = OperationType.Multiply;
+                            clean_up = true;
+                            break;
+                        case TokenType.GenericPower:
+                            operation_token.operation = OperationType.Power;
+                            clean_up = true;
                             break;
                         case TokenType.GenericDivide:
-                            operation_token.operation = KeplerTokens.DataTypes.OperationType.Divide;
-
-                            // assign tokens
-                            operation_token.a = m_tokens[i];
-                            operation_token.b = m_tokens[i + 2];
-
-                            // remove combined tokens
-                            m_tokens.RemoveAt(i + 1);
-                            m_tokens.RemoveAt(i + 1);
-
-                            // assign combined token
-                            m_tokens[i] = operation_token;
-
+                            operation_token.operation = OperationType.Divide;
+                            clean_up = true;
+                            break;
+                        case TokenType.GenericEquality:
+                            operation_token.operation = OperationType.Equality;
+                            clean_up = true;
                             break;
                         default:
                             i++;
                             break;
+                    }
+
+                    if (clean_up)
+                    {
+                        // assign tokens
+                        operation_token.a = m_tokens[i];
+                        operation_token.b = m_tokens[i + 2];
+
+                        // remove combined tokens
+                        m_tokens.RemoveAt(i + 1);
+                        m_tokens.RemoveAt(i + 1);
+
+                        // assign combined token
+                        m_tokens[i] = operation_token;
                     }
                 }
 
@@ -304,8 +284,8 @@ namespace KeplerTokenizer
 
                 new TokenMatch(TokenType.BooleanOperator, "and", TokenMatch.any_string, TokenMatch.any_string, 0),
 
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "equals", TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "is", TokenMatch.any_string, 0),
+                // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "equals", TokenMatch.any_string, 0),
+                // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "is", TokenMatch.any_string, 0),
 
                 // static types
                 new TokenMatch(TokenType.StaticVariableType, "Float", null, TokenMatch.any_string, 0),
@@ -363,6 +343,7 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.GenericAdd, "+", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericSubtract, "-", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericMultiply, "*", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericPower, "^", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 new TokenMatch(TokenType.CallFunction, "call", TokenMatch.any_string, TokenMatch.any_string, 0),
