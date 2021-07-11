@@ -1,6 +1,5 @@
 ﻿using System;
 using KeplerTokenizer;
-using System.Collections.Generic;
 using Arguments;
 using KeplerInterpreter;
 
@@ -75,6 +74,9 @@ namespace KeplerCompiler
                 Interpreter interpreter = new Interpreter();
                 interpreter.verbose_debug = arguments.HasArgument("debug");
 
+                // load static values from file
+                if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
+
                 // do interpretation
                 while (tokenizer.HasNext())
                 {
@@ -99,7 +101,12 @@ namespace KeplerCompiler
             Console.WriteLine("");
 
             Interpreter interpreter = new Interpreter();
+
+
             interpreter.verbose_debug = arguments.HasArgument("debug");
+
+            // load static values from file
+            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
 
             int line = 1;
             while (true)
@@ -133,6 +140,23 @@ namespace KeplerCompiler
                     line++;
                 }
             }
+        }
+
+        static void LoadStaticValues(Interpreter interpreter)
+        {
+            interpreter.levels.end_on_eop = false;
+
+            Tokenizer t = new Tokenizer();
+            t.Load("./kepler_static/static_values.sc");
+
+            while (t.HasNext())
+            {
+                interpreter.Interpret(t.CurrentLine());
+
+                t++;
+            }
+
+            interpreter.levels.end_on_eop = true;
         }
     }
 }

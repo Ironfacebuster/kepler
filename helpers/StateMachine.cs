@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using KeplerTokenizer;
 using KeplerTokens.Tokens;
+using KeplerTokens.DataTypes;
 using KeplerVariables;
 using KeplerInterpreter;
 
@@ -10,6 +11,7 @@ namespace StateMachine
     public class TokenStateLevels
     {
         public bool verbose_debug = false;
+        public bool end_on_eop = true;
         public bool linked_file = false;
         public KeplerVariableManager variables = new KeplerVariableManager();
         public KeplerFunctionManager functions = new KeplerFunctionManager();
@@ -197,8 +199,8 @@ namespace StateMachine
             }
 
             // string handling
-            // cast both operands to String
-            if (a_operand.type == KeplerType.String || b_operand.type == KeplerType.String)
+            // cast both operands to String if adding
+            if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) && token.operation == OperationType.Add)
             {
                 result.SetStringValue(a_operand.AsString() + b_operand.AsString());
                 return result;
@@ -208,7 +210,7 @@ namespace StateMachine
 
             switch (token.operation)
             {
-                case KeplerTokens.DataTypes.OperationType.Add:
+                case OperationType.Add:
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
@@ -220,12 +222,9 @@ namespace StateMachine
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
                             break;
-                        case KeplerType.String:
-                            result.SetStringValue(a_operand.StringValue + b_operand.StringValue);
-                            break;
                     }
                     break;
-                case KeplerTokens.DataTypes.OperationType.Subtract:
+                case OperationType.Subtract:
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
@@ -237,11 +236,9 @@ namespace StateMachine
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue - b_operand.uIntValue);
                             break;
-                        case KeplerType.String:
-                            break;
                     }
                     break;
-                case KeplerTokens.DataTypes.OperationType.Multiply:
+                case OperationType.Multiply:
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
@@ -253,11 +250,9 @@ namespace StateMachine
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue * b_operand.uIntValue);
                             break;
-                        case KeplerType.String:
-                            break;
                     }
                     break;
-                case KeplerTokens.DataTypes.OperationType.Divide:
+                case OperationType.Divide:
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
@@ -268,8 +263,6 @@ namespace StateMachine
                             break;
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.uIntValue / b_operand.uIntValue);
-                            break;
-                        case KeplerType.String:
                             break;
                     }
                     break;
@@ -461,7 +454,7 @@ namespace StateMachine
         {
             if (verbose_debug) Console.WriteLine("EOP!");
 
-            if (!linked_file) Environment.Exit(0); // exit with code 0 if NOT a linked file
+            if (!linked_file && end_on_eop) Environment.Exit(0); // exit with code 0 if NOT a linked file
         }
         void HandleConditionalIf(Token token, TokenState state)
         {
@@ -628,11 +621,14 @@ namespace StateMachine
                 case TokenType.StaticFloat:
                     var.SetFloatValue(float.Parse(token.token_string));
                     break;
+                case TokenType.StaticBoolean:
+                    var.SetBoolValue(bool.Parse(token.token_string));
+                    break;
                 case TokenType.StaticString:
                     var.SetStringValue(token.token_string.Substring(1, token.token_string.Length - 2));
                     break;
                 default:
-                    throw new Exception(String.Format("Unable to create temporary variable for TokenType {0}", token.type));
+                    throw new InterpreterException(String.Format("Unable to create temporary variable for TokenType {0}", token.type));
             }
 
 

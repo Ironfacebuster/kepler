@@ -9,7 +9,8 @@ log:
 	@echo $(test_command) \
 
 build:
-	@dotnet build --output $(output_location)
+	@dotnet build --output $(output_location); \
+	cp -v -r ./kepler_static ./$(output_location)/kepler_static;
 
 clean:
 	@dotnet clean
