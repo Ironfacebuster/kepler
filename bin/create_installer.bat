@@ -30,9 +30,9 @@ echo DetailPrint "Microsoft .NET Core Runtime 3.1 installer returned $0" >> %1
 echo FunctionEnd >> %1
 
 echo Name "Kepler Installer" >> %1
-echo Caption "Kepler b1 Installer V1" >> %1
+echo Caption "Kepler v1-alpha.1 Installer V1" >> %1
 echo Icon "%~dp0Resources\logo 256x256.ico" >> %1
-echo OutFile "%~dp0BUILD\kepler_b1_installer_v1.exe" >> %1
+echo OutFile "%~dp0BUILD\kepler_v1a1_installer_v1.exe" >> %1
 echo SetDateSave on >> %1
 echo SetDatablockOptimize on >> %1
 echo CRCCheck on >> %1

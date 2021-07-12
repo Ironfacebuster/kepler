@@ -7,3 +7,4 @@
 installer.nsi
 */temp
 .DS_Store
+*.xcf
