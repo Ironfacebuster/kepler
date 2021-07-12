@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>kepler</RootNamespace>
+    <ApplicationIcon>./bin/Resources/logo 256x256.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>
