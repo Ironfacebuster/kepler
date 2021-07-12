@@ -12,20 +12,23 @@ In order to build (and use) the compiler, you must have [.NET](https://dotnet.mi
 
 After ensuring .NET is installed, you can use the following steps:
 
+#### **Building and installing on Windows** (with `make`)
+> These steps require [NSIS](https://nsis.sourceforge.io/Main_Page), and only produces a Windows installer.
+1. Open a command prompt and navigate to the root of your local repository.
+2. Enter `make all pack` into your command prompt. Wait for all builds and tests to complete.
+3. Navigate to `/bin/BUILD` to find your newly created installation executable.
+4. Run the executable, then Kepler and associated .NET Core versions will be installed.
+5. Finally, restart any opened command prompts, and enter `kepler`!
+
 #### **Windows** (with `make`)
 1. Open a command prompt and navigate to the root of your local repository.
-2. In the command prompt, simply type `make`.
-3. Wait for the build and test to complete.
-4. Navigate your command prompt to the `BUILD_OUTPUT` folder.
-5. Finally, you can run `./KeplerCompiler` to enter a live interpretation mode.
+2. In the command prompt, simply type `make`, and wait for the build and test to complete.
+3. Navigate your command prompt to the `VS_BUILD_OUTPUT` folder.
+4. Finally, you can run `./kepler` to enter a live interpretation mode.
 
-#### **MacOS** and **Windows** (without `make`)
-1. Open a terminal (or command prompt) and navigate to the root of your local repository
-2. Enter `dotnet build --output BUILD_OUTPUT` into your terminal to build an executable file.
-3. Navigate your command prompt to the `BUILD_OUTPUT` folder.
-4. Finally, you can run `./KeplerCompiler` to enter a live interpretation mode.
+#### **Additionally**, when running the interpreter, you can use provide the `--file` argument and a path to a `.sc` file, or the `--help` argument to display all arguments.
+#### You can also use the interpreter **without building** by entering `dotnet run` in your terminal.
 
-> Building in this way only produces a Windows executable. This will be changed in the future.
-
-#### **Additionally**, when running the compiler, you can use provide the `--file` argument and a path to a `.sc` file, or the `--help` argument to display all arguments.
-#### You can also use the compiler **without building** by using `dotnet run` in your terminal.
+### Todo list
+- [ ] Make the directories associated with building less erratic
+- [ ] Multiplatform
