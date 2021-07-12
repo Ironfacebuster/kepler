@@ -4,12 +4,12 @@ using KeplerTokenizer;
 using Arguments;
 using KeplerInterpreter;
 
+using KeplerVersioning;
+
 namespace KeplerCompiler
 {
     class Program
     {
-        static string version = "v1.1";
-        static string release_date = "July 11th, 2021";
         static Tokenizer tokenizer = new Tokenizer();
         static void Main(string[] args)
         {
@@ -18,11 +18,9 @@ namespace KeplerCompiler
 
             if (arguments.HasArgument("help") || arguments.HasArgument("h"))
             {
-                Console.WriteLine(String.Format("\r\nKepler {0}", version));
-                Console.WriteLine(String.Format("Release date: {0}", release_date));
+                Console.WriteLine(String.Format("\r\nKepler {0}", StaticValues._VERSION));
+                Console.WriteLine(String.Format("Release date: {0}", StaticValues._RELEASE));
 
-                // Console.WriteLine("\r\n--build     Compile the supplied Kepler file.");
-                //  Console.WriteLine("--file      Compile the supplied Kepler file.")
                 Console.WriteLine("--file      The directory/filename of the Kepler file.");
                 Console.WriteLine("--help      Show the list of arguments.");
                 Console.WriteLine("--debug     Enable debug logging.");
@@ -92,8 +90,8 @@ namespace KeplerCompiler
 
         static void LiveInterpret(ArgumentList arguments)
         {
-            Console.WriteLine(String.Format("\r\nKepler {0}", version));
-            Console.WriteLine(String.Format("Release date: {0}", release_date));
+            Console.WriteLine(String.Format("\r\nKepler {0}", StaticValues._VERSION));
+            Console.WriteLine(String.Format("Release date: {0}", StaticValues._RELEASE));
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("Live Interpretation");
             Console.ForegroundColor = ConsoleColor.White;

@@ -11,3 +11,7 @@ TAU is Constant
 
 2_PI is TAU
 2_PI is Constant
+
+! macros
+$_VERSION is $_VERSION
+$_VERSION is Constant

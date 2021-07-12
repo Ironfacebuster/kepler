@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using KeplerTokens.Tokens;
 using KeplerTokens.DataTypes;
+using KeplerVersioning;
 using System.Text.RegularExpressions;
 
 namespace KeplerTokenizer
@@ -103,6 +104,8 @@ namespace KeplerTokenizer
         {
             this.line = index;
             this.indentation = indentation;
+
+            line = StaticValues.ReplaceMacros(line);
 
             // split by spaces, unless inside quotation marks.
             List<string> final_split = new List<string>(Regex.Split(line, "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
