@@ -1,5 +1,6 @@
 /.vscode
-/bin
+/bin/Debug
+/bin/BUILD
 /obj
 /VS_BUILD_OUTPUT/*
 /VS_PUBLISH_OUTPUT/*

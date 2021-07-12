@@ -4,7 +4,8 @@ test_file = test_file.sc
 
 all: clean \
 		build \
-		test
+		test \
+		publish
 
 log:
 	@echo $(test_command) \
@@ -13,19 +14,21 @@ build:
 	@cp -R ./kepler_static ./$(output_location); \
 	dotnet build --output $(output_location); 
 
-pack:
+publish:
 	@echo "Publishing..."; \
-	cp -R ./kepler_static ./$(publish_location); \
-	dotnet publish --output $(publish_location); \
-	./bin/create_installer.bat; \
+	dotnet publish --output $(publish_location);
+
+pack:
+	@cp -R ./kepler_static ./$(publish_location); \
+	./bin/create_installer.bat "./bin/installer.nsi"; \
+	mkdir -p "./bin/BUILD"; \
 	makensis "./bin/installer.nsi"
 
 clean:
 	@dotnet clean
 
 dotnet_test:
-	@ \
-	echo "Running test..."; \
+	@echo "Running test..."; \
 	dotnet run --file "./$(output_location)/kepler_static/examples/$(test_file)" || (echo -e "\e[1;31mTest failed (code: $$?)\e[0m"; exit 1)
 
 test:
