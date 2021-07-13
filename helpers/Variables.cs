@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.CodeDom;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using KeplerTokenizer;
 using KeplerInterpreter;
@@ -114,28 +110,10 @@ namespace KeplerVariables
             StringValue = /* ToLiteral(value); */ value;
         }
 
-        public string AsString()
-        {
-            switch (this.type)
-            {
-                case KeplerType.Float:
-                    return this.FloatValue.ToString();
-                case KeplerType.Int:
-                    return this.IntValue.ToString();
-                case KeplerType.uInt:
-                    return "u" + this.uIntValue.ToString();
-                case KeplerType.Boolean:
-                    return this.BoolValue.ToString();
-                case KeplerType.String:
-                    return this.StringValue;
-            }
-
-            throw new InterpreterException(string.Format("Unable to convert type {0} to String!", this.type));
-        }
-
         public void AssignValue(KeplerVariable variable)
         {
             ValidateConstant();
+            ValidateType(variable.type);
 
             this.type = variable.type;
 
@@ -231,9 +209,11 @@ namespace KeplerVariables
                     return BoolValue.ToString();
                 case KeplerType.String:
                     return StringValue;
+                case KeplerType.NaN:
+                    return "NaN";
             }
 
-            return "";
+            throw new InterpreterException(string.Format("Unable to convert type {0} to String!", this.type));
         }
 
         public int GetValueAsInt()
@@ -446,6 +426,7 @@ namespace KeplerVariables
         List,
         Array,
         Boolean,
-        Unassigned
+        Unassigned,
+        NaN
     }
 }

@@ -158,7 +158,7 @@ namespace StateMachine
             if (state.booleans["variable_assign"])
                 state.left_side_operator.AssignValue(result);
             if (state.booleans["console_print"])
-                state.strings["print_string"] = state.strings["print_string"] + result.AsString();
+                state.strings["print_string"] = state.strings["print_string"] + result.GetValueAsString();
         }
         KeplerVariable DoGenericOperation(Token token)
         {
@@ -200,6 +200,9 @@ namespace StateMachine
                         case KeplerType.String:
                             result.SetBoolValue(a_operand.StringValue == b_operand.StringValue);
                             break;
+                        case KeplerType.NaN:
+                            result.SetBoolValue(true);
+                            break;
                         default:
                             result.SetBoolValue(false);
                             break;
@@ -209,11 +212,23 @@ namespace StateMachine
                 return result;
             }
 
+            if (a_operand.type == KeplerType.NaN || b_operand.type == KeplerType.NaN)
+            {
+                // doing any operation to a NaN results in a NaN
+                result.SetType(KeplerType.NaN);
+                return result;
+            }
+
             // string handling
             // cast both operands to String if adding
             if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) && token.operation == OperationType.Add)
             {
-                result.SetStringValue(a_operand.AsString() + b_operand.AsString());
+                result.SetStringValue(a_operand.GetValueAsString() + b_operand.GetValueAsString());
+                return result;
+            }
+            else if (a_operand.type == KeplerType.String || b_operand.type == KeplerType.String)
+            {
+                result.SetType(KeplerType.NaN);
                 return result;
             }
 
@@ -278,6 +293,12 @@ namespace StateMachine
                     }
                     break;
                 case OperationType.Divide:
+                    // check for divide by zero
+                    if (b_operand.GetValueAsFloat() == 0)
+                    {
+                        result.SetType(KeplerType.NaN);
+                        return result;
+                    }
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:

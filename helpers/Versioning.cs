@@ -2,6 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using KeplerTokenizer;
 using KeplerTokens.Tokens;
+using KeplerTokens.DataTypes;
 
 namespace KeplerVersioning
 {
@@ -26,6 +27,14 @@ namespace KeplerVersioning
                     {
                         case "$_VERSION":
                             line.tokens[i] = new Token(TokenType.StaticString, t.start, EscapeString(_VERSION));
+                            break;
+                        case "NaN":
+                            // this is ugly
+                            // maybe add a StaticNaN?
+                            line.tokens[i] = new Token(TokenType.GenericOperation, t.start + 1, "NaN");
+                            line.tokens[i].a = new Token(TokenType.StaticString, t.start, "null");
+                            line.tokens[i].b = new Token(TokenType.StaticInt, t.start + 2, "0");
+                            line.tokens[i].operation = OperationType.Subtract;
                             break;
                     }
                 }

@@ -15,3 +15,6 @@ TAU is Constant
 ! macros
 $_VERSION is $_VERSION
 $_VERSION is Constant
+
+NaN is NaN
+NaN is Constant
