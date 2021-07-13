@@ -20,9 +20,12 @@ publish:
 
 pack:
 	@cp -R ./kepler_static ./$(publish_location); \
-	./bin/create_installer.bat "./bin/installer.nsi"; \
 	mkdir -p "./bin/BUILD"; \
-	makensis "./bin/installer.nsi"
+	makensis "./bin/modern_installer.nsi"
+	# @cp -R ./kepler_static ./$(publish_location); \
+	# ./bin/create_installer.bat "./bin/installer.nsi"; \
+	# mkdir -p "./bin/BUILD"; \
+	# makensis "./bin/installer.nsi"
 
 clean:
 	@dotnet clean
