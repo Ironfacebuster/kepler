@@ -1,0 +1,11 @@
+a1.2
+! fixed overwriting variable types when directly assigning via another variable
++ Added static NaN value
++ Added NaN creation when doing operations other than addition to strings
+
+a1.1
++ Added automatic typecasting in operations
++ Added static values
+
+a1
+Initial alpha release
