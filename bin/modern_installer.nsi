@@ -61,8 +61,9 @@ Section "Install Kepler" SecDummy
   File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.pdb" 
   File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
   File "D:\C# Projects\KeplerCompiler\bin\Resources\changelog.txt" 
+  
   SetOutPath "$INSTDIR\kepler_static" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\static_values.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\kepler_static\static_values.sc" 
   
   ;Store installation folder
   WriteRegStr HKCU "Software\kepler" "" $INSTDIR
@@ -78,13 +79,13 @@ Section "Example Files" ExampleFiles
 
   SetOutPath "$INSTDIR\examples" 
 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\hello_world.sc" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\link_test.sc" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\ops.sc" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\return.sc" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\test.sc" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\test_file.sc" 
-  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\types.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\hello_world.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test_file.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\types.sc" 
 
 SectionEnd
 
@@ -140,6 +141,7 @@ Section "Uninstall"
   Delete "$INSTDIR\kepler.dll" 
   Delete "$INSTDIR\kepler.exe" 
   Delete "$INSTDIR\kepler.pdb" 
+  Delete "$INSTDIR\changelog.txt" 
   Delete "$INSTDIR\kepler.runtimeconfig.json" 
   Delete "$INSTDIR\kepler_static\static_values.sc" 
   Delete "$INSTDIR\examples\hello_world.sc" 

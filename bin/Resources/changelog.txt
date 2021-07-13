@@ -1,5 +1,5 @@
 a1.2
-! fixed overwriting variable types when directly assigning via another variable
+! Fixed overwriting variable types when directly assigning via another variable
 + Added static NaN value
 + Added NaN creation when doing operations other than addition to strings
 
