@@ -53,7 +53,6 @@ Section "Install Kepler" SecDummy
   
   CreateDirectory $INSTDIR\kepler_static 
   CreateDirectory $INSTDIR\examples 
-  CreateDirectory $INSTDIR\tools 
   SetOutPath $INSTDIR 
   File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.deps.json" 
   File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.dll" 
@@ -80,17 +79,19 @@ Section "Example Files" ExampleFiles
   SetOutPath "$INSTDIR\examples" 
 
   File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\hello_world.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test_file.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\types.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\functions.sc" 
+;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.sc" 
+;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.sc" 
+;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.sc" 
+;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test.sc" 
+;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test_file.sc" 
+;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\types.sc" 
 
 SectionEnd
 
 Section "Install .NET 3.1" InstallDotNet
 
+  CreateDirectory $INSTDIR\tools 
   SetOutPath "$INSTDIR\tools" 
   File "D:\C# Projects\KeplerCompiler\bin\Tools\windowsdesktop-runtime-3.1.16-win-x64.exe" 
   DetailPrint "Installing Microsoft .NET Core Runtime 3.1" 
@@ -145,19 +146,7 @@ Section "Uninstall"
   Delete "$INSTDIR\kepler.runtimeconfig.json" 
   Delete "$INSTDIR\kepler_static\static_values.sc" 
   Delete "$INSTDIR\examples\hello_world.sc" 
-  Delete "$INSTDIR\examples\link_test.sc" 
-  Delete "$INSTDIR\examples\ops.sc" 
-  Delete "$INSTDIR\examples\return.sc" 
-  Delete "$INSTDIR\examples\test.sc" 
-  Delete "$INSTDIR\examples\test_file.sc" 
-  Delete "$INSTDIR\examples\types.sc" 
-  Delete "$INSTDIR\examples\hello_world.sc" 
-  Delete "$INSTDIR\examples\link_test.sc" 
-  Delete "$INSTDIR\examples\ops.sc" 
-  Delete "$INSTDIR\examples\return.sc" 
-  Delete "$INSTDIR\examples\test.sc" 
-  Delete "$INSTDIR\examples\test_file.sc" 
-  Delete "$INSTDIR\examples\types.sc" 
+  Delete "$INSTDIR\examples\functions.sc" 
   Delete $INSTDIR\tools\windowsdesktop-runtime-3.1.16-win-x64.exe 
   RMDir $INSTDIR\tools 
   RMDir $INSTDIR\examples 
