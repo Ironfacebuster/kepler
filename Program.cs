@@ -3,7 +3,6 @@ using System.IO;
 using KeplerTokenizer;
 using Arguments;
 using KeplerInterpreter;
-
 using KeplerVersioning;
 
 namespace KeplerCompiler
@@ -23,8 +22,15 @@ namespace KeplerCompiler
 
                 Console.WriteLine("--file      The directory/filename of the Kepler file.");
                 Console.WriteLine("--help      Show the list of arguments.");
+                Console.WriteLine("--version   Display the currently installed Kepler version.");
                 Console.WriteLine("--debug     Enable debug logging.");
 
+                Environment.Exit(0);
+            }
+
+            if (arguments.HasArgument("version") || arguments.HasArgument("v"))
+            {
+                Console.WriteLine(StaticValues._VERSION);
                 Environment.Exit(0);
             }
 
@@ -152,7 +158,8 @@ namespace KeplerCompiler
 
             while (t.HasNext())
             {
-                interpreter.Interpret(t.CurrentLine());
+                LineIterator line = StaticValues.ReplaceMacros(t.CurrentLine());
+                interpreter.Interpret(line);
 
                 t++;
             }
