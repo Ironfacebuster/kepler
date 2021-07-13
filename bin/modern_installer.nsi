@@ -11,9 +11,9 @@
 ;General
 
   ;Name and file
-  Name "Kepler Alpha 1.1"
+  Name "Kepler Alpha 1.2"
   !define MUI_ICON "D:\C# Projects\KeplerCompiler\bin\Resources\logo 256x256.ico" 
-  OutFile "D:\C# Projects\KeplerCompiler\bin\BUILD\kepler_v1a1.1_installer_v2.exe" 
+  OutFile "D:\C# Projects\KeplerCompiler\bin\BUILD\kepler_v1a1.2_installer_v2.exe" 
   Unicode True
   
   InstallDir "$PROGRAMFILES\kepler" 
@@ -55,13 +55,14 @@ Section "Install Kepler" SecDummy
   CreateDirectory $INSTDIR\examples 
   CreateDirectory $INSTDIR\tools 
   SetOutPath $INSTDIR 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler.deps.json" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler.dll" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler.exe" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler.pdb" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
+  File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.deps.json" 
+  File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.dll" 
+  File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.exe" 
+  File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.pdb" 
+  File "D:\C# Projects\KeplerCompiler\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\changelog.txt" 
   SetOutPath "$INSTDIR\kepler_static" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\static_values.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\static_values.sc" 
   
   ;Store installation folder
   WriteRegStr HKCU "Software\kepler" "" $INSTDIR
@@ -77,13 +78,13 @@ Section "Example Files" ExampleFiles
 
   SetOutPath "$INSTDIR\examples" 
 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\hello_world.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\link_test.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\ops.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\return.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\test.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\test_file.sc" 
-  File "D:\C# Projects\KeplerCompiler\bin\..\VS_PUBLISH_OUTPUT\kepler_static\examples\types.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\hello_world.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\link_test.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\ops.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\return.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\test.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\test_file.sc" 
+  File "D:\C# Projects\KeplerCompiler\kepler_static\examples\types.sc" 
 
 SectionEnd
 
