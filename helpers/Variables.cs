@@ -235,6 +235,63 @@ namespace KeplerVariables
 
             return "";
         }
+
+        public int GetValueAsInt()
+        {
+            switch (type)
+            {
+                case KeplerType.Float:
+                    return (int)FloatValue;
+                case KeplerType.Int:
+                    return IntValue;
+                case KeplerType.uInt:
+                    return (int)uIntValue;
+                case KeplerType.Boolean:
+                    return BoolValue ? 1 : 0;
+                case KeplerType.String:
+                    throw new InterpreterException("Cannot explicitly cast type String to Int!");
+            }
+
+            return 0;
+        }
+
+        public uint GetValueAsUnsignedInt()
+        {
+            switch (type)
+            {
+                case KeplerType.Float:
+                    return (uint)FloatValue;
+                case KeplerType.Int:
+                    return (uint)IntValue;
+                case KeplerType.uInt:
+                    return uIntValue;
+                case KeplerType.Boolean:
+                    return (uint)(BoolValue ? 1 : 0);
+                case KeplerType.String:
+                    throw new InterpreterException("Cannot explicitly cast type String to Int!");
+            }
+
+            return 0;
+        }
+
+        public double GetValueAsFloat()
+        {
+            switch (type)
+            {
+                case KeplerType.Float:
+                    return FloatValue;
+                case KeplerType.Int:
+                    return IntValue;
+                case KeplerType.uInt:
+                    return uIntValue;
+                case KeplerType.Boolean:
+                    return BoolValue ? 1.0 : 0.0;
+                case KeplerType.String:
+                    throw new InterpreterException("Cannot explicitly cast type String to Float!");
+            }
+
+            return 0;
+        }
     }
 
     public class KeplerFunctionManager

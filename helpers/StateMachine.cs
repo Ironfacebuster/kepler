@@ -42,7 +42,6 @@ namespace StateMachine
             TokenState EOP = new TokenState(TokenType.EOP, HandleEOP);
 
             // level 3 states
-            // TokenState StringText = new TokenState(TokenType.StringText, HandleStringText);
             TokenState StaticModifier = new TokenState(TokenType.StaticModifier, HandleStaticModifier);
             StaticModifier.booleans["declared_variable"] = true;
             StaticModifier.booleans["variable_assign"] = true;
@@ -56,17 +55,13 @@ namespace StateMachine
             // level n states
             TokenState GenericAssign = new TokenState(TokenType.GenericAssign, HandleGenericAssign);
             TokenState BooleanOperator = new TokenState(TokenType.BooleanOperator, NullHandle);
-            // TokenState EnterDoubleQuote = new TokenState(TokenType.DoubleQuote, HandleEnterDoubleQuote);
-            // TokenState ExitDoubleQuote = new TokenState(TokenType.DoubleQuote, HandleExitDoubleQuote);
             TokenState StaticVariableType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StaticFunctionType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
-            TokenState GenericAdd = new TokenState(TokenType.GenericAdd, HandleGenericAdd);
 
             // static values
             TokenState StaticFloat = new TokenState(TokenType.StaticFloat, new TokenState[] { BooleanOperator, EOL }, HandleStaticFloat);
             TokenState StaticInt = new TokenState(TokenType.StaticInt, new TokenState[] { BooleanOperator, EOL }, HandleStaticInt);
             TokenState StaticString = new TokenState(TokenType.StaticString, new TokenState[] { BooleanOperator, EOL }, HandleStaticString);
-            // TokenState StaticUnsignedFloat = new TokenState(TokenType.StaticUnsignedFloat, new TokenState[] { BooleanOperator, EOL }, HandleStaticUnsignedFloat);
             TokenState StaticUnsignedInt = new TokenState(TokenType.StaticUnsignedInt, new TokenState[] { BooleanOperator, EOL }, HandleStaticUnsignedInt);
             TokenState StaticBool = new TokenState(TokenType.StaticBoolean, new TokenState[] { BooleanOperator, EOL }, HandleStaticBool);
 
@@ -95,7 +90,6 @@ namespace StateMachine
             TokenState PositionalArgumentAssignment = new TokenState(TokenType.PositionalArgumentAssignment, HandlePositionalArgumentAssignment);
 
             // linking stuff
-            // TokenState LinkFile = new TokenState(TokenType.LinkFile, new TokenState[] { EnterDoubleQuote }, HandleLinkFile);
             TokenState LinkFile = new TokenState(TokenType.LinkFile, new TokenState[] { StaticString }, HandleLinkFile);
 
             level1.Add(new TokenState(TokenType.StartHeader, new TokenState[] { DeclareHeader }, HandleStartHeader));    // start header token
@@ -103,28 +97,21 @@ namespace StateMachine
             level1.Add(LinkFile);                                                                                        // link file
 
             level1.Add(new TokenState(TokenType.StartFunction, new TokenState[] { DeclareFunction }, HandleStartFunction));     // start function token
-            level1.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));       // end function token
+            level1.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));         // end function token
 
             // ASSIGN RECURSIVE CHILD STATES
             GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, GenericOperation };
-            GenericAdd.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType };
             AssignFunction.child_states = new TokenState[] { AssignFunctionType, AssignNonPositionalArgument };
             AssignFunctionType.child_states = new TokenState[] { StaticVariableType };
-            // ConsolePrint.child_states = new TokenState[] { EnterDoubleQuote, DeclareVariable };
             ConsolePrint.child_states = new TokenState[] { GenericOperation, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType };
 
-            DeclareVariable.child_states = new TokenState[] { PositionalArgumentAssignment, GenericAdd, EOL };
+            DeclareVariable.child_states = new TokenState[] { PositionalArgumentAssignment, EOL };
             PositionalArgumentAssignment.child_states = new TokenState[] { StaticVariableType };
             AssignNonPositionalArgument.child_states = new TokenState[] { DeclareVariable };
 
             StaticVariableType.child_states = new TokenState[] { BooleanOperator, EOL };
             StaticFunctionType.child_states = new TokenState[] { BooleanOperator, EOL };
             StaticModifier.child_states = new TokenState[] { BooleanOperator, /*StaticVariableType,*/ EOL };
-
-            // string handling
-            // EnterDoubleQuote.child_states = new TokenState[] { StringText, ExitDoubleQuote };  // String
-            // StringText.child_states = new TokenState[] { StringText, ExitDoubleQuote };        // String
-            // ExitDoubleQuote.child_states = new TokenState[] { BooleanOperator, EOL };          // String
 
             // handle "and is" & assigning arguments
             BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable };
@@ -151,14 +138,6 @@ namespace StateMachine
         void NullHandle(Token token, TokenState state)
         {
             // do nothing...
-        }
-        void HandleGenericAdd(Token token, TokenState state)
-        {
-            if (state.booleans["declared_variable"])
-            {
-                state.a_operand = state.c_variable.Clone(); // create a cloned variable (no direct reference)
-                state.booleans["assigned_a_operand"] = true;
-            }
         }
         void HandleConsolePrint(Token token, TokenState state)
         {
@@ -200,7 +179,6 @@ namespace StateMachine
 
             if (token.operation == OperationType.Equality)
             {
-
                 if (a_operand.type != b_operand.type)
                     result.SetBoolValue(false);
                 else
@@ -239,7 +217,7 @@ namespace StateMachine
                 return result;
             }
 
-            if (a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Cannot \"{0}\" mismatched types! ({1} and {2})", token.operation, a_operand.type, b_operand.type));
+            // if (a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Cannot \"{0}\" mismatched types! ({1} and {2})", token.operation, a_operand.type, b_operand.type));
 
             switch (token.operation)
             {
@@ -247,13 +225,13 @@ namespace StateMachine
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
-                            result.SetFloatValue(a_operand.FloatValue + b_operand.FloatValue);
+                            result.SetFloatValue(a_operand.GetValueAsFloat() + b_operand.GetValueAsFloat());
                             break;
                         case KeplerType.Int:
-                            result.SetIntValue(a_operand.IntValue + b_operand.IntValue);
+                            result.SetIntValue(a_operand.GetValueAsInt() + b_operand.GetValueAsInt());
                             break;
                         case KeplerType.uInt:
-                            result.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
+                            result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() + b_operand.GetValueAsUnsignedInt());
                             break;
                     }
                     break;
@@ -261,13 +239,13 @@ namespace StateMachine
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
-                            result.SetFloatValue(a_operand.FloatValue - b_operand.FloatValue);
+                            result.SetFloatValue(a_operand.GetValueAsFloat() - b_operand.GetValueAsFloat());
                             break;
                         case KeplerType.Int:
-                            result.SetIntValue(a_operand.IntValue - b_operand.IntValue);
+                            result.SetIntValue(a_operand.GetValueAsInt() - b_operand.GetValueAsInt());
                             break;
                         case KeplerType.uInt:
-                            result.SetUnsignedIntValue(a_operand.uIntValue - b_operand.uIntValue);
+                            result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() - b_operand.GetValueAsUnsignedInt());
                             break;
                     }
                     break;
@@ -275,13 +253,13 @@ namespace StateMachine
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
-                            result.SetFloatValue(a_operand.FloatValue * b_operand.FloatValue);
+                            result.SetFloatValue(a_operand.GetValueAsFloat() * b_operand.GetValueAsFloat());
                             break;
                         case KeplerType.Int:
-                            result.SetIntValue(a_operand.IntValue * b_operand.IntValue);
+                            result.SetIntValue(a_operand.GetValueAsInt() * b_operand.GetValueAsInt());
                             break;
                         case KeplerType.uInt:
-                            result.SetUnsignedIntValue(a_operand.uIntValue * b_operand.uIntValue);
+                            result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() * b_operand.GetValueAsUnsignedInt());
                             break;
                     }
                     break;
@@ -289,13 +267,13 @@ namespace StateMachine
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
-                            result.SetFloatValue(Math.Pow(a_operand.FloatValue, b_operand.FloatValue));
+                            result.SetFloatValue(Math.Pow(a_operand.GetValueAsFloat(), b_operand.GetValueAsFloat()));
                             break;
                         case KeplerType.Int:
-                            result.SetIntValue((int)Math.Pow(a_operand.IntValue, b_operand.IntValue));
+                            result.SetIntValue((int)Math.Pow(a_operand.GetValueAsInt(), b_operand.GetValueAsInt()));
                             break;
                         case KeplerType.uInt:
-                            result.SetUnsignedIntValue((uint)Math.Pow(a_operand.uIntValue, b_operand.uIntValue));
+                            result.SetUnsignedIntValue((uint)Math.Pow(a_operand.GetValueAsUnsignedInt(), b_operand.GetValueAsUnsignedInt()));
                             break;
                     }
                     break;
@@ -303,13 +281,13 @@ namespace StateMachine
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
-                            result.SetFloatValue(a_operand.FloatValue / b_operand.FloatValue);
+                            result.SetFloatValue(a_operand.GetValueAsFloat() / b_operand.GetValueAsFloat());
                             break;
                         case KeplerType.Int:
-                            result.SetIntValue(a_operand.IntValue / b_operand.IntValue);
+                            result.SetIntValue(a_operand.GetValueAsInt() / b_operand.GetValueAsInt());
                             break;
                         case KeplerType.uInt:
-                            result.SetUnsignedIntValue(a_operand.uIntValue / b_operand.uIntValue);
+                            result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() / b_operand.GetValueAsUnsignedInt());
                             break;
                     }
                     break;
@@ -424,55 +402,6 @@ namespace StateMachine
             Enum.TryParse(token.token_string, out KeplerModifier m_type);
             state.left_side_operator.SetModifier(m_type);
         }
-        // void HandleEnterDoubleQuote(Token token, TokenState state)
-        // {
-        //     state.booleans["inside_string"] = true;
-        //     state.strings["build_string"] = "";
-        // }
-        // void HandleExitDoubleQuote(Token token, TokenState state)
-        // {
-        //     state.booleans["inside_string"] = false;
-
-        //     if (state.booleans["console_print"])
-        //     {
-
-        //         state.strings["print_string"] = state.strings["print_string"] + state.strings["build_string"];
-
-        //     }
-        //     else if (inside_header && state.booleans["link_file"])
-        //     {
-        //         if (verbose_debug) Console.WriteLine(string.Format("LINKING \"{0}\"", state.strings["build_string"]));
-
-        //         // load file and interpret
-        //         Tokenizer m_tokenizer = new Tokenizer();
-        //         m_tokenizer.Load(state.strings["build_string"]);
-
-        //         Interpreter m_interpreter = new Interpreter();
-        //         m_interpreter.verbose_debug = verbose_debug;
-        //         m_interpreter.levels.linked_file = true;
-
-        //         // do interpretation
-        //         while (m_tokenizer.HasNext())
-        //         {
-        //             m_interpreter.Interpret(m_tokenizer.CurrentLine());
-
-        //             m_tokenizer++;
-        //         }
-
-        //         // transfer all global variables and functions
-        //         linked_variables = m_interpreter.levels.variables;
-        //         linked_functions = m_interpreter.levels.functions;
-
-        //         has_linked_file = true;
-
-        //     }
-        //     else state.c_variable.SetStringValue(state.strings["build_string"]);
-        // }
-        // void HandleStringText(Token token, TokenState state)
-        // {
-        //     state.strings["build_string"] = state.strings["build_string"].Length == 0 ? token.token_string : state.strings["build_string"] + " " + token.token_string;
-        //     state.booleans["inside_string"] = true;
-        // }
         void HandleStaticVariableType(Token token, TokenState state)
         {
             Enum.TryParse(token.token_string, out KeplerType m_type);
@@ -521,40 +450,6 @@ namespace StateMachine
             {
                 state.left_side_operator.AssignValue(variables.GetVariable(token.token_string));
             }
-            // if (state.booleans["assigned_a_operand"])
-            // {
-            //     // on the other side of a "GenericOperation"
-            //     // TODO: check operation type after adding other operations
-            //     if (verbose_debug) Console.WriteLine(token.token_string);
-            //     KeplerVariable b_operand = variables.GetVariable(token.token_string);
-
-            //     if (verbose_debug) Console.WriteLine(state.a_operand);
-            //     if (verbose_debug) Console.WriteLine(b_operand);
-
-            //     if (state.a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Mismatched types! ({0} and {1})", state.a_operand.type, b_operand.type));
-            //     KeplerVariable a_operand = state.a_operand;
-            //     return_value.SetType(b_operand.type);
-
-            //     switch (b_operand.type)
-            //     {
-            //         case KeplerType.Float:
-            //             state.left_side_operator.SetFloatValue(a_operand.FloatValue + b_operand.FloatValue);
-            //             break;
-            //         case KeplerType.Int:
-            //             state.left_side_operator.SetIntValue(a_operand.IntValue + b_operand.IntValue);
-            //             break;
-            //         case KeplerType.uInt:
-            //             state.left_side_operator.SetUnsignedIntValue(a_operand.uIntValue + b_operand.uIntValue);
-            //             break;
-            //         case KeplerType.String:
-            //             state.left_side_operator.SetStringValue(a_operand.StringValue + b_operand.StringValue);
-            //             break;
-            //     }
-
-            //     state.ResetOperands();
-            //     // state.a_operand = b_operand; // shift for chained adds
-            //     // state.booleans["assigned_a_operand"] = true;
-            // }
             else if (state.booleans["console_print"])
             {
                 state.strings["print_string"] = state.strings["print_string"] + variables.GetVariable(token.token_string).GetValueAsString();
@@ -603,8 +498,6 @@ namespace StateMachine
                     if (verbose_debug) Console.WriteLine(string.Format("Scheduling call of {0} to EOL", c_function.name));
                 }
                 else ExecuteFunction(c_function);
-                // foreach(KeyValuePair<string,KeplerType> pair in c_function.non_positional_arguments)
-                //     Console.WriteLine(string.Format("{0} -> {1}",pair.Key,pair.Value));
 
 
 
@@ -643,11 +536,19 @@ namespace StateMachine
             Interpreter f_interpreter = new Interpreter();
             f_interpreter.levels.variables = this.variables.Copy();
             f_interpreter.levels.functions = this.functions.Copy();
+            f_interpreter.verbose_debug = this.verbose_debug;
 
-            // f_interpreter.verbose_debug = true;
             // do interpretation
             foreach (LineIterator line in function.lines)
+            {
                 f_interpreter.Interpret(line);
+
+                // if (f_interpreter.HasReturnValue())
+                // {
+                //     do something with return value
+                //     break;
+                // }
+            }
 
             function.Reset(); // reset target, argument assignments
         }
@@ -755,7 +656,6 @@ namespace StateMachine
         {
             booleans["assigned_a_operand"] = false;
             a_operand = new KeplerVariable();
-            // left_side_operator = 
         }
 
         public TokenState Shift(TokenState previous_token)
@@ -765,7 +665,7 @@ namespace StateMachine
             this.strings = previous_token.strings;
 
             this.add_operands = previous_token.add_operands;
-            this.a_operand = previous_token.a_operand;
+            // this.a_operand = previous_token.a_operand;
             this.left_side_operator = previous_token.left_side_operator;
 
             this.c_variable = previous_token.c_variable;
