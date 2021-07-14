@@ -335,10 +335,10 @@ namespace StateMachine
                     result.SetBoolValue(a_operand.GetValueAsFloat() >= b_operand.GetValueAsFloat());
                     break;
                 case OperationType.LessThan:
-                    result.SetBoolValue(a_operand.GetValueAsFloat() > b_operand.GetValueAsFloat());
+                    result.SetBoolValue(a_operand.GetValueAsFloat() < b_operand.GetValueAsFloat());
                     break;
                 case OperationType.LessThanEqual:
-                    result.SetBoolValue(a_operand.GetValueAsFloat() >= b_operand.GetValueAsFloat());
+                    result.SetBoolValue(a_operand.GetValueAsFloat() <= b_operand.GetValueAsFloat());
                     break;
             }
 
