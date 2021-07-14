@@ -99,6 +99,9 @@ namespace StateMachine
             level1.Add(new TokenState(TokenType.StartFunction, new TokenState[] { DeclareFunction }, HandleStartFunction));     // start function token
             level1.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));         // end function token
 
+            level1.Add(new TokenState(TokenType.StartConditional, new TokenState[] { StaticBool, GenericOperation }, HandleStartConditional));  // if
+            level1.Add(new TokenState(TokenType.EndConditional, new TokenState[] { EOL }, HandleEndConditional));                               // endif
+
             // ASSIGN RECURSIVE CHILD STATES
             GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, GenericOperation };
             AssignFunction.child_states = new TokenState[] { AssignFunctionType, AssignNonPositionalArgument };
@@ -139,6 +142,21 @@ namespace StateMachine
         {
             // do nothing...
         }
+
+        void HandleStartConditional(Token token, TokenState state)
+        {
+            // enter "validate_conditional"
+            state.booleans["validate_conditional"] = true;
+        }
+
+        void HandleEndConditional(Token token, TokenState state)
+        {
+            if (state.booleans["validate_conditional"] && !state.booleans["inside_conditional"]) throw new InterpreterException("Unexpected endif token!");
+            // enter "validate_conditional"
+            state.booleans["validate_conditional"] = false;
+            state.booleans["inside_conditional"] = false;
+        }
+
         void HandleConsolePrint(Token token, TokenState state)
         {
             state.strings["print_string"] = ""; // clear print_string
@@ -146,19 +164,14 @@ namespace StateMachine
         }
         void HandleGenericOperation(Token token, TokenState state)
         {
-            if (verbose_debug)
-            {
-                Console.WriteLine("Doing generic operation");
-                Console.WriteLine(token.a);
-                Console.WriteLine(token.b);
-            }
-
             KeplerVariable result = DoGenericOperation(token);
 
             if (state.booleans["variable_assign"])
                 state.left_side_operator.AssignValue(result);
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + result.GetValueAsString();
+            if (state.booleans["validate_conditional"])
+                state.booleans["inside_conditional"] = result.GetValueAsBool();
         }
         KeplerVariable DoGenericOperation(Token token)
         {
@@ -312,6 +325,9 @@ namespace StateMachine
                             break;
                     }
                     break;
+                case OperationType.Modulo:
+                    result.SetFloatValue(a_operand.GetValueAsFloat() % b_operand.GetValueAsFloat());
+                    break;
             }
 
             return result;
@@ -383,6 +399,8 @@ namespace StateMachine
                 state.left_side_operator.SetBoolValue(bool.Parse(token.token_string));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + bool.Parse(token.token_string);
+            // if (state.booleans["validate_conditional"])
+            //     state.booleans["inside_conditional"] = bool.Parse(token.token_string);
         }
         void HandleStaticString(Token token, TokenState state)
         {
@@ -652,7 +670,8 @@ namespace StateMachine
             booleans["declared_variable"] = false;
             booleans["declared_function"] = false;
             booleans["variable_assign"] = false;
-            // booleans["inside_string"] = false;
+            booleans["validate_conditional"] = false;
+            booleans["inside_conditional"] = false;
             booleans["function_assign"] = false;
             booleans["assigning_function_variables"] = false;
             booleans["assigning_function_variables_type"] = false;

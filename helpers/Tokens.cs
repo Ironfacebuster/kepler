@@ -119,6 +119,10 @@ namespace KeplerTokens
             StartNonPositionalArguments,
             CallFunction,
 
+            // conditional things
+            StartConditional,
+            EndConditional,
+
             // operations
             GenericAdd,
             GenericSubtract,
@@ -126,6 +130,7 @@ namespace KeplerTokens
             GenericPower,
             GenericDivide,
             GenericOperation,
+            GenericModulo,
             GenericEquality, // equality comparison (if type != type, throw TypeError)
 
             AssignNonPositionalArgument,
@@ -191,8 +196,8 @@ namespace KeplerTokens
             Divide,
             Multiply,
             Power,
+            Modulo,
             Equality
-            // TODO: add more operations (exp, mod, etc...)
         }
         public class Float
         {

@@ -28,6 +28,7 @@ namespace KeplerTokenizer
 
                 Regex r = new Regex(@"^(    )");
                 Regex double_quotes = new Regex("(?!\\B\"[^\"]*),(?![^\"]*\"\\B)");
+                // Regex eol_comment = new Regex()
                 // convert leading 4 spaces to a tab and trim end spaces
                 // .Replace(",", " and") <- important: CANNOT split by commas within quotation marks!
                 string line = double_quotes.Replace(r.Replace(lines[i], "\t").TrimEnd(charsToTrim), " and");
@@ -104,8 +105,9 @@ namespace KeplerTokenizer
             this.line = index;
             this.indentation = indentation;
 
+            Regex inline_comment = new Regex("(!--[\\w|\\s]*--!)|(![\\w|\\s|\"]*$)"); // remove inline comments
             // split by spaces, unless inside quotation marks.
-            List<string> final_split = new List<string>(Regex.Split(line, "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
+            List<string> final_split = new List<string>(Regex.Split(inline_comment.Replace(line.Replace("\t", " "), ""), "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
 
             List<Token> m_tokens = new List<Token>();
 
@@ -123,7 +125,10 @@ namespace KeplerTokenizer
                     // if we're at the beginning of this line.
                     if (i == 0)
                     {
-                        pair = GetTokenType(tokenized, final_split[Math.Min(i + 1, final_split.Count - 1)], null);
+                        if (final_split.Count == 1)
+                            pair = GetTokenType(tokenized, null, null);
+                        else
+                            pair = GetTokenType(tokenized, final_split[Math.Min(i + 1, final_split.Count - 1)], null);
                     }
                     else
                     {
@@ -151,35 +156,6 @@ namespace KeplerTokenizer
                     if (tokenized.EndsWith("\"")) in_string = false;
                     // throw new Exception(string.Format("Unable to tokenize line {0}: unrecognizable token!\r\nToken: {1}", this.line, tokenized));
                 }
-
-                // NOT NEEDED RIGHT NOw, but keeping for the future
-                // Extra passes
-
-                // String pass
-                // for (int i = 0; i < m_tokens.Count; i++)
-                // {
-                //     // if this token is a double quote
-                //     if (m_tokens[i].type == TokenType.DoubleQuote)
-                //     {
-                //         Token n_string = new Token(TokenType.StaticString, i, m_tokens[i].token_string);
-                //         bool add_space = false;
-
-                //         while (m_tokens[i + 1].type != TokenType.DoubleQuote)
-                //         {
-                //             if (add_space) n_string.token_string = n_string.token_string + " " + m_tokens[i + 1].token_string;
-                //             else n_string.token_string = n_string.token_string + m_tokens[i + 1].token_string;
-                //             m_tokens.RemoveAt(i + 1);
-
-                //             add_space = true;
-                //         }
-
-                //         // handle final DoubleQuote
-                //         m_tokens.RemoveAt(i + 1);
-                //         n_string.token_string = n_string.token_string + "\"";
-
-                //         m_tokens[i] = n_string;
-                //     }
-                // }
 
                 // Operations pass
                 for (int i = 0; i < m_tokens.Count;)
@@ -220,6 +196,10 @@ namespace KeplerTokenizer
                             operation_token.operation = OperationType.Divide;
                             clean_up = true;
                             break;
+                        case TokenType.GenericModulo:
+                            operation_token.operation = OperationType.Modulo;
+                            clean_up = true;
+                            break;
                         case TokenType.GenericEquality:
                             operation_token.operation = OperationType.Equality;
                             clean_up = true;
@@ -244,6 +224,17 @@ namespace KeplerTokenizer
                     }
                 }
 
+                // conditional virtual equality
+                if (m_tokens.Count == 2 && m_tokens[0].type == TokenType.StartConditional)
+                {
+                    Token equality = new Token(TokenType.GenericOperation, 1, m_tokens[1].token_string);
+                    equality.operation = OperationType.Equality;
+                    equality.a = m_tokens[1];
+                    equality.b = new Token(TokenType.StaticBoolean, 3, "True");
+
+                    m_tokens[1] = equality;
+                }
+
                 this.tokens = m_tokens;
             }
             catch (SystemException e)
@@ -258,11 +249,14 @@ namespace KeplerTokenizer
 
             TokenMatch[] tokens = new TokenMatch[] {
                 new TokenMatch(TokenType.EOP, "EOP", "EOP", null, 0), // End of Program token
+                new TokenMatch(TokenType.EOP, "EOP", null, null, 0), // End of Program token
 
                 // new TokenMatch(TokenType.DoubleQuote, "\"", TokenMatch.any_string, TokenMatch.any_string, 0), // handle doublequote
                 // new TokenMatch(TokenType.DoubleQuote, "\"", null, TokenMatch.any_string, 0), // handle doublequote at end of line
+                new TokenMatch(TokenType.StartConditional, "if", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.EndConditional, "endif", null, null, 0),
 
-                new TokenMatch(TokenType.StartHeader, "start", "Header",null, 0),
+                new TokenMatch(TokenType.StartHeader, "start", "Header", null, 0),
                 new TokenMatch(TokenType.EndHeader, "end", "Header", null, 0),
                 new TokenMatch(TokenType.DeclareHeader, "Header", null, "start", 0),
                 new TokenMatch(TokenType.DeclareHeader, "Header", null, "end", 0),
@@ -314,9 +308,9 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.AssignFunctionType, "returns", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.AssignNonPositionalArgument, "uses", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.FunctionReturn, "return", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.ConditionalIf, "if", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.ConditionalElse, "else", "else", null, 0),
-                new TokenMatch(TokenType.ConditionalElseIf, "else", "if", null, 1), // i++
+                // new TokenMatch(TokenType.ConditionalIf, "if", TokenMatch.any_string, null, 0),
+                // new TokenMatch(TokenType.ConditionalElse, "else", "else", null, 0),
+                // new TokenMatch(TokenType.ConditionalElseIf, "else", "if", null, 1), // i++
                 new TokenMatch(TokenType.GenericAssign, "is", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 // modifiers
@@ -345,6 +339,7 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.GenericMultiply, "*", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericPower, "^", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericModulo, "%", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 new TokenMatch(TokenType.CallFunction, "call", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "call", 0),

@@ -18,7 +18,11 @@ namespace KeplerInterpreter
         public Token c_token = new Token(TokenType.UNRECOGNIZED, 0, "NUL");
         // bool assigned_token = false;
         bool inside_function = false;
+        bool inside_conditional = false;
+        int conditional_indentation = 0;
+        bool skip_conditional = false;
         public KeplerFunction c_function = new KeplerFunction("NUL");
+        public KeplerFunction c_conditional = new KeplerFunction("CONDITIONAL");
         public LineIterator c_line = new LineIterator("", 0, 0);
 
         static string PrintLine(LineIterator line)
@@ -255,6 +259,37 @@ namespace KeplerInterpreter
                 return;
             }
 
+            if (skip_conditional)
+            {
+                // check for "endif"
+                if (c_line.CurrentToken().type == TokenType.EndConditional && c_line.indentation == conditional_indentation) skip_conditional = false;
+
+                return;
+            }
+
+            if (inside_conditional)
+            {
+                c_line.m_num = 0;
+
+                c_conditional.lines.Add(c_line);
+
+                if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == conditional_indentation)
+                {
+                    inside_conditional = false;
+
+                    Interpreter conditional_int = new Interpreter();
+                    conditional_int.verbose_debug = verbose_debug;
+
+                    conditional_int.levels.variables = levels.variables.Copy();
+                    conditional_int.levels.functions = levels.functions.Copy();
+
+                    for (int i = 0; i < c_conditional.lines.Count; i++)
+                        conditional_int.Interpret(c_conditional.lines[i]);
+                }
+
+                return;
+            }
+
             if (verbose_debug)
             {
                 Console.WriteLine("\r\nINTERP. " + c_line.GetString());
@@ -289,6 +324,7 @@ namespace KeplerInterpreter
                 if (c_state.booleans["inside_function"] && c_token.token_string != "start")
                 {
                     inside_function = true;
+                    c_state.c_function.lines = new List<LineIterator>(); // clear lines in case of redefinition
                     c_function = c_state.c_function;
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_function.name));
@@ -303,6 +339,18 @@ namespace KeplerInterpreter
                         // Console.ForegroundColor = ConsoleColor.White;
                         Console.WriteLine(c_state.strings["print_string"]);
                     }
+                    if (c_state.booleans["inside_conditional"])
+                    {
+                        c_conditional.lines = new List<LineIterator>();
+                        inside_conditional = true;
+                        conditional_indentation = c_line.indentation;
+                    }
+                    if (c_state.booleans["validate_conditional"] && !c_state.booleans["inside_conditional"])
+                    {
+                        conditional_indentation = c_line.indentation;
+                        skip_conditional = true;
+                    }
+
                     break;
                 }
 
