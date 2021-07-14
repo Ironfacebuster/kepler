@@ -3,7 +3,6 @@ a1.2
 ! Fixed inline block comments not actually working as comments
 ! Fixed tabs being treated as normal characters, rather than spaces
 + Added static NaN value
-+ Added NaN creation when doing operations other than addition to strings
 + Added basic if statement support
 + Added >, >=, <, <= as valid comparisons
 + Added modulo math operation
