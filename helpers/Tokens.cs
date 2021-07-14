@@ -132,6 +132,10 @@ namespace KeplerTokens
             GenericOperation,
             GenericModulo,
             GenericEquality, // equality comparison (if type != type, throw TypeError)
+            GenericLessThan,
+            GenericGreaterThan,
+            GenericLessThanEqual,
+            GenericGreaterThanEqual,
 
             AssignNonPositionalArgument,
             PositionalArgument,
@@ -197,7 +201,11 @@ namespace KeplerTokens
             Multiply,
             Power,
             Modulo,
-            Equality
+            Equality,
+            GreaterThan,
+            GreaterThanEqual,
+            LessThan,
+            LessThanEqual
         }
         public class Float
         {

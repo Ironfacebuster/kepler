@@ -328,6 +328,18 @@ namespace StateMachine
                 case OperationType.Modulo:
                     result.SetFloatValue(a_operand.GetValueAsFloat() % b_operand.GetValueAsFloat());
                     break;
+                case OperationType.GreaterThan:
+                    result.SetBoolValue(a_operand.GetValueAsFloat() > b_operand.GetValueAsFloat());
+                    break;
+                case OperationType.GreaterThanEqual:
+                    result.SetBoolValue(a_operand.GetValueAsFloat() >= b_operand.GetValueAsFloat());
+                    break;
+                case OperationType.LessThan:
+                    result.SetBoolValue(a_operand.GetValueAsFloat() > b_operand.GetValueAsFloat());
+                    break;
+                case OperationType.LessThanEqual:
+                    result.SetBoolValue(a_operand.GetValueAsFloat() >= b_operand.GetValueAsFloat());
+                    break;
             }
 
             return result;

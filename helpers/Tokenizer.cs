@@ -105,7 +105,7 @@ namespace KeplerTokenizer
             this.line = index;
             this.indentation = indentation;
 
-            Regex inline_comment = new Regex("(!--[\\w|\\s]*--!)|(![\\w|\\s|\"]*$)"); // remove inline comments
+            Regex inline_comment = new Regex("((!--)[\\w|\\s]*(--!))"); // remove inline comments
             // split by spaces, unless inside quotation marks.
             List<string> final_split = new List<string>(Regex.Split(inline_comment.Replace(line.Replace("\t", " "), ""), "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
 
@@ -202,6 +202,22 @@ namespace KeplerTokenizer
                             break;
                         case TokenType.GenericEquality:
                             operation_token.operation = OperationType.Equality;
+                            clean_up = true;
+                            break;
+                        case TokenType.GenericGreaterThan:
+                            operation_token.operation = OperationType.GreaterThan;
+                            clean_up = true;
+                            break;
+                        case TokenType.GenericGreaterThanEqual:
+                            operation_token.operation = OperationType.GreaterThanEqual;
+                            clean_up = true;
+                            break;
+                        case TokenType.GenericLessThan:
+                            operation_token.operation = OperationType.LessThan;
+                            clean_up = true;
+                            break;
+                        case TokenType.GenericLessThanEqual:
+                            operation_token.operation = OperationType.LessThanEqual;
                             clean_up = true;
                             break;
                         default:
@@ -340,6 +356,11 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.GenericPower, "^", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericModulo, "%", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericLessThan, "<", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericGreaterThan, ">", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericLessThanEqual, "<=", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericGreaterThanEqual, ">=", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 new TokenMatch(TokenType.CallFunction, "call", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "call", 0),
@@ -348,7 +369,6 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.PositionalArgumentAssignment, "as", null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, null, "as", 0),
                 new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, TokenMatch.any_string, "as", 0),
-                new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0)
