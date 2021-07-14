@@ -272,6 +272,25 @@ namespace KeplerVariables
 
             return 0;
         }
+
+        public bool GetValueAsBool()
+        {
+            switch (type)
+            {
+                case KeplerType.Float:
+                    return (int)FloatValue >= 1;
+                case KeplerType.Int:
+                    return IntValue >= 1;
+                case KeplerType.uInt:
+                    return uIntValue >= 1;
+                case KeplerType.Boolean:
+                    return BoolValue;
+                case KeplerType.String:
+                    throw new InterpreterException("Cannot explicitly cast type String to Bool!");
+            }
+
+            return false;
+        }
     }
 
     public class KeplerFunctionManager
