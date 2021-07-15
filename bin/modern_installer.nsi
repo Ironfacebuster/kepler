@@ -11,9 +11,9 @@
 ;General
 
   ;Name and file
-  Name "Kepler Alpha 1.2"
+  Name "Kepler Alpha 1.3"
   !define MUI_ICON "D:\C# Projects\KeplerCompiler\bin\Resources\logo 256x256.ico" 
-  OutFile "D:\C# Projects\KeplerCompiler\bin\BUILD\kepler_v1a1.2_installer_v2.exe" 
+  OutFile "D:\C# Projects\KeplerCompiler\bin\BUILD\kepler_v1a1.3_installer_v2.exe" 
   Unicode True
   
   InstallDir "$PROGRAMFILES\kepler" 
@@ -80,12 +80,22 @@ Section "Example Files" ExampleFiles
 
   File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\hello_world.sc" 
   File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\functions.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\if.sc"  
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\fizzbuzz.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\test_file.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\types.sc" 
+
+SectionEnd
+
+Section "Add to Path" AppendPath
+
+  DetailPrint "Attempting to add to PATH..."
+  EnVar::AddValue "PATH" $INSTDIR
+  Pop $0 
 
 SectionEnd
 
@@ -104,14 +114,6 @@ Section "Install .NET 3.1" InstallDotNet
   ${EndIf} 
   SetDetailsPrint lastused 
   DetailPrint "Microsoft .NET Core Runtime 3.1 installer returned $0" 
-
-SectionEnd
-
-Section "Add to Path" AppendPath
-
-  DetailPrint "Attempting to add to PATH..."
-  EnVar::AddValue "PATH" $INSTDIR
-  Pop $0 
 
 SectionEnd
 
@@ -147,6 +149,8 @@ Section "Uninstall"
   Delete "$INSTDIR\kepler_static\static_values.sc" 
   Delete "$INSTDIR\examples\hello_world.sc" 
   Delete "$INSTDIR\examples\functions.sc" 
+  Delete "$INSTDIR\examples\if.sc" 
+  Delete "$INSTDIR\examples\fizzbuzz.sc" 
   Delete $INSTDIR\tools\windowsdesktop-runtime-3.1.16-win-x64.exe 
   RMDir $INSTDIR\tools 
   RMDir $INSTDIR\examples 
