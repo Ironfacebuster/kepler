@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using KeplerTokens.Tokens;
 using KeplerTokens.DataTypes;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace KeplerTokenizer
 {
@@ -107,7 +108,10 @@ namespace KeplerTokenizer
 
             Regex inline_comment = new Regex("((!--)[\\w|\\s]*(--!))"); // remove inline comments
             // split by spaces, unless inside quotation marks.
-            List<string> final_split = new List<string>(Regex.Split(inline_comment.Replace(line.Replace("\t", " "), ""), "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
+            List<string> final_split = Regex.Matches(inline_comment.Replace(line.Replace("\t", " "), ""), @"[\""].+?[\""]|[^ ]+")
+                            .Cast<Match>()
+                            .Select(m => m.Value)
+                            .ToList();
 
             List<Token> m_tokens = new List<Token>();
 
