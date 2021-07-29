@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Arguments
@@ -15,14 +14,17 @@ namespace Arguments
             this.argument = argument;
             this.value = value;
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} -> {1}", argument, value);
+        }
     }
     public class ArgumentList
     {
         List<Argument> arguments = new List<Argument>();
         public ArgumentList(string[] args)
         {
-            // int last_index = -1;
-            // if (args.Length % 2 != 0) throw new Exception("Mismatched argument pairs!\r\nList of arguments is not even!");
             for (var i = 0; i < args.Length;)
             {
                 // create the argument
@@ -73,7 +75,6 @@ namespace Arguments
 
             return hasArgument;
         }
-
         public string GetArgument(string argument)
         {
             foreach (Argument arg in arguments)

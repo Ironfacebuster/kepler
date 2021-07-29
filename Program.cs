@@ -1,9 +1,9 @@
 ﻿using System;
-using System.IO;
 using KeplerTokenizer;
 using Arguments;
 using KeplerInterpreter;
 using KeplerVersioning;
+using Help;
 
 namespace KeplerCompiler
 {
@@ -17,13 +17,14 @@ namespace KeplerCompiler
 
             if (arguments.HasArgument("help") || arguments.HasArgument("h"))
             {
-                Console.WriteLine(String.Format("\r\nKepler {0}", StaticValues._VERSION));
-                Console.WriteLine(String.Format("Release date: {0}", StaticValues._RELEASE));
+                HelpList list = new HelpList();
 
-                Console.WriteLine("--file      The directory/filename of the Kepler file.");
-                Console.WriteLine("--help      Show the list of arguments.");
-                Console.WriteLine("--version   Display the currently installed Kepler version.");
-                Console.WriteLine("--debug     Enable debug logging.");
+                list.AddOption("--file", "The pathlike directory/filename of the kepler file.");
+                list.AddOption("--help", "Show the list of arguments.");
+                list.AddOption("--version", "Display the currently installed Kepler version.");
+                list.AddOption("--debug", "Enable debug logging.");
+
+                list.Print();
 
                 Environment.Exit(0);
             }
