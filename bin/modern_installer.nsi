@@ -82,6 +82,7 @@ Section "Example Files" ExampleFiles
   File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\functions.sc" 
   File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\if.sc"  
   File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\fizzbuzz.sc" 
+  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\digiroot.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.sc" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.sc" 
@@ -151,6 +152,7 @@ Section "Uninstall"
   Delete "$INSTDIR\examples\functions.sc" 
   Delete "$INSTDIR\examples\if.sc" 
   Delete "$INSTDIR\examples\fizzbuzz.sc" 
+  Delete "$INSTDIR\examples\digiroot.sc" 
   Delete $INSTDIR\tools\windowsdesktop-runtime-3.1.16-win-x64.exe 
   RMDir $INSTDIR\tools 
   RMDir $INSTDIR\examples 
