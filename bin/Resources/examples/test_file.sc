@@ -7,7 +7,7 @@ print ""
 
 start Header
     successful_tests is 0
-    total_tests is 13
+    total_tests is 15
 
     inc_success returns Int
 
