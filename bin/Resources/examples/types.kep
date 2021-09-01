@@ -7,7 +7,7 @@ start Header
 
     string is String and is "test string"
 
-    ! link "./examples/return.sc"
+    ! link "./examples/return.kep"
 end Header
 
 start function1 

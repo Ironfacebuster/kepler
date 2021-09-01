@@ -3,7 +3,7 @@ start Header
     function1 returns Int
     function2 returns Int
 
-    ! link "./examples/types.sc"
+    ! link "./examples/types.kep"
 end Header
 
 start function1

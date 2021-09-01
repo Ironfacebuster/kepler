@@ -1,11 +1,12 @@
 a1.3
+! Changed file extension to .kep
 ! Fixed string literals being improperly formed when followed by text without a whitespace in between. (issue #3)
 
 a1.2
 ! Fixed overwriting variable types when directly assigning via another variable
 ! Fixed inline block comments not actually working as comments (issue #2)
 ! Fixed tabs being treated as normal characters, rather than spaces
-+ Added static NaN value
++ Added static NaN value and type
 + Added basic if statement support
 + Added >, >=, <, <= as valid comparisons
 + Added modulo math operation
