@@ -3,6 +3,8 @@ using KeplerTokenizer;
 using Arguments;
 using KeplerInterpreter;
 using KeplerVersioning;
+using System.Collections.Generic;
+using KeplerVariables;
 using Help;
 
 namespace KeplerCompiler
@@ -37,7 +39,7 @@ namespace KeplerCompiler
 
             try
             {
-                if (arguments.HasArgument("file")) Init(arguments);
+                if (arguments.HasArgument("file") || arguments.HasArgument("filename")) Init(arguments);
                 else LiveInterpret(arguments);
             }
             catch (Exception e)
@@ -57,28 +59,8 @@ namespace KeplerCompiler
         {
 
             // load the file, and tokenize it.
-            tokenizer.Load(arguments.GetArgument("file"));
+            tokenizer.Load(arguments.HasArgument("filename") ? arguments.GetArgument("filename") : arguments.GetArgument("file"));
 
-            // if (arguments.HasArgument("build"))
-            // {
-            //     Console.WriteLine(String.Format("\r\nSCode/Kepler Interpreter {0}", version));
-            //     Console.WriteLine("Release date: June 10th, 2021");
-            //     Console.WriteLine("\r\nStarting compilation...");
-            //     DateTime started = DateTime.Now;
-
-            //     // do compilation
-
-            //     TimeSpan time_elapsed = DateTime.Now - started;
-
-            //     Console.ForegroundColor = ConsoleColor.Green;
-            //     Console.WriteLine("\r\nDone!");
-
-            //     Console.ForegroundColor = ConsoleColor.White;
-            //     Console.ResetColor();
-            //     Console.WriteLine(string.Format("Time Elapsed {0}", time_elapsed));
-            // }
-            // else
-            // {
             Interpreter interpreter = new Interpreter();
             interpreter.verbose_debug = arguments.HasArgument("debug");
 
@@ -86,13 +68,16 @@ namespace KeplerCompiler
             if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
 
             // do interpretation
-            while (tokenizer.HasNext())
+            while (tokenizer.HasNext() || interpreter.HasAnyInterrupts())
             {
-                interpreter.Interpret(tokenizer.CurrentLine());
-
-                tokenizer++;
+                if (interpreter.HasInterrupt())
+                    interpreter.HandleInterrupts();
+                else if (tokenizer.current_line < tokenizer.Lines().Count)
+                {
+                    interpreter.Interpret(tokenizer.CurrentLine());
+                    tokenizer++;
+                }
             }
-            // }
         }
 
         static void LiveInterpret(ArgumentList arguments)
@@ -155,7 +140,7 @@ namespace KeplerCompiler
             Tokenizer t = new Tokenizer();
 
             string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            t.Load(directory + "\\kepler_static\\static_values.sc");
+            t.Load(directory + "\\kepler_static\\static_values.kep");
 
             while (t.HasNext())
             {
