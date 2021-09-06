@@ -43,7 +43,11 @@ namespace Arguments
                         i += 2;
                     }
                 }
-                else i++;
+                else
+                {
+                    arguments.Add(new Argument("filename", args[i]));
+                    i++;
+                }
 
                 // last_index = i;
             }
