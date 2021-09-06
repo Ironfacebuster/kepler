@@ -16,7 +16,7 @@ namespace KeplerTokenizer
         public void Load(string filename)
         {
             string fileExt = System.IO.Path.GetExtension(filename);
-            if (fileExt != ".sc") throw new Exception("This file is not a valid .sc file!");
+            if (fileExt != ".kep") throw new Exception("This file is not a valid .kep file!");
 
             string[] lines = System.IO.File.ReadAllLines(@filename);
             List<LineIterator> filtered_lines = new List<LineIterator>();
@@ -244,6 +244,64 @@ namespace KeplerTokenizer
                     }
                 }
 
+                // Combine
+                for (int i = 1; i < m_tokens.Count;)
+                {
+
+                    if (i == m_tokens.Count - 2 || i == m_tokens.Count - 1)
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    Token peek = m_tokens[i + 1];
+                    Token far_peek = m_tokens[i + 2];
+
+                    Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
+                    operation_token.start = i;
+                    operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
+                    bool clean_up = false;
+
+                    switch (peek.type)
+                    {
+                        // AND
+                        case TokenType.BooleanOperator:
+                            if ((m_tokens[i].type == TokenType.GenericOperation || m_tokens[i].type == TokenType.StaticBoolean) && (far_peek.type == TokenType.GenericOperation || far_peek.type == TokenType.StaticBoolean))
+                            {
+                                operation_token.operation = OperationType.And;
+                                clean_up = true;
+                            }
+                            else i++;
+                            break;
+                        // OR
+                        case TokenType.OrOperator:
+                            if ((m_tokens[i].type == TokenType.GenericOperation || m_tokens[i].type == TokenType.StaticBoolean) && (far_peek.type == TokenType.GenericOperation || far_peek.type == TokenType.StaticBoolean))
+                            {
+                                operation_token.operation = OperationType.Or;
+                                clean_up = true;
+                            }
+                            else i++;
+                            break;
+                        default:
+                            i++;
+                            break;
+                    }
+
+                    if (clean_up)
+                    {
+                        // assign tokens
+                        operation_token.a = m_tokens[i];
+                        operation_token.b = m_tokens[i + 2];
+
+                        // remove combined tokens
+                        m_tokens.RemoveAt(i + 1);
+                        m_tokens.RemoveAt(i + 1);
+
+                        // assign combined token
+                        m_tokens[i] = operation_token;
+                    }
+                }
+
                 // conditional virtual equality
                 if (m_tokens.Count == 2 && m_tokens[0].type == TokenType.StartConditional)
                 {
@@ -271,6 +329,18 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.EOP, "EOP", "EOP", null, 0), // End of Program token
                 new TokenMatch(TokenType.EOP, "EOP", null, null, 0), // End of Program token
 
+                // looping things
+                new TokenMatch(TokenType.StartInterval, "start", "every", null, 0),
+                new TokenMatch(TokenType.EndInterval, "end", "every", null, 0),
+                new TokenMatch(TokenType.DeclareInterval, "every", TokenMatch.any_string, "start", 0),
+                new TokenMatch(TokenType.DeclareInterval, "every", TokenMatch.any_string, "end", 0),
+
+                new TokenMatch(TokenType.StartLoop, "start", "forever", null, 0),
+                new TokenMatch(TokenType.EndLoop, "end", "forever", null, 0),
+                new TokenMatch(TokenType.DeclareLoop, "forever", TokenMatch.any_string, "start", 0),
+                new TokenMatch(TokenType.DeclareLoop, "forever", TokenMatch.any_string, "end", 0),
+                new TokenMatch(TokenType.BreakOut, "breakout", null, null, 0),
+
                 // new TokenMatch(TokenType.DoubleQuote, "\"", TokenMatch.any_string, TokenMatch.any_string, 0), // handle doublequote
                 // new TokenMatch(TokenType.DoubleQuote, "\"", null, TokenMatch.any_string, 0), // handle doublequote at end of line
                 new TokenMatch(TokenType.StartConditional, "if", TokenMatch.any_string, null, 0),
@@ -297,6 +367,7 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.EndStaticList, "}", null, null, 0),
 
                 new TokenMatch(TokenType.BooleanOperator, "and", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.OrOperator, "or", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "equals", TokenMatch.any_string, 0),
                 // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "is", TokenMatch.any_string, 0),
@@ -323,7 +394,7 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.StartPositionalArguments, "using", TokenMatch.any_string, TokenMatch.any_string, 0), // "using" defines the start of positional arguments
                 new TokenMatch(TokenType.PositionalArgumentAssignment, "as", TokenMatch.any_string, TokenMatch.any_string, 0), // "as" is a PositionalArgumentAssignment
                 new TokenMatch(TokenType.PositionalArgument, TokenMatch.any_string, TokenMatch.any_string, "as", 0), // any string AFTER "as" is a PositionalArgument
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "and", TokenMatch.any_string, 0), // any string before "and" is a DeclareVariable, if it isn't after "as"
+                // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "and", TokenMatch.any_string, 0), // any string before "and" is a DeclareVariable, if it isn't after "as"
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "as", TokenMatch.any_string, 0), // any string BEFORE "as" is a DeclareVariable
                 new TokenMatch(TokenType.AssignFunctionType, "returns", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.AssignNonPositionalArgument, "uses", TokenMatch.any_string, TokenMatch.any_string, 0),
@@ -376,7 +447,7 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0)
-                // since these "pairs" are checked from top to bottom, this final DeclareVariable is JIC (just in case)
+                // since these "pairs" are checked from top to bottom, this final DeclareVariable is just in case
         };
 
             // if (tokenized == "True" || tokenized == "False") m_tokens.Add(new Token(TokenType.StaticBoolean, i));

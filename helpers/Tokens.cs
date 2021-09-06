@@ -92,6 +92,7 @@ namespace KeplerTokens
         public enum TokenType
         {
             BooleanOperator,
+            OrOperator,
             ConstantValue,
 
             // variable things
@@ -171,6 +172,15 @@ namespace KeplerTokens
 
             ConsolePrint, // print to console
 
+            // looping things
+            StartInterval,
+            DeclareInterval,
+            EndInterval,
+            StartLoop,
+            DeclareLoop,
+            EndLoop,
+            BreakOut,
+
             // signaling things
             EOP, // End of Program
             EOL, // End of Line
@@ -205,7 +215,9 @@ namespace KeplerTokens
             GreaterThan,
             GreaterThanEqual,
             LessThan,
-            LessThanEqual
+            LessThanEqual,
+            And,
+            Or
         }
         public class Float
         {

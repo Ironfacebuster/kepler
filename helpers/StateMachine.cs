@@ -13,6 +13,8 @@ namespace StateMachine
         public bool verbose_debug = false;
         public bool end_on_eop = true;
         public bool linked_file = false;
+        public bool is_interrupt = false;
+        public int interrupt_id = -1;
         public KeplerVariableManager variables = new KeplerVariableManager();
         public KeplerFunctionManager functions = new KeplerFunctionManager();
 
@@ -28,6 +30,7 @@ namespace StateMachine
 
         bool inside_header = false;
         KeplerFunction scheduled_function = new KeplerFunction("NUL");
+        public Interpreter interpreter;
         // level 1 tokens
         // EOP - EOP
         // if - ConditionalIf
@@ -55,6 +58,7 @@ namespace StateMachine
             // level n states
             TokenState GenericAssign = new TokenState(TokenType.GenericAssign, HandleGenericAssign);
             TokenState BooleanOperator = new TokenState(TokenType.BooleanOperator, NullHandle);
+            TokenState OrOperator = new TokenState(TokenType.OrOperator, NullHandle);
             TokenState StaticVariableType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StaticFunctionType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
 
@@ -64,6 +68,21 @@ namespace StateMachine
             TokenState StaticString = new TokenState(TokenType.StaticString, new TokenState[] { BooleanOperator, EOL }, HandleStaticString);
             TokenState StaticUnsignedInt = new TokenState(TokenType.StaticUnsignedInt, new TokenState[] { BooleanOperator, EOL }, HandleStaticUnsignedInt);
             TokenState StaticBool = new TokenState(TokenType.StaticBoolean, new TokenState[] { BooleanOperator, EOL }, HandleStaticBool);
+
+            // loop stuff
+            TokenState DeclareInterval = new TokenState(TokenType.DeclareInterval, new TokenState[] { StaticInt, StaticFloat, StaticUnsignedInt, DeclareVariable, EOL }, HandleDeclareInterval);
+            TokenState StartInterval = new TokenState(TokenType.StartInterval, new TokenState[] { DeclareInterval }, HandleStartInterval);
+            TokenState EndInterval = new TokenState(TokenType.EndInterval, new TokenState[] { DeclareInterval }, HandleEndInterval);
+
+            TokenState BreakOut = new TokenState(TokenType.BreakOut, new TokenState[] { EOL }, HandleBreakOut);
+
+            // TokenState DeclareLoop = new TokenState(TokenType.DeclareLoop, new TokenState[] { EOL }, HandleDeclareLoop);
+            // TokenState StartLoop = new TokenState(TokenType.StartInterval, new TokenState[] { DeclareLoop }, HandleStartLoop);
+            // TokenState EndLoop = new TokenState(TokenType.EndInterval, new TokenState[] { DeclareLoop }, HandleEndLoop);
+
+            level1.Add(StartInterval);
+            level1.Add(EndInterval);
+            level1.Add(BreakOut);
 
             // Function,
             // List,
@@ -83,7 +102,7 @@ namespace StateMachine
             TokenState ConsolePrint = new TokenState(TokenType.ConsolePrint, HandleConsolePrint);
 
             TokenState GenericOperation = new TokenState(TokenType.GenericOperation, HandleGenericOperation);
-            GenericOperation.child_states = new TokenState[] { GenericOperation, EOL };
+            GenericOperation.child_states = new TokenState[] { GenericOperation, BooleanOperator, EOL };
 
             // function argument stuff
             TokenState AssignNonPositionalArgument = new TokenState(TokenType.AssignNonPositionalArgument, HandleAssignNonPositionalArgument);
@@ -117,7 +136,7 @@ namespace StateMachine
             StaticModifier.child_states = new TokenState[] { BooleanOperator, /*StaticVariableType,*/ EOL };
 
             // handle "and is" & assigning arguments
-            BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable };
+            BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable, GenericOperation };
 
             level1.Add(AssignVariable);
             level1.Add(AssignFunction);
@@ -340,6 +359,12 @@ namespace StateMachine
                 case OperationType.LessThanEqual:
                     result.SetBoolValue(a_operand.GetValueAsFloat() <= b_operand.GetValueAsFloat());
                     break;
+                case OperationType.And:
+                    result.SetBoolValue(a_operand.GetValueAsBool() && b_operand.GetValueAsBool());
+                    break;
+                case OperationType.Or:
+                    result.SetBoolValue(a_operand.GetValueAsBool() || b_operand.GetValueAsBool());
+                    break;
             }
 
             return result;
@@ -390,6 +415,8 @@ namespace StateMachine
                 state.left_side_operator.SetFloatValue(double.Parse(token.token_string));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
+            if (state.booleans["inside_interval"])
+                state.c_interrupt.SetInterval((int)double.Parse(token.token_string)); // cast to int
         }
         void HandleStaticInt(Token token, TokenState state)
         {
@@ -397,6 +424,8 @@ namespace StateMachine
                 state.left_side_operator.SetIntValue(int.Parse(token.token_string));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
+            if (state.booleans["inside_interval"])
+                state.c_interrupt.SetInterval(int.Parse(token.token_string));
         }
         void HandleStaticUnsignedInt(Token token, TokenState state)
         {
@@ -404,6 +433,8 @@ namespace StateMachine
                 state.left_side_operator.SetUnsignedIntValue(uint.Parse(token.token_string.Substring(1)));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
+            if (state.booleans["inside_interval"])
+                state.c_interrupt.SetInterval((int)uint.Parse(token.token_string.Substring(1))); // cast to int
         }
         void HandleStaticBool(Token token, TokenState state)
         {
@@ -481,6 +512,10 @@ namespace StateMachine
         {
             if (verbose_debug) Console.WriteLine("EOP!");
 
+            // if (state.booleans["inside_if_statement"]) throw new InterpreterException("Unexpected EOF!");
+            // if (state.booleans["inside_interval"]) throw new InterpreterException("Unexpected EOF!");
+            // if (state.booleans["inside_function"]) throw new InterpreterException("Unexpected EOF!");
+
             if (!linked_file && end_on_eop) Environment.Exit(0); // exit with code 0 if NOT a linked file
         }
         void HandleConditionalIf(Token token, TokenState state)
@@ -510,6 +545,10 @@ namespace StateMachine
                 state.c_function.AddNonPositional(token.token_string);
                 state.strings["nonpositional_variable_name"] = token.token_string;
             }
+            // else if (state.booleans["inside_interval"])
+            // {
+            //     state.c_interrupt.SetInterval(variables.GetVariable(token.token_string).GetValueAsInt());
+            // }
             else
             {
                 state.c_variable = variables.DeclareVariable(token.token_string);
@@ -550,8 +589,6 @@ namespace StateMachine
                 }
                 else ExecuteFunction(c_function);
 
-
-
                 // interpret lines within function
                 // interpret until "ReturnFunction" is encountered
             }
@@ -560,6 +597,28 @@ namespace StateMachine
                 state.c_function = functions.DeclareFunction(token.token_string);
                 state.booleans["declared_function"] = true;
             }
+        }
+
+        void HandleStartInterval(Token token, TokenState state)
+        {
+            if (state.booleans["inside_interval"]) throw new TokenException("Unexpected start of interval!");
+            state.booleans["inside_interval"] = true;
+        }
+        void HandleEndInterval(Token token, TokenState state)
+        {
+            if (!state.booleans["inside_interval"]) throw new TokenException("Unexpected end of interval!");
+            state.booleans["inside_interval"] = false;
+        }
+        void HandleDeclareInterval(Token token, TokenState state)
+        {
+            if (state.booleans["inside_interval"] && verbose_debug)
+                Console.WriteLine("declare interrupt!");
+        }
+        void HandleBreakOut(Token token, TokenState state)
+        {
+            if (!this.is_interrupt) throw new InterpreterException("Unexpected breakout, nothing to break out of!");
+
+            interpreter.GetInterrupt(this.interrupt_id).Disable();
         }
         void HandleAssignFunctionType(Token token, TokenState state)
         {
@@ -657,6 +716,7 @@ namespace StateMachine
         public KeplerVariable left_side_operator; // "left_side_operator" is
         public List<KeplerVariable> add_operands = new List<KeplerVariable>();
         public KeplerFunction c_function;
+        public KeplerInterrupt c_interrupt;
 
         public TokenState(TokenType type, Action<Token, TokenState> action)
         {
@@ -689,6 +749,7 @@ namespace StateMachine
             booleans["assigning_function_variables_type"] = false;
             booleans["closing_function"] = false;
             booleans["inside_function"] = false;
+            booleans["inside_interval"] = false;
             booleans["calling_function"] = false;
             booleans["inside_if_statement"] = false;
             booleans["inside_header"] = false;
@@ -722,6 +783,7 @@ namespace StateMachine
 
             this.c_variable = previous_token.c_variable;
             this.c_function = previous_token.c_function;
+            this.c_interrupt = previous_token.c_interrupt;
 
             return this;
         }

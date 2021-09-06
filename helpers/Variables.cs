@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using KeplerTokenizer;
 using KeplerInterpreter;
+using System.Diagnostics;
+using System;
 
 namespace KeplerVariables
 {
@@ -425,6 +427,68 @@ namespace KeplerVariables
             //     output = output + line + "\r\n";
             // }
             return string.Format("KeplerFunction {0}", type);
+        }
+    }
+
+    public class KeplerInterrupt
+    {
+        Stopwatch stopWatch = new Stopwatch();
+
+        public int id = -1; // unassigned ID
+        int interval = -1; // unassigned interval
+        long last_check = 0;
+        long desired_time = 0;
+        bool validated = false;
+        public KeplerFunction function;
+        bool disabled = false;
+        public KeplerInterrupt(int id, KeplerFunction function)
+        {
+            this.id = id;
+            // this.interval = ms_interval;
+            // this.Reset(); // assign last_check
+            this.function = function;
+        }
+
+        public void Reset()
+        {
+            this.last_check = this.stopWatch.ElapsedMilliseconds;
+            this.desired_time = this.last_check + this.interval;
+        }
+
+        public void SetInterval(int interval)
+        {
+            interval = Math.Min(1, interval);
+            if (!this.validated)
+            {
+                this.stopWatch.Start();
+                this.validated = true;
+            }
+            this.interval = interval;
+            this.Reset();
+        }
+
+        public bool isValidInterrupt()
+        {
+            if (this.disabled) return false;
+            if (!this.validated) return false;
+
+            return this.stopWatch.ElapsedMilliseconds >= this.desired_time;
+        }
+
+        public int Overage()
+        {
+            return (int)(this.stopWatch.ElapsedMilliseconds - this.last_check);
+        }
+
+
+        public void Disable()
+        {
+            this.disabled = true;
+        }
+
+        public bool IsDisabled()
+        {
+            return this.disabled;
         }
     }
 
