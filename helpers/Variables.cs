@@ -457,7 +457,7 @@ namespace KeplerVariables
 
         public void SetInterval(int interval)
         {
-            interval = Math.Min(1, interval);
+            interval = Math.Max(1, interval);
             if (!this.validated)
             {
                 this.stopWatch.Start();

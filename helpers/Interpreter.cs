@@ -519,7 +519,7 @@ namespace KeplerInterpreter
                 if (this.interrupts[i].isValidInterrupt()) valid_interrupts.Add(this.interrupts[i]);
             }
 
-            return valid_interrupts.OrderBy(i => i.Overage()).ToList();
+            return valid_interrupts.ToList();
         }
     }
 
