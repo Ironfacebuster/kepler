@@ -5,6 +5,8 @@ using KeplerTokens.Tokens;
 using KeplerTokens.DataTypes;
 using KeplerVariables;
 using KeplerInterpreter;
+using KeplerExceptions;
+using System.IO;
 
 namespace KeplerStateMachine
 {
@@ -465,6 +467,8 @@ namespace KeplerStateMachine
                 Interpreter m_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
                 m_interpreter.verbose_debug = verbose_debug;
                 m_interpreter.statemachine.linked_file = true;
+                m_interpreter.tracer = this.interpreter.tracer;
+                m_interpreter.filename = Path.GetFileName(string_value);
 
                 // do interpretation
                 while (m_tokenizer.HasNext())
@@ -508,6 +512,7 @@ namespace KeplerStateMachine
         {
             if (schedule_execute_function)
             {
+                // this.interpreter.tracer.TraceFunction(scheduled_function);
                 ExecuteFunction(scheduled_function);
                 schedule_execute_function = false;
             }
@@ -519,6 +524,8 @@ namespace KeplerStateMachine
             // if (state.booleans["inside_if_statement"]) throw new InterpreterException("Unexpected EOF!");
             // if (state.booleans["inside_interval"]) throw new InterpreterException("Unexpected EOF!");
             // if (state.booleans["inside_function"]) throw new InterpreterException("Unexpected EOF!");
+            // if (state.booleans["inside_interval"]) throw new InterpreterException("Unexpected EOF!");
+            // if (state.booleans["inside_loop"]) throw new InterpreterException("Unexpected EOF!");
 
             if (!linked_file && end_on_eop) Environment.Exit(0); // exit with code 0 if NOT a linked file
         }
@@ -671,6 +678,8 @@ namespace KeplerStateMachine
         }
         void ExecuteFunction(KeplerFunction function)
         {
+            int stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
+
             if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("Cannot assign to {1} as {0} does not have a defined return type", function.name, function.GetTarget()));
 
             function.ResetLines(); // reset line token indexes to zero
@@ -678,7 +687,10 @@ namespace KeplerStateMachine
             Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
             f_interpreter.statemachine.variables = this.variables.Copy();
             f_interpreter.statemachine.functions = this.functions.Copy();
+
             f_interpreter.verbose_debug = this.verbose_debug;
+            f_interpreter.tracer = this.interpreter.tracer;
+            f_interpreter.filename = this.interpreter.filename;
 
             // do interpretation
             foreach (LineIterator line in function.lines)
@@ -693,6 +705,8 @@ namespace KeplerStateMachine
             }
 
             function.Reset(); // reset target, argument assignments
+
+            this.interpreter.tracer.PopStack(stack_id);
         }
         KeplerVariable CreateTemporaryVariable(Token token)
         {
@@ -837,10 +851,10 @@ namespace KeplerStateMachine
                 if (state.type == peek.type) return state;
             }
 
-            if (peek.type == TokenType.EOL) throw new TokenException("[554] Unexpected EOL");
+            if (peek.type == TokenType.EOL) throw new GenericException("[554] Unexpected EOL", 1);
 
             // Console.WriteLine(peek.type);
-            throw new TokenException(string.Format("[557] Unexpected token \"{0}\"", peek.token_string));
+            throw new GenericException(string.Format("[557] Unexpected token \"{0}\"", peek.token_string), 1);
         }
 
         public override string ToString()
@@ -850,24 +864,5 @@ namespace KeplerStateMachine
         }
     }
 
-    public class TokenException : Exception
-    {
-        public TokenException() { }
 
-        public TokenException(string message)
-            : base(message) { }
-
-        public TokenException(string message, Exception inner)
-            : base(message, inner) { }
-    }
-    public class LevelOneException : Exception
-    {
-        public LevelOneException() { }
-
-        public LevelOneException(string message)
-            : base(message) { }
-
-        public LevelOneException(string message, Exception inner)
-            : base(message, inner) { }
-    }
 }

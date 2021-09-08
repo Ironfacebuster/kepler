@@ -4,6 +4,8 @@ using KeplerTokenizer;
 using KeplerTokens.Tokens;
 using KeplerStateMachine;
 using KeplerVariables;
+using KeplerTracing;
+using KeplerExceptions;
 
 namespace KeplerInterpreter
 {
@@ -11,6 +13,8 @@ namespace KeplerInterpreter
     {
         // TODO: SCOPES!!!!!
         public int ID = 0;
+        public string filename = "[LIVE]";
+        public KeplerErrorStack tracer;
         public StateMachine statemachine = new StateMachine();
         public bool verbose_debug = false;
         public bool has_parent = false;
@@ -19,7 +23,6 @@ namespace KeplerInterpreter
         public Interpreter global;
         public TokenState c_state = new TokenState(TokenType.UNRECOGNIZED, null, null);
         public Token c_token = new Token(TokenType.UNRECOGNIZED, 0, "NUL");
-        // bool assigned_token = false;
         bool inside_function = false;
         bool inside_conditional = false;
         bool inside_interrupt = false;
@@ -104,38 +107,22 @@ namespace KeplerInterpreter
             catch (TokenException e)
             {
 
+                // this.tracer.PushStack("at ")
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
+                // this.tracer.PopStack();
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+                throw new KeplerException(this.c_line, "Syntax Error: " + e.Message, this.tracer);
+            }
+            catch (KeplerException e)
+            {
+                throw e;
+                // if (verbose_debug) this.DUMP();
+                // else Console.WriteLine("");
 
-                string full_line = line.GetString();
-                string[] split_line = full_line.Split(" ");
-                string line_header = PrintLine(line);
-
-                string spaces = "";
-
-                for (int i = 0; i < c_token.start + 1; i++)
-                {
-                    int len = 0;
-                    while (len < split_line[i].Length)
-                    {
-                        spaces = spaces + " ";
-                        len++;
-                    }
-
-                    spaces = spaces + " "; // add space between words
-                }
-
-                spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
-
-
-                Console.Write(c_line.GetString() + "\r\n");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(spaces + "^ " + e.Message);
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor(); // backup reset color (doesn't work for me, but oh well)
-                Environment.Exit(-1);
+                // this.tracer.PushStack(String.Format("at {0}:<{1}:{2}>", this.filename, line.line, line.CurrentToken().start + 1));
+                // throw new KeplerException("InterpreterException: " + e.Message, this.tracer);
             }
             catch (InterpreterException e)
             {
@@ -143,34 +130,9 @@ namespace KeplerInterpreter
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
-
-                string full_line = c_line.GetString();
-                string[] split_line = full_line.Split(" ");
-                string line_header = PrintLine(line);
-
-                string spaces = "";
-
-                for (int i = 0; i < c_token.start + 1; i++)
-                {
-                    int len = 0;
-                    while (len < split_line[i].Length)
-                    {
-                        spaces = spaces + " ";
-                        len++;
-                    }
-
-                    spaces = spaces + " "; // add space between words
-                }
-
-                spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
-
-                Console.Write(c_line.GetString() + "\r\n");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(spaces + "^ " + e.Message);
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor(); // backup reset color (doesn't work for me, but oh well)
-                Environment.Exit(-1);
+                // this.tracer.PopStack();
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+                throw new KeplerException(this.c_line, "Error: " + e.Message, this.tracer);
             }
             catch (EOPException e)
             {
@@ -178,20 +140,17 @@ namespace KeplerInterpreter
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
+                // this.tracer.PopStack();
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+                throw new KeplerException(this.c_line, "Error: " + e.Message, this.tracer);
+            }
+            catch (GenericException e)
+            {
+                if (verbose_debug) this.DUMP();
+                else Console.WriteLine("");
 
-                string full_line = c_line.GetString();
-                string[] split_line = full_line.Split(" ");
-                string line_header = PrintLine(line);
-
-                string spaces = "".PadLeft(line_header.Length, ' ');
-
-                Console.Write(c_line.GetString() + "\r\n");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(spaces + "^ " + e.Message);
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor(); // backup reset color (doesn't work for me, but oh well)
-                Environment.Exit(-1);
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1 + e.token_offset));
+                throw new KeplerException(this.c_line, "Error: " + e.Message, this.tracer, 1);
             }
             catch (LinkedFileException e)
             {
@@ -199,30 +158,9 @@ namespace KeplerInterpreter
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
-                string full_line = c_line.GetString();
-                string[] split_line = full_line.Split(" ");
-                string line_header = PrintLine(line);
-
-                string spaces = "";
-
-                int len = 0;
-                while (len < split_line[0].Length)
-                {
-                    spaces = spaces + " ";
-                    len++;
-                }
-
-                spaces = spaces + " "; // add space between words
-
-                spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
-
-                Console.Write(c_line.GetString() + "\r\n");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(string.Format("{0}^ Error linking file: {1}", spaces, e.Message));
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor(); // backup reset color (doesn't work for me, but oh well)
-                Environment.Exit(-1);
+                // this.tracer.PopStack();
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+                throw new KeplerException(this.c_line, "Linked File Error: " + e.Message, this.tracer);
             }
             catch (LevelOneException e)
             {
@@ -230,33 +168,9 @@ namespace KeplerInterpreter
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
-                string full_line = c_line.GetString();
-                string[] split_line = full_line.Split(" ");
-                string line_header = PrintLine(line);
-
-                string spaces = "";
-
-                for (int i = 0; i < c_token.start; i++)
-                {
-                    int len = 0;
-                    while (len < split_line[i].Length)
-                    {
-                        spaces = spaces + " ";
-                        len++;
-                    }
-
-                    spaces = spaces + " "; // add space between words
-                }
-
-                spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
-
-                Console.Write(c_line.GetString() + "\r\n");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(spaces + "^ " + e.Message);
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor(); // backup reset color (doesn't work for me, but oh well)
-                Environment.Exit(-1);
+                // this.tracer.PopStack();
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+                throw new KeplerException(this.c_line, "Syntax Error: " + e.Message, this.tracer);
             }
             catch (Exception e)
             {
@@ -264,7 +178,10 @@ namespace KeplerInterpreter
                 else Console.WriteLine("");
 
                 Console.WriteLine(e);
-                Environment.Exit(-1);
+
+                // this.tracer.PopStack();
+                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+                throw new KeplerException(this.c_line, "Exception: " + e.Message, this.tracer);
             }
         }
 
@@ -307,12 +224,13 @@ namespace KeplerInterpreter
             {
                 c_line.m_num = 0;
 
-                if (line.tokens[0].type == TokenType.EOP) throw new EOPException("Unexpected end of program!");
+                if (line.tokens[0].type == TokenType.EOP)
+                    throw new EOPException("Unexpected end of program!");
 
                 if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
                 c_interrupt.function.lines.Add(c_line);
 
-                if (line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever")
+                if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever")
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     c_interrupt.SetForever();
@@ -323,7 +241,7 @@ namespace KeplerInterpreter
 
                     this.HandleInterrupts(true);
                 }
-                if (line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every")
+                if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every")
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     inside_interrupt = false;
@@ -372,6 +290,8 @@ namespace KeplerInterpreter
 
                 if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == conditional_indentation)
                 {
+                    // int stack_id = this.tracer.PushStack(String.Format("at conditional ({0}:{1}:{2})", this.filename, c_line.line - c_conditional.lines.Count, c_line.CurrentToken().start + 1));
+
                     inside_conditional = false;
 
                     Interpreter conditional_int = new Interpreter(this.global, this);
@@ -379,13 +299,18 @@ namespace KeplerInterpreter
                     conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
                     conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
 
+
                     conditional_int.verbose_debug = verbose_debug;
+                    conditional_int.tracer = this.tracer;
+                    conditional_int.filename = this.filename;
 
                     conditional_int.statemachine.variables = statemachine.variables.Copy();
                     conditional_int.statemachine.functions = statemachine.functions.Copy();
 
                     for (int i = 0; i < c_conditional.lines.Count; i++)
                         conditional_int.Interpret(c_conditional.lines[i]);
+
+                    // this.tracer.PopStack(stack_id);
                 }
 
                 return;
@@ -496,11 +421,12 @@ namespace KeplerInterpreter
 
             for (int i = 0; i < interrupts.Count; ++i)
             {
-                if (!interrupts[i].isInfinite() && only_infinite) continue;
+                KeplerInterrupt interrupt = interrupts[i];
+                if (!interrupt.isInfinite() && only_infinite) continue;
 
-                if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupts[i].id);
+                if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
 
-                KeplerFunction int_function = interrupts[i].function;
+                KeplerFunction int_function = interrupt.function;
 
                 int_function.ResetLines();
 
@@ -515,6 +441,8 @@ namespace KeplerInterpreter
                 f_interpreter.statemachine.interrupt_id = interrupts[i].id;
 
                 f_interpreter.verbose_debug = this.verbose_debug;
+                f_interpreter.tracer = this.tracer;
+                f_interpreter.filename = this.filename;
 
                 // do interpretation
                 foreach (LineIterator line in int_function.lines)
