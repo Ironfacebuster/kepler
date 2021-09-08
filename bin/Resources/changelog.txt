@@ -1,6 +1,13 @@
 a1.3
+- Removed .NET installer from Kepler installer.
+! Improved support for inline block comments.
++ Added support for "and" and "or" operations when comparing booleans.
++ Added support for loading files without "--file".
++ Added (and improved) prime number checker example.
++ Added "breakout" keyword, to break out of intervals.
++ Added "every" interval method. This can be used to run code at regular intervals.
 ! Changed file extension to .kep
-! Fixed string literals being improperly formed when followed by text without a whitespace in between. (issue #3)
+! (issue #3) Fixed string literals being improperly formed when followed by text without a whitespace in between.
 
 a1.2
 ! Fixed overwriting variable types when directly assigning via another variable
