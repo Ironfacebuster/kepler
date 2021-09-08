@@ -61,22 +61,18 @@ namespace KeplerCompiler
             // load the file, and tokenize it.
             tokenizer.Load(arguments.HasArgument("filename") ? arguments.GetArgument("filename") : arguments.GetArgument("file"));
 
-            Interpreter interpreter = new Interpreter();
+            Interpreter interpreter = new Interpreter(null, null);
             interpreter.verbose_debug = arguments.HasArgument("debug");
 
             // load static values from file
             if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
 
             // do interpretation
-            while (tokenizer.HasNext() || interpreter.HasAnyInterrupts())
+            while (tokenizer.HasNext() || interpreter.interrupts.HasAnyInterrupts())
             {
-                if (interpreter.HasInterrupt())
-                    interpreter.HandleInterrupts();
-                else if (tokenizer.current_line < tokenizer.Lines().Count)
-                {
-                    interpreter.Interpret(tokenizer.CurrentLine());
-                    tokenizer++;
-                }
+                if (interpreter.interrupts.HasInterrupts())
+                    interpreter.HandleInterrupts(false);
+                else if (tokenizer.current_line < tokenizer.Lines().Count) { interpreter.Interpret(tokenizer.CurrentLine()); tokenizer++; }
             }
         }
 
@@ -91,7 +87,7 @@ namespace KeplerCompiler
             Console.WriteLine("Type \".help\" for help");
             Console.WriteLine("");
 
-            Interpreter interpreter = new Interpreter();
+            Interpreter interpreter = new Interpreter(null, null);
 
 
             interpreter.verbose_debug = arguments.HasArgument("debug");
@@ -102,40 +98,45 @@ namespace KeplerCompiler
             int line = 1;
             while (true)
             {
-                Console.Write("> ");
-                string input = Console.ReadLine();
-
-                if (input.StartsWith("."))
-                {
-                    switch (input.Substring(1).ToLower())
-                    {
-                        case "help":
-                            Console.WriteLine(" "); // padding
-                            Console.WriteLine(".HELP    show this help menu");
-                            // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
-                            Console.WriteLine(".EXIT    exit immediately");
-                            Console.WriteLine(" "); // padding
-                            break;
-                        case "dump":
-                            interpreter.DUMP();
-                            break;
-                        case "exit":
-                            Console.Write("Exiting live interpretation...");
-                            Environment.Exit(0); // exit without error
-                            break;
-                    }
-                }
+                if (interpreter.interrupts.HasInterrupts())
+                    interpreter.HandleInterrupts(false);
                 else
                 {
-                    interpreter.Interpret(tokenizer.TokenizeLine(line, input));
-                    line++;
+                    Console.Write("> ");
+                    string input = Console.ReadLine();
+
+                    if (input.StartsWith("."))
+                    {
+                        switch (input.Substring(1).ToLower())
+                        {
+                            case "help":
+                                Console.WriteLine(" "); // padding
+                                Console.WriteLine(".HELP    show this help menu");
+                                // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
+                                Console.WriteLine(".EXIT    exit immediately");
+                                Console.WriteLine(" "); // padding
+                                break;
+                            case "dump":
+                                interpreter.DUMP();
+                                break;
+                            case "exit":
+                                Console.Write("Exiting live interpretation...");
+                                Environment.Exit(0); // exit without error
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        interpreter.Interpret(tokenizer.TokenizeLine(line, input));
+                        line++;
+                    }
                 }
             }
         }
 
         static void LoadStaticValues(Interpreter interpreter)
         {
-            interpreter.levels.end_on_eop = false;
+            interpreter.statemachine.end_on_eop = false;
 
             Tokenizer t = new Tokenizer();
 
@@ -150,7 +151,7 @@ namespace KeplerCompiler
                 t++;
             }
 
-            interpreter.levels.end_on_eop = true;
+            interpreter.statemachine.end_on_eop = true;
         }
     }
 }
