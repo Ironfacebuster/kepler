@@ -2,32 +2,36 @@ using System;
 using System.Collections.Generic;
 using KeplerTokenizer;
 using KeplerTokens.Tokens;
-using StateMachine;
+using KeplerStateMachine;
 using KeplerVariables;
-
-using System.Linq;
 
 namespace KeplerInterpreter
 {
     public class Interpreter
     {
         // TODO: SCOPES!!!!!
-        public TokenStateLevels levels = new TokenStateLevels();
+        public int ID = 0;
+        public StateMachine statemachine = new StateMachine();
         public bool verbose_debug = false;
         public bool has_parent = false;
         public Interpreter parent;
+        public bool is_global = false;
+        public Interpreter global;
         public TokenState c_state = new TokenState(TokenType.UNRECOGNIZED, null, null);
         public Token c_token = new Token(TokenType.UNRECOGNIZED, 0, "NUL");
         // bool assigned_token = false;
         bool inside_function = false;
         bool inside_conditional = false;
         bool inside_interrupt = false;
+        bool inside_loop = false;
         int conditional_indentation = 0;
         bool skip_conditional = false;
 
-        List<KeplerInterrupt> interrupts = new List<KeplerInterrupt>();
+        bool killed = false;
+
+        public KeplerInterruptManager interrupts = new KeplerInterruptManager();
         public KeplerFunction c_function = new KeplerFunction("NUL");
-        public KeplerInterrupt c_interrupt = new KeplerInterrupt(-1, new KeplerFunction("NUL"));
+        public KeplerInterrupt c_interrupt = new KeplerInterrupt(-1, new KeplerFunction("NUL"), null);
         public KeplerFunction c_conditional = new KeplerFunction("CONDITIONAL");
         public LineIterator c_line = new LineIterator("", 0, 0);
 
@@ -43,32 +47,56 @@ namespace KeplerInterpreter
             return line_header;
         }
 
+        public Interpreter(Interpreter global_scope, Interpreter parent)
+        {
+            if (global_scope == null)
+            {
+                this.global = this;
+                this.is_global = true;
+            }
+            else
+            {
+                this.global = global_scope;
+                this.interrupts = this.global.interrupts;
+            }
+
+            if (parent == null) this.has_parent = false;
+            else
+            {
+                this.ID = parent.ID + 1;
+                this.has_parent = true;
+                this.parent = parent;
+            }
+
+            this.statemachine.interpreter = this;
+            c_interrupt.parent = this;
+        }
+
         public void Interpret(LineIterator line)
         {
-            this.levels.interpreter = this;
-            levels.verbose_debug = verbose_debug;
+            statemachine.verbose_debug = verbose_debug;
             try
             {
-                if (levels.has_linked_file)
+                if (statemachine.has_linked_file)
                 {
                     if (verbose_debug) Console.WriteLine("Linked file loaded!");
                     // file was linked, so we copy all the global variables and functions
 
-                    foreach (KeyValuePair<string, KeplerVariable> pair in levels.linked_variables.list)
+                    foreach (KeyValuePair<string, KeplerVariable> pair in statemachine.linked_variables.local)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (levels.variables.list.ContainsKey(pair.Key)) throw new LinkedFileException(string.Format("{0} has already been declared.", pair.Key));
-                        levels.variables.list.Add(pair.Key, pair.Value);
+                        if (statemachine.variables.global.local.ContainsKey(pair.Key)) throw new LinkedFileException(string.Format("{0} has already been declared.", pair.Key));
+                        statemachine.variables.global.local.Add(pair.Key, pair.Value);
                     }
 
-                    foreach (KeyValuePair<string, KeplerFunction> pair in levels.linked_functions.list)
+                    foreach (KeyValuePair<string, KeplerFunction> pair in statemachine.linked_functions.global)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (levels.functions.list.ContainsKey(pair.Key)) throw new LinkedFileException(string.Format("{0} has already been declared.", pair.Key));
-                        levels.functions.list.Add(pair.Key, pair.Value);
+                        if (statemachine.functions.global.ContainsKey(pair.Key)) throw new LinkedFileException(string.Format("{0} has already been declared.", pair.Key));
+                        statemachine.functions.global.Add(pair.Key, pair.Value);
                     }
 
-                    levels.has_linked_file = false; // reset to false
+                    statemachine.has_linked_file = false; // reset to false
                 }
 
                 internal_int(line);
@@ -243,8 +271,8 @@ namespace KeplerInterpreter
         public void DUMP()
         {
             Console.WriteLine("");
-            Console.WriteLine(this.levels.functions);
-            Console.WriteLine(this.levels.variables);
+            Console.WriteLine(this.statemachine.functions);
+            Console.WriteLine(this.statemachine.variables);
 
             Console.WriteLine(this.c_state.a_operand);
 
@@ -266,14 +294,16 @@ namespace KeplerInterpreter
 
         void internal_int(LineIterator line)
         {
-            if (verbose_debug) Console.WriteLine("Registered Interrupts: " + this.interrupts.Count);
-            levels.end_on_eop = levels.end_on_eop && this.interrupts.Count == 0;
+            if (this.killed) return;
+
+            if (verbose_debug && this.is_global) Console.WriteLine("Registered Interrupts: " + this.interrupts.Count);
+            statemachine.end_on_eop = statemachine.end_on_eop && this.interrupts.Count == 0;
 
             c_line.m_num = 0;
             c_line = line;
             bool assigned_level_one_state = false;
 
-            if (inside_interrupt)
+            if (inside_interrupt || inside_loop)
             {
                 c_line.m_num = 0;
 
@@ -282,6 +312,17 @@ namespace KeplerInterpreter
                 if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
                 c_interrupt.function.lines.Add(c_line);
 
+                if (line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever")
+                {
+                    c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    c_interrupt.SetForever();
+                    inside_loop = false;
+                    c_state.booleans["inide_loop"] = false;
+
+                    if (verbose_debug) Console.WriteLine(string.Format("EXIT LOOP <{0}>", c_interrupt.id));
+
+                    this.HandleInterrupts(true);
+                }
                 if (line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every")
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
@@ -333,18 +374,15 @@ namespace KeplerInterpreter
                 {
                     inside_conditional = false;
 
-                    Interpreter conditional_int = new Interpreter();
+                    Interpreter conditional_int = new Interpreter(this.global, this);
 
-                    conditional_int.has_parent = true;
-                    conditional_int.parent = this;
-
-                    conditional_int.levels.is_interrupt = this.levels.is_interrupt;
-                    conditional_int.levels.interrupt_id = this.levels.interrupt_id;
+                    conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
+                    conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
 
                     conditional_int.verbose_debug = verbose_debug;
 
-                    conditional_int.levels.variables = levels.variables.Copy();
-                    conditional_int.levels.functions = levels.functions.Copy();
+                    conditional_int.statemachine.variables = statemachine.variables.Copy();
+                    conditional_int.statemachine.functions = statemachine.functions.Copy();
 
                     for (int i = 0; i < c_conditional.lines.Count; i++)
                         conditional_int.Interpret(c_conditional.lines[i]);
@@ -355,7 +393,7 @@ namespace KeplerInterpreter
 
             if (verbose_debug)
             {
-                Console.WriteLine("\r\nINTERP. " + c_line.GetString());
+                Console.WriteLine("\r\nINTERP. " + c_line.line + " " + c_line.GetString());
 
                 foreach (Token t in c_line.tokens)
                 {
@@ -366,14 +404,14 @@ namespace KeplerInterpreter
             }
             while (line.HasNext())
             {
-
                 c_token = line.CurrentToken();
 
+                if (this.killed) break;
                 if (c_token.type == TokenType.EOL) break;
 
                 if (!assigned_level_one_state)
                 {
-                    c_state = levels.GetLevelOneToken(c_token);
+                    c_state = statemachine.GetLevelOneToken(c_token);
                     if (verbose_debug) Console.WriteLine("START " + c_token);
                     assigned_level_one_state = true;
                 }
@@ -397,12 +435,26 @@ namespace KeplerInterpreter
                 if (c_state.booleans["inside_interval"] && c_token.token_string == "start")
                 {
                     int int_id = this.interrupts.Count;
-                    KeplerInterrupt interrupt = new KeplerInterrupt(int_id, new KeplerFunction("interval_" + int_id));
+                    KeplerInterrupt interrupt = new KeplerInterrupt(int_id, new KeplerFunction("interval_" + int_id), this);
 
                     c_state.c_interrupt = interrupt;
-                    interrupts.Add(interrupt);
+                    this.interrupts.Add(interrupt);
 
                     inside_interrupt = true;
+                    c_interrupt = c_state.c_interrupt;
+
+                    if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
+                }
+
+                if (c_state.booleans["inside_loop"] && c_token.token_string == "start")
+                {
+                    int int_id = this.interrupts.Count;
+                    KeplerInterrupt interrupt = new KeplerInterrupt(int_id, new KeplerFunction("loop_" + int_id), this);
+
+                    c_state.c_interrupt = interrupt;
+                    this.interrupts.Add(interrupt);
+
+                    inside_loop = true;
                     c_interrupt = c_state.c_interrupt;
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
@@ -430,96 +482,50 @@ namespace KeplerInterpreter
             }
         }
 
-        public void HandleInterrupts()
+        public void Kill()
+        {
+            if (verbose_debug) Console.WriteLine("INTERRUPT " + this.ID + " KILLED ON LINE" + this.c_line.line);
+            this.killed = true;
+            this.c_line.Kill();
+        }
+
+        public void HandleInterrupts(bool only_infinite)
         {
             // do interrupts
-            List<KeplerInterrupt> interrupts = this.GetInterrupts();
+            List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
 
             for (int i = 0; i < interrupts.Count; ++i)
             {
+                if (!interrupts[i].isInfinite() && only_infinite) continue;
+
+                if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupts[i].id);
+
                 KeplerFunction int_function = interrupts[i].function;
 
                 int_function.ResetLines();
 
-                Interpreter f_interpreter = new Interpreter();
+                // maybe move this to when the interrupt is created?
+                // seems like creating a new interpreter could cause a bit of delay
+                Interpreter f_interpreter = new Interpreter(this.global, this);
 
-                f_interpreter.has_parent = true;
-                f_interpreter.parent = this;
+                f_interpreter.statemachine.variables = statemachine.variables.Copy();
+                f_interpreter.statemachine.functions = statemachine.functions.Copy();
 
-                f_interpreter.levels.variables = levels.variables.Copy();
-                f_interpreter.levels.functions = levels.functions.Copy();
-
-
-                f_interpreter.levels.is_interrupt = true;
-                f_interpreter.levels.interrupt_id = interrupts[i].id;
+                f_interpreter.statemachine.is_interrupt = true;
+                f_interpreter.statemachine.interrupt_id = interrupts[i].id;
 
                 f_interpreter.verbose_debug = this.verbose_debug;
 
                 // do interpretation
                 foreach (LineIterator line in int_function.lines)
                 {
-                    if (HasInterrupt(interrupts[i].id))
+                    if (this.interrupts.HasInterrupt(interrupts[i].id))
                         f_interpreter.Interpret(line);
                     else break;
                 }
 
                 interrupts[i].Reset();
             }
-        }
-
-        public bool HasAnyInterrupts()
-        {
-            // cleanup pass
-            int i = 0;
-            while (i < this.interrupts.Count)
-            {
-                if (this.interrupts[i].IsDisabled()) this.interrupts.RemoveAt(i);
-                else ++i;
-            }
-
-            return this.interrupts.Count > 0;
-        }
-        public bool HasInterrupt()
-        {
-            for (int i = 0; i < this.interrupts.Count; ++i)
-            {
-                if (this.interrupts[i].isValidInterrupt()) return true;
-            }
-
-            return false;
-        }
-
-        public bool HasInterrupt(int id)
-        {
-            for (int i = 0; i < this.interrupts.Count; ++i)
-            {
-                if (this.interrupts[i].id == id && this.interrupts[i].isValidInterrupt()) return true;
-            }
-
-            return false;
-        }
-
-        public KeplerInterrupt GetInterrupt(int id)
-        {
-            for (int i = 0; i < this.interrupts.Count; ++i)
-                if (this.interrupts[i].id == id) return this.interrupts[i];
-
-            if (this.has_parent)
-                return this.parent.GetInterrupt(id);
-
-            throw new InterpreterException("Unable to find interrupt with ID " + id);
-        }
-
-        public List<KeplerInterrupt> GetInterrupts()
-        {
-            List<KeplerInterrupt> valid_interrupts = new List<KeplerInterrupt>();
-
-            for (int i = 0; i < this.interrupts.Count; ++i)
-            {
-                if (this.interrupts[i].isValidInterrupt()) valid_interrupts.Add(this.interrupts[i]);
-            }
-
-            return valid_interrupts.ToList();
         }
     }
 

@@ -3,54 +3,80 @@ using KeplerTokenizer;
 using KeplerInterpreter;
 using System.Diagnostics;
 using System;
+using System.Linq;
 
 namespace KeplerVariables
 {
 
     public class KeplerVariableManager
     {
-        public IDictionary<string, KeplerVariable> list = new Dictionary<string, KeplerVariable>();
+        // public IDictionary<string, KeplerVariable> global = new Dictionary<string, KeplerVariable>();
+        public KeplerVariableManager global;
+        public IDictionary<string, KeplerVariable> local = new Dictionary<string, KeplerVariable>();
 
-        public KeplerVariable DeclareVariable(string name)
+        public KeplerVariableManager()
+        {
+            this.global = this;
+        }
+
+        public KeplerVariable DeclareVariable(string name, bool global_override)
         {
             // TODO: handle redeclarations
             // if the dictionary has this variable already
-            if (list.ContainsKey(name)) return list[name];
+            if (global.local.ContainsKey(name)) return global.local[name];
+            if (local.ContainsKey(name)) return local[name];
 
             // variables are created the first time they're seen
             KeplerVariable n_var = new KeplerVariable();
-            list[name] = n_var;
+            if (global_override) global.local[name] = n_var;
+            else local[name] = n_var;
             return n_var;
         }
 
         public KeplerVariable GetVariable(string name)
         {
-            if (list.ContainsKey(name))
+            if (global.local.ContainsKey(name))
             {
-                KeplerVariable found = list[name];
+                // Console.WriteLine("GLOBAL VAR " + name);
+                KeplerVariable found = global.local[name];
 
-                if (found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[154] {0} does not have a defined type", name));
+                if (found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[43] {0} does not have a defined type", name));
 
-                return list[name];
+                return global.local[name];
+            }
+            if (local.ContainsKey(name))
+            {
+                // Console.WriteLine("LOCAL VAR " + name);
+                KeplerVariable found = local[name];
+
+                if (found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[52] {0} does not have a defined type", name));
+
+                return local[name];
             }
 
-            throw new InterpreterException(string.Format("[154] {0} has not yet been declared", name));
+            throw new InterpreterException(string.Format("[57] {0} has not yet been declared", name));
         }
 
         // allow copying of global for "scoping"
         public KeplerVariableManager Copy()
         {
             KeplerVariableManager copy = new KeplerVariableManager();
-            copy.list = new Dictionary<string, KeplerVariable>(this.list);
+            copy.global = this.global;
+            // copy.global = new Dictionary<string, KeplerVariable>(this.global);
+            copy.local = new Dictionary<string, KeplerVariable>(this.local);
             return copy;
         }
 
         public override string ToString()
         {
             string output = "VariableManager\r\n";
-            foreach (KeyValuePair<string, KeplerVariable> pair in list)
+            foreach (KeyValuePair<string, KeplerVariable> pair in global.local)
             {
-                output = output + pair.Key + " => " + pair.Value + "\r\n";
+                output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
+            }
+            foreach (KeyValuePair<string, KeplerVariable> pair in local)
+            {
+                output = output + "LOCAL " + pair.Key + " => " + pair.Value + "\r\n";
             }
             return output;
             // return base.ToString();
@@ -202,7 +228,9 @@ namespace KeplerVariables
             switch (type)
             {
                 case KeplerType.Float:
-                    return FloatValue.ToString();
+                    string str = FloatValue.ToString();
+                    if (str.IndexOf(".") == -1) str = str + ".0";
+                    return str;
                 case KeplerType.Int:
                     return IntValue.ToString();
                 case KeplerType.uInt:
@@ -297,40 +325,49 @@ namespace KeplerVariables
 
     public class KeplerFunctionManager
     {
-        public IDictionary<string, KeplerFunction> list = new Dictionary<string, KeplerFunction>();
+        public IDictionary<string, KeplerFunction> global = new Dictionary<string, KeplerFunction>();
+        public IDictionary<string, KeplerFunction> local = new Dictionary<string, KeplerFunction>();
 
-        public KeplerFunction DeclareFunction(string name)
+        public KeplerFunction DeclareFunction(string name, bool global_override)
         {
             // TODO: handle redeclarations
             // if the dictionary has this variable already
-            if (list.ContainsKey(name)) return list[name];
+            if (global.ContainsKey(name)) return global[name];
+            if (local.ContainsKey(name)) return local[name];
 
             // functions are created the first time they're seen
             KeplerFunction n_funct = new KeplerFunction(name);
-            list[name] = n_funct;
+            if (global_override) global[name] = n_funct;
+            else local[name] = n_funct;
             return n_funct;
         }
 
         public KeplerFunction GetFunction(string name)
         {
-            if (list.ContainsKey(name)) return list[name];
+            if (global.ContainsKey(name)) return global[name];
+            if (local.ContainsKey(name)) return local[name];
 
-            throw new InterpreterException(string.Format("[154] {0} has not yet been declared", name));
+            throw new InterpreterException(string.Format("[338] {0} has not yet been declared", name));
         }
 
         public KeplerFunctionManager Copy()
         {
             KeplerFunctionManager copy = new KeplerFunctionManager();
-            copy.list = new Dictionary<string, KeplerFunction>(this.list);
+            copy.global = new Dictionary<string, KeplerFunction>(this.global);
+            copy.local = new Dictionary<string, KeplerFunction>(this.local);
             return copy;
         }
 
         public override string ToString()
         {
             string output = "FunctionManager\r\n";
-            foreach (KeyValuePair<string, KeplerFunction> pair in list)
+            foreach (KeyValuePair<string, KeplerFunction> pair in global)
             {
-                output = output + pair.Key + " => " + pair.Value + "\r\n";
+                output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
+            }
+            foreach (KeyValuePair<string, KeplerFunction> pair in local)
+            {
+                output = output + "LOCAL " + pair.Key + " => " + pair.Value + "\r\n";
             }
             return output;
             // return base.ToString();
@@ -382,7 +419,11 @@ namespace KeplerVariables
 
         public void ResetLines()
         {
-            for (int i = 0; i < this.lines.Count; ++i) this.lines[i].m_num = 0;
+            for (int i = 0; i < this.lines.Count; ++i)
+            {
+                this.lines[i].killed = false;
+                this.lines[i].m_num = 0;
+            }
         }
         public void Reset()
         {
@@ -440,10 +481,12 @@ namespace KeplerVariables
         long desired_time = 0;
         bool validated = false;
         public KeplerFunction function;
+        public Interpreter parent;
         bool disabled = false;
-        public KeplerInterrupt(int id, KeplerFunction function)
+        public KeplerInterrupt(int id, KeplerFunction function, Interpreter parent)
         {
             this.id = id;
+            this.parent = parent;
             // this.interval = ms_interval;
             // this.Reset(); // assign last_check
             this.function = function;
@@ -467,10 +510,18 @@ namespace KeplerVariables
             this.Reset();
         }
 
+        public void SetForever()
+        {
+            this.interval = -2;
+            this.Reset();
+            this.validated = true;
+        }
+
         public bool isValidInterrupt()
         {
             if (this.disabled) return false;
             if (!this.validated) return false;
+            if (this.interval == -2) return true;
 
             return this.stopWatch.ElapsedMilliseconds >= this.desired_time;
         }
@@ -483,12 +534,114 @@ namespace KeplerVariables
 
         public void Disable()
         {
+            // if (verbose_debug) Console.WriteLine("DISABLE " + this.id);
             this.disabled = true;
         }
 
         public bool IsDisabled()
         {
             return this.disabled;
+        }
+
+        public bool isInfinite()
+        {
+            return this.interval == -2;
+        }
+    }
+
+    public class KeplerInterruptManager
+    {
+        public List<KeplerInterrupt> interrupts = new List<KeplerInterrupt>();
+        // public Interpreter global;
+
+        public void Add(KeplerInterrupt interrupt)
+        {
+            this.interrupts.Insert(0, interrupt);
+        }
+
+        public bool HasAnyInterrupts()
+        {
+            this.CleanInterrupts();
+            return this.interrupts.Count > 0;
+        }
+        public bool HasInterrupts()
+        {
+            for (int i = 0; i < this.interrupts.Count; ++i)
+            {
+                if (this.interrupts[i].isValidInterrupt()) return true;
+            }
+
+            return false;
+        }
+
+        public bool HasInterrupt(int id)
+        {
+            for (int i = 0; i < this.interrupts.Count; ++i)
+            {
+                if (this.interrupts[i].id == id && this.interrupts[i].isValidInterrupt()) return true;
+            }
+
+            return false;
+        }
+
+        public KeplerInterrupt GetInterrupt(int id)
+        {
+            for (int i = 0; i < this.interrupts.Count; ++i)
+                if (this.interrupts[i].id == id) return this.interrupts[i];
+
+            // if (this.has_parent)
+            //     return this.parent.GetInterrupt(id);
+
+            throw new InterpreterException("Unable to find interrupt with ID " + id);
+        }
+
+        public List<KeplerInterrupt> GetInterrupts()
+        {
+            this.CleanInterrupts();
+
+            bool added_infinite = false;
+            List<KeplerInterrupt> valid_interrupts = new List<KeplerInterrupt>();
+
+            int i = 0;
+            while (i < this.interrupts.Count)
+            {
+                if (this.interrupts[i].isValidInterrupt())
+                {
+                    if (this.interrupts[i].isInfinite())
+                    {
+                        if (!added_infinite)
+                        {
+                            // Console.WriteLine("ADDING " + this.interrupts[i].id);
+                            valid_interrupts.Add(this.interrupts[i]);
+                            added_infinite = true;
+                        }
+                        // else Console.WriteLine("SKIPPING " + this.interrupts[i].id);
+                    }
+                    else valid_interrupts.Add(this.interrupts[i]);
+                }
+                i++;
+            }
+
+            return valid_interrupts.ToList();
+        }
+
+        void CleanInterrupts()
+        {
+            int i = 0;
+            while (i < this.interrupts.Count)
+            {
+                if (this.interrupts[i].IsDisabled())
+                {
+                    // Console.WriteLine("REMOVING " + this.interrupts[i].id);
+                    this.interrupts.RemoveAt(i);
+                }
+                else i++;
+            }
+        }
+
+        public int Count
+        {
+            get { return this.interrupts.Count; }
         }
     }
 

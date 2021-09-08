@@ -43,7 +43,7 @@ namespace KeplerTokenizer
                 {
                     in_comment_block = true;
                 }
-                if (m_line.EndsWith("--!"))
+                if (m_line.EndsWith("--!") && in_comment_block)
                 {
                     in_comment_block = false;
                     continue;
@@ -101,6 +101,7 @@ namespace KeplerTokenizer
         public int indentation = 0;
         public int m_num = 0;
         public List<Token> tokens = new List<Token>();
+        public bool killed = false;
         public LineIterator(string line, int index, int indentation)
         {
             this.line = index;
@@ -510,6 +511,7 @@ namespace KeplerTokenizer
 
         public Boolean HasNext()
         {
+            if (killed) return false;
             return m_num < tokens.Count;
         }
 
@@ -524,6 +526,11 @@ namespace KeplerTokenizer
 
             return tokens[m_num + 1];
             // return tokens[m_num];
+        }
+
+        public void Kill()
+        {
+            this.killed = true;
         }
     }
 }

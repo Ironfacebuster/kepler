@@ -6,9 +6,9 @@ using KeplerTokens.DataTypes;
 using KeplerVariables;
 using KeplerInterpreter;
 
-namespace StateMachine
+namespace KeplerStateMachine
 {
-    public class TokenStateLevels
+    public class StateMachine
     {
         public bool verbose_debug = false;
         public bool end_on_eop = true;
@@ -38,7 +38,7 @@ namespace StateMachine
         // else - ConditionalElse
         // variable - DeclareVariable
 
-        public TokenStateLevels()
+        public StateMachine()
         {
             // final states
             TokenState EOL = new TokenState(TokenType.EOL, HandleEOL);
@@ -70,18 +70,22 @@ namespace StateMachine
             TokenState StaticBool = new TokenState(TokenType.StaticBoolean, new TokenState[] { BooleanOperator, EOL }, HandleStaticBool);
 
             // loop stuff
-            TokenState DeclareInterval = new TokenState(TokenType.DeclareInterval, new TokenState[] { StaticInt, StaticFloat, StaticUnsignedInt, DeclareVariable, EOL }, HandleDeclareInterval);
+            TokenState DeclareInterval = new TokenState(TokenType.DeclareInterval, new TokenState[] { StaticInt, StaticFloat, StaticUnsignedInt, DeclareVariable, EOL }, NullHandle);
             TokenState StartInterval = new TokenState(TokenType.StartInterval, new TokenState[] { DeclareInterval }, HandleStartInterval);
             TokenState EndInterval = new TokenState(TokenType.EndInterval, new TokenState[] { DeclareInterval }, HandleEndInterval);
 
             TokenState BreakOut = new TokenState(TokenType.BreakOut, new TokenState[] { EOL }, HandleBreakOut);
 
-            // TokenState DeclareLoop = new TokenState(TokenType.DeclareLoop, new TokenState[] { EOL }, HandleDeclareLoop);
-            // TokenState StartLoop = new TokenState(TokenType.StartInterval, new TokenState[] { DeclareLoop }, HandleStartLoop);
-            // TokenState EndLoop = new TokenState(TokenType.EndInterval, new TokenState[] { DeclareLoop }, HandleEndLoop);
+            TokenState DeclareLoop = new TokenState(TokenType.DeclareLoop, new TokenState[] { EOL }, NullHandle);
+            TokenState StartLoop = new TokenState(TokenType.StartLoop, new TokenState[] { DeclareLoop }, HandleStartLoop);
+            TokenState EndLoop = new TokenState(TokenType.EndLoop, new TokenState[] { DeclareLoop }, HandleEndLoop);
 
             level1.Add(StartInterval);
             level1.Add(EndInterval);
+
+            level1.Add(StartLoop);
+            level1.Add(EndLoop);
+
             level1.Add(BreakOut);
 
             // Function,
@@ -458,9 +462,9 @@ namespace StateMachine
                 Tokenizer m_tokenizer = new Tokenizer();
                 m_tokenizer.Load(string_value);
 
-                Interpreter m_interpreter = new Interpreter();
+                Interpreter m_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
                 m_interpreter.verbose_debug = verbose_debug;
-                m_interpreter.levels.linked_file = true;
+                m_interpreter.statemachine.linked_file = true;
 
                 // do interpretation
                 while (m_tokenizer.HasNext())
@@ -471,8 +475,8 @@ namespace StateMachine
                 }
 
                 // transfer all global variables and functions
-                linked_variables = m_interpreter.levels.variables;
-                linked_functions = m_interpreter.levels.functions;
+                linked_variables = m_interpreter.statemachine.variables;
+                linked_functions = m_interpreter.statemachine.functions;
 
                 has_linked_file = true;
             }
@@ -551,19 +555,19 @@ namespace StateMachine
             // }
             else
             {
-                state.c_variable = variables.DeclareVariable(token.token_string);
+                state.c_variable = variables.DeclareVariable(token.token_string, this.interpreter.is_global ? true : false);
                 state.booleans["declared_variable"] = true;
             }
         }
         void HandleDeclareVariableAndAssign(Token token, TokenState state)
         {
-            state.c_variable = variables.DeclareVariable(token.token_string);
+            state.c_variable = variables.DeclareVariable(token.token_string, this.interpreter.is_global ? true : false);
             state.booleans["declared_variable"] = true;
             state.booleans["variable_assign"] = true;
         }
         void HandleDeclareFunctionAndAssign(Token token, TokenState state)
         {
-            state.c_function = functions.DeclareFunction(token.token_string);
+            state.c_function = functions.DeclareFunction(token.token_string, this.interpreter.is_global ? true : false);
             state.booleans["declared_function"] = true;
         }
         void HandleDeclareFunction(Token token, TokenState state)
@@ -594,7 +598,7 @@ namespace StateMachine
             }
             else
             {
-                state.c_function = functions.DeclareFunction(token.token_string);
+                state.c_function = functions.DeclareFunction(token.token_string, this.interpreter.is_global ? true : false);
                 state.booleans["declared_function"] = true;
             }
         }
@@ -609,16 +613,44 @@ namespace StateMachine
             if (!state.booleans["inside_interval"]) throw new TokenException("Unexpected end of interval!");
             state.booleans["inside_interval"] = false;
         }
-        void HandleDeclareInterval(Token token, TokenState state)
+
+        void HandleStartLoop(Token token, TokenState state)
         {
-            if (state.booleans["inside_interval"] && verbose_debug)
-                Console.WriteLine("declare interrupt!");
+            if (state.booleans["inside_loop"]) throw new TokenException("Unexpected start of forever!");
+            state.booleans["inside_loop"] = true;
+        }
+        void HandleEndLoop(Token token, TokenState state)
+        {
+            if (!state.booleans["inside_loop"]) throw new TokenException("Unexpected end of forever!");
+            state.booleans["inside_loop"] = false;
         }
         void HandleBreakOut(Token token, TokenState state)
         {
             if (!this.is_interrupt) throw new InterpreterException("Unexpected breakout, nothing to break out of!");
 
-            interpreter.GetInterrupt(this.interrupt_id).Disable();
+            if (verbose_debug) Console.WriteLine("BREAK ON LINE " + interpreter.c_line.line);
+
+            KillAll();
+        }
+        void KillAll()
+        {
+            Interpreter parent_interpreter = interpreter;
+            KeplerInterrupt interrupt = interpreter.interrupts.GetInterrupt(this.interrupt_id);
+
+            while (true)
+            {
+                if (parent_interpreter.ID != interrupt.parent.ID)
+                {
+                    parent_interpreter = parent_interpreter.parent;
+                    parent_interpreter.Kill();
+                }
+                else break;
+            }
+
+            interrupt.parent.Kill();
+            this.interpreter.Kill();
+
+            interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
         }
         void HandleAssignFunctionType(Token token, TokenState state)
         {
@@ -643,9 +675,9 @@ namespace StateMachine
 
             function.ResetLines(); // reset line token indexes to zero
 
-            Interpreter f_interpreter = new Interpreter();
-            f_interpreter.levels.variables = this.variables.Copy();
-            f_interpreter.levels.functions = this.functions.Copy();
+            Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
+            f_interpreter.statemachine.variables = this.variables.Copy();
+            f_interpreter.statemachine.functions = this.functions.Copy();
             f_interpreter.verbose_debug = this.verbose_debug;
 
             // do interpretation
@@ -750,6 +782,7 @@ namespace StateMachine
             booleans["closing_function"] = false;
             booleans["inside_function"] = false;
             booleans["inside_interval"] = false;
+            booleans["inside_loop"] = false;
             booleans["calling_function"] = false;
             booleans["inside_if_statement"] = false;
             booleans["inside_header"] = false;
