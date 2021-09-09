@@ -161,6 +161,8 @@ namespace KeplerExceptions
                 case KeplerErrorCode.UNEXP_EOP:
                 case KeplerErrorCode.UNEXP_TOKEN:
                     return 1;
+                case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
+                    return -1;
                     // case KeplerErrorCode.INVAL_FILE:
                     // case KeplerErrorCode.UNEXP_START_LOOP:
                     // case KeplerErrorCode.UNEXP_END_LOOP:

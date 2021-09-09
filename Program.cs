@@ -48,61 +48,7 @@ namespace KeplerCompiler
             }
             catch (KeplerException e)
             {
-                LineIterator c_line = e.line;
-                Token c_token = e.line.CurrentToken();
-
-                string full_line = c_line.GetString();
-                string[] split_line = full_line.Split(" ");
-                string line_header = String.Format("<{0}>: ", e.line.line);
-
-                string spaces = "";
-
-                int token_start = c_token.start + e.token_offset;
-
-                for (int i = 0; i < token_start; i++)
-                {
-                    int len = 0;
-                    while (len < split_line[i].Length)
-                    {
-                        spaces = spaces + " ";
-                        len++;
-                    }
-
-                    spaces = spaces + " "; // add space between words
-                }
-
-                spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
-
-                Console.ForegroundColor = ConsoleColor.Blue;
-                Console.Write(line_header);
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(c_line.GetString());
-
-                Console.ForegroundColor = ConsoleColor.Red;
-                // Console.WriteLine(spaces + "^ ");
-                Console.Write(spaces);
-                int marker_length = token_start > c_line.tokens.Count - 1 ? 1 : c_line.tokens[token_start].token_string.Length;
-
-                if (marker_length == 1)
-                    Console.Write("^");
-                else
-                    for (int i = 0; i < marker_length; i++)
-                    {
-                        Console.Write("~");
-                    }
-
-                Console.WriteLine("");
-
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write(e.message);
-
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write(e.stack.GetStack());
-
-                Console.ResetColor(); // reset the color back to default
-                Console.WriteLine("");
-
+                LogKeplerException(e, true);
                 Environment.Exit(-1);
             }
             catch (Exception e)
@@ -110,14 +56,13 @@ namespace KeplerCompiler
                 Console.ForegroundColor = ConsoleColor.Red;
 
                 Console.WriteLine("");
-                Console.Write(e.Message);
+                Console.Write(e);
 
                 Console.ResetColor(); // reset the color back to default
                 Console.WriteLine("");
 
                 Environment.ExitCode = -1;
             }
-
         }
 
         static void Init(ArgumentList arguments, KeplerErrorStack tracer)
@@ -167,38 +112,45 @@ namespace KeplerCompiler
             int line = 1;
             while (true)
             {
-                if (interpreter.interrupts.HasInterrupts())
-                    interpreter.HandleInterrupts(false);
-                else
+                try
                 {
-                    Console.Write("> ");
-                    string input = Console.ReadLine();
-
-                    if (input.StartsWith("."))
-                    {
-                        switch (input.Substring(1).ToLower())
-                        {
-                            case "help":
-                                Console.WriteLine(" "); // padding
-                                Console.WriteLine(".HELP    show this help menu");
-                                // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
-                                Console.WriteLine(".EXIT    exit immediately");
-                                Console.WriteLine(" "); // padding
-                                break;
-                            case "dump":
-                                interpreter.DUMP();
-                                break;
-                            case "exit":
-                                Console.Write("Exiting live interpretation...");
-                                Environment.Exit(0); // exit without error
-                                break;
-                        }
-                    }
+                    if (interpreter.interrupts.HasInterrupts())
+                        interpreter.HandleInterrupts(false);
                     else
                     {
-                        interpreter.Interpret(tokenizer.TokenizeLine(line, input));
-                        line++;
+                        Console.Write("> ");
+                        string input = Console.ReadLine();
+
+                        if (input.StartsWith("."))
+                        {
+                            switch (input.Substring(1).ToLower())
+                            {
+                                case "help":
+                                    Console.WriteLine(" "); // padding
+                                    Console.WriteLine(".HELP    show this help menu");
+                                    // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
+                                    Console.WriteLine(".EXIT    exit immediately");
+                                    Console.WriteLine(" "); // padding
+                                    break;
+                                case "dump":
+                                    interpreter.DUMP();
+                                    break;
+                                case "exit":
+                                    Console.Write("Exiting live interpretation...");
+                                    Environment.Exit(0); // exit without error
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            interpreter.Interpret(tokenizer.TokenizeLine(line, input));
+                            line++;
+                        }
                     }
+                }
+                catch (KeplerException e)
+                {
+                    LogKeplerException(e, false);
                 }
             }
         }
@@ -221,6 +173,68 @@ namespace KeplerCompiler
             }
 
             interpreter.statemachine.end_on_eop = true;
+        }
+
+        static void LogKeplerException(KeplerException e, bool show_trace)
+        {
+            LineIterator c_line = e.line;
+            Token c_token = e.line.CurrentToken();
+
+            string full_line = c_line.GetString();
+            string[] split_line = full_line.Split(" ");
+            string line_header = String.Format("<{0}>: ", e.line.line);
+
+            string spaces = "";
+
+            int token_start = c_token.start + e.token_offset;
+
+            for (int i = 0; i < token_start; i++)
+            {
+                int len = 0;
+                while (len < split_line[i].Length)
+                {
+                    spaces = spaces + " ";
+                    len++;
+                }
+
+                spaces = spaces + " "; // add space between words
+            }
+
+            spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
+
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write(line_header);
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(c_line.GetString());
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            // Console.WriteLine(spaces + "^ ");
+            Console.Write(spaces);
+            int marker_length = token_start > c_line.tokens.Count - 1 ? 1 : c_line.tokens[token_start].token_string.Length;
+
+            if (marker_length == 1)
+                Console.Write("^");
+            else
+                for (int i = 0; i < marker_length; i++)
+                {
+                    Console.Write("~");
+                }
+
+            Console.WriteLine("");
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write(e.message);
+
+            if (show_trace)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write(e.stack.GetStack());
+            }
+            else Console.WriteLine("");
+
+            Console.ResetColor(); // reset the color back to default
+            Console.WriteLine("");
         }
     }
 }
