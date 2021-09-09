@@ -7,7 +7,7 @@ namespace KeplerVersioning
     public class StaticValues
     {
         public static string _VERSION = "v1a1.3.1";
-        public static string _RELEASE = "August 8th, 2021";
+        public static string _RELEASE = "August 9th, 2021";
 
         public static LineIterator ReplaceMacros(LineIterator line)
         {
