@@ -7,75 +7,109 @@ using KeplerTokenizer;
 
 namespace KeplerTracing
 {
-    public class KeplerTracer
-    {
-        List<KeplerTrace> traces = new List<KeplerTrace>();
-        // Interpreter base_interpreter = 
+    // public class KeplerTracer
+    // {
+    //     List<KeplerTrace> traces = new List<KeplerTrace>();
+    //     // Interpreter base_interpreter = 
 
-        void Trace()
-        {
+    //     void Trace()
+    //     {
 
-        }
+    //     }
 
-        void RemoveTrace()
-        {
+    //     void RemoveTrace()
+    //     {
 
-        }
+    //     }
 
-        // public void TraceFunction(KeplerFunction function)
-        // {
-        //     this.traces.Add(new KeplerTrace(function.name, function));
-        // }
+    //     // public void TraceFunction(KeplerFunction function)
+    //     // {
+    //     //     this.traces.Add(new KeplerTrace(function.name, function));
+    //     // }
 
-        void GetTraceRoute()
-        {
+    //     void GetTraceRoute()
+    //     {
 
-        }
+    //     }
 
-    }
+    // }
 
-    class KeplerTrace
-    {
-        string name = "$NULL";
-        string filename = "$NULL";
-        int line = -1;
+    // class KeplerTrace
+    // {
+    //     string name = "$NULL";
+    //     string filename = "$NULL";
+    //     int line = -1;
 
-        public KeplerTrace(string name, int line)
-        {
+    //     public KeplerTrace(string name, int line)
+    //     {
 
-        }
+    //     }
 
-        public override string ToString()
-        {
-            return String.Format("at {0} <{1}:{2}>", this.name, this.filename, this.line);
-        }
-    }
+    //     public override string ToString()
+    //     {
+    //         return String.Format("at {0} <{1}:{2}>", this.name, this.filename, this.line);
+    //     }
+    // }
 
     public class KeplerErrorStack
     {
-        List<string> stack = new List<string>();
+        List<KeplerTrace> stack = new List<KeplerTrace>();
 
         public int PushStack(string n)
         {
-            this.stack.Insert(0, n);
+            if (this.stack.Count > 0 && this.stack[0].message == n) this.stack[0] = this.stack[0].Increment();
+            else this.stack.Insert(0, new KeplerTrace(n, 1));
+
             return this.stack.Count - 1;
         }
 
         public void PopStack(int index)
         {
-            this.stack.Remove(this.stack[index]);
+            if (this.stack[index].count > 1) this.stack[index].Decrement();
+            else this.stack.Remove(this.stack[index]);
         }
 
         public string GetStack()
         {
             string stacked = "";
-            this.stack.ForEach(str => stacked = stacked + "\r\n\t" + str);
+            int i = 0;
+            int max = Math.Min(10, this.stack.Count);
+
+            while (i < max)
+            {
+                stacked = stacked + "\r\n\t" + this.stack[i].ToString();
+                i++;
+            }
+
             return stacked;
         }
+    }
 
-        // public void Throw(string message)
-        // {
-        //     throw new KeplerException(current_line, message, this);
-        // }
+    struct KeplerTrace
+    {
+        public int count;
+        public string message;
+
+        public KeplerTrace(string message, int count)
+        {
+            this.message = message;
+            this.count = count;
+        }
+
+        public override string ToString()
+        {
+            if (this.count > 1) return message + " x" + count;
+            return message;
+        }
+
+        public KeplerTrace Increment()
+        {
+            return new KeplerTrace(this.message, this.count + 1);
+        }
+
+        public KeplerTrace Decrement()
+        {
+            return new KeplerTrace(this.message, this.count - 1);
+        }
     }
 }
