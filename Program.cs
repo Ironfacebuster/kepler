@@ -3,9 +3,11 @@ using KeplerTokenizer;
 using Arguments;
 using KeplerInterpreter;
 using KeplerVersioning;
-using System.Collections.Generic;
-using KeplerVariables;
+using KeplerTokens.Tokens;
+using KeplerExceptions;
+using KeplerTracing;
 using Help;
+using System.IO;
 
 namespace KeplerCompiler
 {
@@ -37,32 +39,78 @@ namespace KeplerCompiler
                 Environment.Exit(0);
             }
 
+            KeplerErrorStack tracer = new KeplerErrorStack();
+
             try
             {
-                if (arguments.HasArgument("file") || arguments.HasArgument("filename")) Init(arguments);
-                else LiveInterpret(arguments);
+                if (arguments.HasArgument("file") || arguments.HasArgument("filename")) Init(arguments, tracer);
+                else LiveInterpret(arguments, tracer);
+            }
+            catch (KeplerException e)
+            {
+                LineIterator c_line = e.line;
+                Token c_token = e.line.CurrentToken();
+
+                string full_line = c_line.GetString();
+                string[] split_line = full_line.Split(" ");
+                string line_header = String.Format("<{0}>: ", e.line.line);
+
+                string spaces = "";
+
+                for (int i = 0; i < c_token.start + e.token_offset; i++)
+                {
+                    int len = 0;
+                    while (len < split_line[i].Length)
+                    {
+                        spaces = spaces + " ";
+                        len++;
+                    }
+
+                    spaces = spaces + " "; // add space between words
+                }
+
+                spaces = spaces.PadLeft(spaces.Length + line_header.Length, ' ');
+
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write(line_header);
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(c_line.GetString());
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(spaces + "^ ");
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write(e.message);
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write(e.stack.GetStack());
+
+                Console.ResetColor(); // reset the color back to default
+                Console.WriteLine("");
+
+                Environment.Exit(-1);
             }
             catch (Exception e)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(" ");
-                Console.WriteLine(e.Message);
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.ResetColor();
+                Console.WriteLine(e);
 
                 Environment.ExitCode = -1;
             }
 
         }
 
-        static void Init(ArgumentList arguments)
+        static void Init(ArgumentList arguments, KeplerErrorStack tracer)
         {
 
             // load the file, and tokenize it.
-            tokenizer.Load(arguments.HasArgument("filename") ? arguments.GetArgument("filename") : arguments.GetArgument("file"));
+            string filename = arguments.HasArgument("filename") ? arguments.GetArgument("filename") : arguments.GetArgument("file");
+            tokenizer.Load(filename);
 
             Interpreter interpreter = new Interpreter(null, null);
+            interpreter.filename = Path.GetFileName(filename);
             interpreter.verbose_debug = arguments.HasArgument("debug");
+            interpreter.tracer = tracer;
 
             // load static values from file
             if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
@@ -76,7 +124,7 @@ namespace KeplerCompiler
             }
         }
 
-        static void LiveInterpret(ArgumentList arguments)
+        static void LiveInterpret(ArgumentList arguments, KeplerErrorStack tracer)
         {
             Console.WriteLine(String.Format("\r\nKepler {0}", StaticValues._VERSION));
             Console.WriteLine(String.Format("Release date: {0}", StaticValues._RELEASE));
@@ -88,6 +136,7 @@ namespace KeplerCompiler
             Console.WriteLine("");
 
             Interpreter interpreter = new Interpreter(null, null);
+            interpreter.tracer = tracer;
 
 
             interpreter.verbose_debug = arguments.HasArgument("debug");
