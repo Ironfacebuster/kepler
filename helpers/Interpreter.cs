@@ -177,7 +177,7 @@ namespace KeplerInterpreter
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
-                Console.WriteLine(e);
+                // Console.WriteLine(e);
 
                 // this.tracer.PopStack();
                 this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
@@ -426,6 +426,8 @@ namespace KeplerInterpreter
 
                 if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
 
+                int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
+
                 KeplerFunction int_function = interrupt.function;
 
                 int_function.ResetLines();
@@ -453,6 +455,8 @@ namespace KeplerInterpreter
                 }
 
                 interrupts[i].Reset();
+
+                this.tracer.PopStack(stack_id);
             }
         }
     }
