@@ -88,14 +88,14 @@ namespace KeplerInterpreter
                     foreach (KeyValuePair<string, KeplerVariable> pair in statemachine.linked_variables.local)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (statemachine.variables.global.local.ContainsKey(pair.Key)) throw new LinkedFileException(string.Format("{0} has already been declared.", pair.Key));
+                        if (statemachine.variables.global.local.ContainsKey(pair.Key)) throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
                         statemachine.variables.global.local.Add(pair.Key, pair.Value);
                     }
 
                     foreach (KeyValuePair<string, KeplerFunction> pair in statemachine.linked_functions.global)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (statemachine.functions.global.ContainsKey(pair.Key)) throw new LinkedFileException(string.Format("{0} has already been declared.", pair.Key));
+                        if (statemachine.functions.global.ContainsKey(pair.Key)) throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
                         statemachine.functions.global.Add(pair.Key, pair.Value);
                     }
 
@@ -104,73 +104,17 @@ namespace KeplerInterpreter
 
                 internal_int(line);
             }
-            catch (TokenException e)
+            catch (KeplerError e)
             {
 
-                // this.tracer.PushStack("at ")
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
+                int start_offset = e.GetTokenOffset();
 
-                // this.tracer.PopStack();
                 this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
-                throw new KeplerException(this.c_line, "Syntax Error: " + e.Message, this.tracer);
+                throw new KeplerException(this.c_line, e.GetErrorString(), this.tracer, start_offset);
             }
             catch (KeplerException e)
             {
                 throw e;
-                // if (verbose_debug) this.DUMP();
-                // else Console.WriteLine("");
-
-                // this.tracer.PushStack(String.Format("at {0}:<{1}:{2}>", this.filename, line.line, line.CurrentToken().start + 1));
-                // throw new KeplerException("InterpreterException: " + e.Message, this.tracer);
-            }
-            catch (InterpreterException e)
-            {
-
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
-
-                // this.tracer.PopStack();
-                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
-                throw new KeplerException(this.c_line, "Error: " + e.Message, this.tracer);
-            }
-            catch (EOPException e)
-            {
-
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
-
-                // this.tracer.PopStack();
-                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
-                throw new KeplerException(this.c_line, "Error: " + e.Message, this.tracer);
-            }
-            catch (GenericException e)
-            {
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
-
-                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1 + e.token_offset));
-                throw new KeplerException(this.c_line, "Error: " + e.Message, this.tracer, 1);
-            }
-            catch (LinkedFileException e)
-            {
-
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
-
-                // this.tracer.PopStack();
-                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
-                throw new KeplerException(this.c_line, "Linked File Error: " + e.Message, this.tracer);
-            }
-            catch (LevelOneException e)
-            {
-
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
-
-                // this.tracer.PopStack();
-                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
-                throw new KeplerException(this.c_line, "Syntax Error: " + e.Message, this.tracer);
             }
             catch (Exception e)
             {
@@ -224,8 +168,7 @@ namespace KeplerInterpreter
             {
                 c_line.m_num = 0;
 
-                if (line.tokens[0].type == TokenType.EOP)
-                    throw new EOPException("Unexpected end of program!");
+                if (line.tokens[0].type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
 
                 if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
                 c_interrupt.function.lines.Add(c_line);
@@ -257,7 +200,7 @@ namespace KeplerInterpreter
             {
 
                 c_line.m_num = 0;
-                if (line.CurrentToken().type == TokenType.EOP) throw new EOPException("Unexpected end of program!");
+                if (line.CurrentToken().type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
 
                 c_function.lines.Add(c_line);
 
@@ -284,7 +227,7 @@ namespace KeplerInterpreter
             {
                 c_line.m_num = 0;
 
-                if (line.CurrentToken().type == TokenType.EOP) throw new EOPException("Unexpected end of program!");
+                if (line.CurrentToken().type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
 
                 c_conditional.lines.Add(c_line);
 
@@ -342,8 +285,8 @@ namespace KeplerInterpreter
                 }
                 else if (verbose_debug) Console.WriteLine("TOKEN " + c_token);
 
-                if (c_token.type != TokenType.EOL && c_state.type == TokenType.EOL && c_line.Peek().type != TokenType.EOL) throw new TokenException("Unexpected EOL!");
-                if (c_state.type != c_token.type) throw new TokenException(string.Format("Unexpected token {0} {1}", c_token.type, c_state.type));
+                if (c_token.type != TokenType.EOL && c_state.type == TokenType.EOL && c_line.Peek().type != TokenType.EOL) throw new KeplerError(KeplerErrorCode.UNEXP_EOL);
+                if (c_state.type != c_token.type) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { c_token.token_string });
 
                 c_state = c_state.DoAction(c_token, c_line.Peek()).Shift(c_state);
 
@@ -459,32 +402,5 @@ namespace KeplerInterpreter
                 this.tracer.PopStack(stack_id);
             }
         }
-    }
-
-    public class InterpreterException : Exception
-    {
-
-        public InterpreterException() { }
-
-        public InterpreterException(string message)
-            : base(message) { }
-
-        public InterpreterException(string message, Exception inner)
-            : base(message, inner) { }
-    }
-
-    public class EOPException : Exception
-    {
-        public EOPException(string message)
-            : base(message) { }
-    }
-
-    public class LinkedFileException : Exception
-    {
-        public LinkedFileException() { }
-        public LinkedFileException(string message)
-            : base(message) { }
-        public LinkedFileException(string message, Exception inner)
-            : base(message, inner) { }
     }
 }

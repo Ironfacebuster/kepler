@@ -98,8 +98,10 @@ namespace KeplerTracing
 
         public override string ToString()
         {
-            if (this.count > 1) return message + " x" + count;
-            return message;
+            string m = this.message;
+            if (this.count > 1) m = m + " x" + count;
+
+            return m;
         }
 
         public KeplerTrace Increment()

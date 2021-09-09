@@ -57,7 +57,9 @@ namespace KeplerCompiler
 
                 string spaces = "";
 
-                for (int i = 0; i < c_token.start + e.token_offset; i++)
+                int token_start = c_token.start + e.token_offset;
+
+                for (int i = 0; i < token_start; i++)
                 {
                     int len = 0;
                     while (len < split_line[i].Length)
@@ -78,7 +80,19 @@ namespace KeplerCompiler
                 Console.WriteLine(c_line.GetString());
 
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(spaces + "^ ");
+                // Console.WriteLine(spaces + "^ ");
+                Console.Write(spaces);
+                int marker_length = token_start > c_line.tokens.Count - 1 ? 1 : c_line.tokens[token_start].token_string.Length;
+
+                if (marker_length == 1)
+                    Console.Write("^");
+                else
+                    for (int i = 0; i < marker_length; i++)
+                    {
+                        Console.Write("~");
+                    }
+
+                Console.WriteLine("");
 
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write(e.message);
@@ -93,7 +107,13 @@ namespace KeplerCompiler
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Red;
+
+                Console.WriteLine("");
+                Console.Write(e.Message);
+
+                Console.ResetColor(); // reset the color back to default
+                Console.WriteLine("");
 
                 Environment.ExitCode = -1;
             }

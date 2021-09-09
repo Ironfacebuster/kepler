@@ -4,6 +4,7 @@ using KeplerInterpreter;
 using System.Diagnostics;
 using System;
 using System.Linq;
+using KeplerExceptions;
 
 namespace KeplerVariables
 {
@@ -40,7 +41,7 @@ namespace KeplerVariables
                 // Console.WriteLine("GLOBAL VAR " + name);
                 KeplerVariable found = global.local[name];
 
-                if (found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[43] {0} does not have a defined type", name));
+                if (found.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.UNASSIGNED_TYPE, new string[] { name });
 
                 return global.local[name];
             }
@@ -49,12 +50,12 @@ namespace KeplerVariables
                 // Console.WriteLine("LOCAL VAR " + name);
                 KeplerVariable found = local[name];
 
-                if (found.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("[52] {0} does not have a defined type", name));
+                if (found.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.UNASSIGNED_TYPE, new string[] { name });
 
                 return local[name];
             }
 
-            throw new InterpreterException(string.Format("[57] {0} has not yet been declared", name));
+            throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
         }
 
         // allow copying of global for "scoping"
@@ -189,11 +190,11 @@ namespace KeplerVariables
         {
             ValidateConstant();
             if (this.type == KeplerType.Unassigned) this.type = type;
-            if (this.type != type) throw new InterpreterException(string.Format("[101] Invalid type assignment {0} to {1}", type, this.type));
+            if (this.type != type) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { type.ToString(), this.type.ToString() });
         }
         public void ValidateConstant()
         {
-            if (this.modifier == KeplerModifier.Constant) throw new InterpreterException("[105] Assignment to constant variable");
+            if (this.modifier == KeplerModifier.Constant) throw new KeplerError(KeplerErrorCode.ASSIGN_CONSTANT_VAR);
         }
 
         public override string ToString()
@@ -243,7 +244,7 @@ namespace KeplerVariables
                     return "NaN";
             }
 
-            throw new InterpreterException(string.Format("Unable to convert type {0} to String!", this.type));
+            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "String" });
         }
 
         public int GetValueAsInt()
@@ -259,7 +260,7 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue ? 1 : 0;
                 case KeplerType.String:
-                    throw new InterpreterException("Cannot explicitly cast type String to Int!");
+                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
             }
 
             return 0;
@@ -278,7 +279,7 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return (uint)(BoolValue ? 1 : 0);
                 case KeplerType.String:
-                    throw new InterpreterException("Cannot explicitly cast type String to Int!");
+                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
             }
 
             return 0;
@@ -297,7 +298,7 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue ? 1.0 : 0.0;
                 case KeplerType.String:
-                    throw new InterpreterException("Cannot explicitly cast type String to Float!");
+                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Float" });
             }
 
             return 0;
@@ -316,7 +317,7 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue;
                 case KeplerType.String:
-                    throw new InterpreterException("Cannot explicitly cast type String to Bool!");
+                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
             }
 
             return false;
@@ -347,7 +348,7 @@ namespace KeplerVariables
             if (global.ContainsKey(name)) return global[name];
             if (local.ContainsKey(name)) return local[name];
 
-            throw new InterpreterException(string.Format("[338] {0} has not yet been declared", name));
+            throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
         }
 
         public KeplerFunctionManager Copy()
@@ -452,12 +453,12 @@ namespace KeplerVariables
 
         void AssertNPArgumentNotExists(string name)
         {
-            if (non_positional_arguments.ContainsKey(name)) throw new InterpreterException(string.Format("{0} already has a non-positional argument named {1}", this.name, name));
+            if (non_positional_arguments.ContainsKey(name)) throw new KeplerError(KeplerErrorCode.DUP_NONPOS_ARG, new string[] { this.name, name });
         }
 
         void AssertNPArgument(string name)
         {
-            if (!non_positional_arguments.ContainsKey(name)) throw new InterpreterException(string.Format("{0} does not have a non-positional argument named {1}", this.name, name));
+            if (!non_positional_arguments.ContainsKey(name)) throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.name, name });
         }
 
         public override string ToString()
@@ -592,7 +593,7 @@ namespace KeplerVariables
             // if (this.has_parent)
             //     return this.parent.GetInterrupt(id);
 
-            throw new InterpreterException("Unable to find interrupt with ID " + id);
+            throw new KeplerError(KeplerErrorCode.UNDECLARED_INT_ID, new string[] { id.ToString() });
         }
 
         public List<KeplerInterrupt> GetInterrupts()

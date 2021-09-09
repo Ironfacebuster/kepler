@@ -157,11 +157,9 @@ namespace KeplerStateMachine
         public TokenState GetLevelOneToken(Token token)
         {
             foreach (TokenState state in level1)
-            {
                 if (state.type == token.type) return state;
-            }
 
-            throw new LevelOneException(string.Format("[141] Unexpected initial token \"{0}\"", token.token_string));
+            throw new KeplerError(KeplerErrorCode.UNEXP_START_TOKEN, new string[] { token.token_string });
         }
         void NullHandle(Token token, TokenState state)
         {
@@ -176,7 +174,7 @@ namespace KeplerStateMachine
 
         void HandleEndConditional(Token token, TokenState state)
         {
-            if (state.booleans["validate_conditional"] && !state.booleans["inside_conditional"]) throw new InterpreterException("Unexpected endif token!");
+            if (state.booleans["validate_conditional"] && !state.booleans["inside_conditional"]) throw new KeplerError(KeplerErrorCode.UNEXP_END_COND);
             // enter "validate_conditional"
             state.booleans["validate_conditional"] = false;
             state.booleans["inside_conditional"] = false;
@@ -269,8 +267,6 @@ namespace KeplerStateMachine
                 result.SetType(KeplerType.NaN);
                 return result;
             }
-
-            // if (a_operand.type != b_operand.type) throw new InterpreterException(string.Format("Cannot \"{0}\" mismatched types! ({1} and {2})", token.operation, a_operand.type, b_operand.type));
 
             switch (token.operation)
             {
@@ -377,7 +373,7 @@ namespace KeplerStateMachine
         }
         void HandleLinkFile(Token token, TokenState state)
         {
-            if (!inside_header) throw new InterpreterException("Cannot link file outside of Header");
+            if (!inside_header) throw new KeplerError(KeplerErrorCode.LINK_OUT_HEADER);
             state.booleans["link_file"] = true;
         }
         void HandleStartFunction(Token token, TokenState state)
@@ -521,12 +517,6 @@ namespace KeplerStateMachine
         {
             if (verbose_debug) Console.WriteLine("EOP!");
 
-            // if (state.booleans["inside_if_statement"]) throw new InterpreterException("Unexpected EOF!");
-            // if (state.booleans["inside_interval"]) throw new InterpreterException("Unexpected EOF!");
-            // if (state.booleans["inside_function"]) throw new InterpreterException("Unexpected EOF!");
-            // if (state.booleans["inside_interval"]) throw new InterpreterException("Unexpected EOF!");
-            // if (state.booleans["inside_loop"]) throw new InterpreterException("Unexpected EOF!");
-
             if (!linked_file && end_on_eop) Environment.Exit(0); // exit with code 0 if NOT a linked file
         }
         void HandleConditionalIf(Token token, TokenState state)
@@ -583,7 +573,7 @@ namespace KeplerStateMachine
             // TODO: execute function after arguments are assigned
             if (state.booleans["calling_function"])
             {
-                if (c_function.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("Cannot call {0} without a defined return type", c_function.name));
+                if (c_function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.CALL_UNDEF_FUNCT_TYPE, new string[] { c_function.name });
 
                 if (state.booleans["declared_variable"])
                 {
@@ -612,28 +602,28 @@ namespace KeplerStateMachine
 
         void HandleStartInterval(Token token, TokenState state)
         {
-            if (state.booleans["inside_interval"]) throw new TokenException("Unexpected start of interval!");
+            if (state.booleans["inside_interval"]) throw new KeplerError(KeplerErrorCode.UNEXP_START_INT);
             state.booleans["inside_interval"] = true;
         }
         void HandleEndInterval(Token token, TokenState state)
         {
-            if (!state.booleans["inside_interval"]) throw new TokenException("Unexpected end of interval!");
+            if (!state.booleans["inside_interval"]) throw new KeplerError(KeplerErrorCode.UNEXP_END_INT);
             state.booleans["inside_interval"] = false;
         }
 
         void HandleStartLoop(Token token, TokenState state)
         {
-            if (state.booleans["inside_loop"]) throw new TokenException("Unexpected start of forever!");
+            if (state.booleans["inside_loop"]) throw new KeplerError(KeplerErrorCode.UNEXP_START_LOOP);
             state.booleans["inside_loop"] = true;
         }
         void HandleEndLoop(Token token, TokenState state)
         {
-            if (!state.booleans["inside_loop"]) throw new TokenException("Unexpected end of forever!");
+            if (!state.booleans["inside_loop"]) throw new KeplerError(KeplerErrorCode.UNEXP_END_LOOP);
             state.booleans["inside_loop"] = false;
         }
         void HandleBreakOut(Token token, TokenState state)
         {
-            if (!this.is_interrupt) throw new InterpreterException("Unexpected breakout, nothing to break out of!");
+            if (!this.is_interrupt) throw new KeplerError(KeplerErrorCode.NULL_BREAKOUT);
 
             if (verbose_debug) Console.WriteLine("BREAK ON LINE " + interpreter.c_line.line);
 
@@ -680,7 +670,7 @@ namespace KeplerStateMachine
         {
             int stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
 
-            if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new InterpreterException(string.Format("Cannot assign to {1} as {0} does not have a defined return type", function.name, function.GetTarget()));
+            if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
 
             function.ResetLines(); // reset line token indexes to zero
 
@@ -736,7 +726,7 @@ namespace KeplerStateMachine
                     var.SetStringValue(token.token_string.Substring(1, token.token_string.Length - 2));
                     break;
                 default:
-                    throw new InterpreterException(String.Format("Unable to create temporary variable for TokenType {0}", token.type));
+                    throw new KeplerError(KeplerErrorCode.NULL_TEMP_VAR, new string[] { token.type.ToString() });
             }
 
 
@@ -845,21 +835,16 @@ namespace KeplerStateMachine
         TokenState GetNextState(TokenState current_state, Token peek)
         {
             foreach (TokenState state in current_state.child_states)
-            {
-                // Console.WriteLine(string.Format("{0} {1}", state.type, peek.type));
-                // if (this.MatchState(state, peek)) return state;
                 if (state.type == peek.type) return state;
-            }
 
-            if (peek.type == TokenType.EOL) throw new GenericException("[554] Unexpected EOL", 1);
 
-            // Console.WriteLine(peek.type);
-            throw new GenericException(string.Format("[557] Unexpected token \"{0}\"", peek.token_string), 1);
+            if (peek.type == TokenType.EOL) throw new KeplerError(KeplerErrorCode.UNEXP_EOL);
+
+            throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { peek.token_string });
         }
 
         public override string ToString()
         {
-            // string output = "TokenState\r\n";
             return string.Format("TokenState {0}", this.type);
         }
     }
