@@ -22,8 +22,6 @@ namespace KeplerVariables
 
         public KeplerVariable DeclareVariable(string name, bool global_override)
         {
-            // TODO: handle redeclarations
-            // if the dictionary has this variable already
             if (global.local.ContainsKey(name)) return global.local[name];
             if (local.ContainsKey(name)) return local[name];
 
@@ -331,8 +329,6 @@ namespace KeplerVariables
 
         public KeplerFunction DeclareFunction(string name, bool global_override)
         {
-            // TODO: handle redeclarations
-            // if the dictionary has this variable already
             if (global.ContainsKey(name)) return global[name];
             if (local.ContainsKey(name)) return local[name];
 

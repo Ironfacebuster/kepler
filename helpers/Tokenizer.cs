@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using KeplerTokens.Tokens;
-using KeplerTokens.DataTypes;
 using System.Text.RegularExpressions;
 using System.Linq;
 using KeplerExceptions;
+using KeplerTokens;
+using KeplerStateMachine;
 
 namespace KeplerTokenizer
 {
@@ -332,6 +332,8 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.EOP, "EOP", "EOP", null, 0), // End of Program token
                 new TokenMatch(TokenType.EOP, "EOP", null, null, 0), // End of Program token
 
+                new TokenMatch(TokenType.StartAssertion, "assert", TokenMatch.any_string, null, 0), // Assertion token
+
                 // looping things
                 new TokenMatch(TokenType.StartInterval, "start", "every", null, 0),
                 new TokenMatch(TokenType.EndInterval, "end", "every", null, 0),
@@ -449,8 +451,8 @@ namespace KeplerTokenizer
                 new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, TokenMatch.any_string, "as", 0),
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0)
-                // since these "pairs" are checked from top to bottom, this final DeclareVariable is just in case
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0),
+            // since these "pairs" are checked from top to bottom, this final DeclareVariable is just in case
         };
 
             // if (tokenized == "True" || tokenized == "False") m_tokens.Add(new Token(TokenType.StaticBoolean, i));

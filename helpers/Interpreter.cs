@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using KeplerTokenizer;
-using KeplerTokens.Tokens;
 using KeplerStateMachine;
+using KeplerTokens;
 using KeplerVariables;
 using KeplerTracing;
 using KeplerExceptions;
@@ -11,7 +11,6 @@ namespace KeplerInterpreter
 {
     public class Interpreter
     {
-        // TODO: SCOPES!!!!!
         public int ID = 0;
         public string filename = "[LIVE]";
         public KeplerErrorStack tracer;
@@ -21,21 +20,22 @@ namespace KeplerInterpreter
         public Interpreter parent;
         public bool is_global = false;
         public Interpreter global;
-        public TokenState c_state = new TokenState(TokenType.UNRECOGNIZED, null, null);
-        public Token c_token = new Token(TokenType.UNRECOGNIZED, 0, "NUL");
+        public TokenState c_state = null;
+        public Token c_token = null;
         bool inside_function = false;
         bool inside_conditional = false;
         bool inside_interrupt = false;
         bool inside_loop = false;
         int conditional_indentation = 0;
         bool skip_conditional = false;
-
         bool killed = false;
-
         public KeplerInterruptManager interrupts = new KeplerInterruptManager();
-        public KeplerFunction c_function = new KeplerFunction("NUL");
-        public KeplerInterrupt c_interrupt = new KeplerInterrupt(-1, new KeplerFunction("NUL"), null);
+        public KeplerFunction c_function = null;
+        // new KeplerFunction("NUL")
+        public KeplerInterrupt c_interrupt = null;
+        // new KeplerInterrupt(-1, new KeplerFunction("NUL"), null)
         public KeplerFunction c_conditional = new KeplerFunction("CONDITIONAL");
+        // 
         public LineIterator c_line = new LineIterator("", 0, 0);
 
         static string PrintLine(LineIterator line)
@@ -72,7 +72,8 @@ namespace KeplerInterpreter
             }
 
             this.statemachine.interpreter = this;
-            c_interrupt.parent = this;
+            if (c_interrupt != null)
+                c_interrupt.parent = this;
         }
 
         public void Interpret(LineIterator line)
