@@ -61,7 +61,6 @@ namespace KeplerVariables
         {
             KeplerVariableManager copy = new KeplerVariableManager();
             copy.global = this.global;
-            // copy.global = new Dictionary<string, KeplerVariable>(this.global);
             copy.local = new Dictionary<string, KeplerVariable>(this.local);
             return copy;
         }

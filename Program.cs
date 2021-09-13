@@ -56,7 +56,11 @@ namespace KeplerCompiler
                 Console.ForegroundColor = ConsoleColor.Red;
 
                 Console.WriteLine("");
+#if DEBUG
                 Console.Write(e);
+#else
+                Console.Write(e.Message);
+#endif
 
                 Console.ResetColor(); // reset the color back to default
                 Console.WriteLine("");
@@ -79,13 +83,17 @@ namespace KeplerCompiler
 
             // load static values from file
             if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
-
             // do interpretation
             while (tokenizer.HasNext() || interpreter.interrupts.HasAnyInterrupts())
             {
+                // Console.WriteLine(tokenizer.HasNext());
                 if (interpreter.interrupts.HasInterrupts())
                     interpreter.HandleInterrupts(false);
-                else if (tokenizer.current_line < tokenizer.Lines().Count) { interpreter.Interpret(tokenizer.CurrentLine()); tokenizer++; }
+                else if (tokenizer.current_line < tokenizer.Lines().Count)
+                {
+                    interpreter.Interpret(tokenizer.CurrentLine());
+                    tokenizer++;
+                }
             }
         }
 
@@ -211,7 +219,7 @@ namespace KeplerCompiler
             Console.ForegroundColor = ConsoleColor.Red;
             // Console.WriteLine(spaces + "^ ");
             Console.Write(spaces);
-            int marker_length = token_start > c_line.tokens.Count - 1 ? 1 : c_line.tokens[token_start].token_string.Length;
+            int marker_length = c_line.tokens.Count > 0 ? token_start > c_line.tokens.Count - 1 ? 1 : c_line.tokens[token_start].token_string.Length : 0;
 
             if (marker_length == 1)
                 Console.Write("^");

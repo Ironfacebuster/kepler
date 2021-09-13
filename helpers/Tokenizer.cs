@@ -321,8 +321,9 @@ namespace KeplerTokenizer
                 m_tokens[1] = equality;
             }
 
+            if (m_tokens.Count == 0) m_tokens.Add(new Token(TokenType.EOL, 0, "EOL"));
+
             this.tokens = m_tokens;
-            // }
         }
 
         private TokenMatch GetTokenType(string token, string peek, string previous)
@@ -521,6 +522,7 @@ namespace KeplerTokenizer
 
         public Token CurrentToken()
         {
+            if (m_num >= tokens.Count) return new Token(TokenType.EOL, 0, "EOL");
             return tokens[m_num];
         }
 

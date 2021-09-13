@@ -106,7 +106,7 @@ namespace KeplerExceptions
                 case KeplerErrorCode.UNEXP_START_LOOP:
                     return string.Format("[{0}] Syntax Error: Unexpected start of forever.", this.code);
                 case KeplerErrorCode.UNEXP_END_LOOP:
-                    return string.Format("[{0}] Syntax Error: Unexpected start of forever.", this.code);
+                    return string.Format("[{0}] Syntax Error: Unexpected end of forever.", this.code);
                 case KeplerErrorCode.UNEXP_START_INT:
                     return string.Format("[{0}] Syntax Error: Unexpected start of interval.", this.code);
                 case KeplerErrorCode.UNEXP_END_INT:
@@ -150,6 +150,8 @@ namespace KeplerExceptions
                     return string.Format("[{0}] Declaration Error: {1} has already been declared.", this.code, this.args[0]);
                 case KeplerErrorCode.FALSE_ASSERTION:
                     return string.Format("[{0}] Assertion Error: Assertion evaluated to {1} when True was expected!", this.code, this.args[0]);
+                case KeplerErrorCode.GENERIC_ERROR:
+                    return string.Format("[{0}] {1}", this.code, this.args[0]);
             }
 
             return string.Format("Unexpected Error {0}", this.code);
@@ -219,6 +221,7 @@ namespace KeplerExceptions
         DUP_NONPOS_ARG,
         UNDECLARED_NONPOS_ARG,
         DECLARE_DUP,
-        FALSE_ASSERTION
+        FALSE_ASSERTION,
+        GENERIC_ERROR
     }
 }
