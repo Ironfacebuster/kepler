@@ -26,9 +26,9 @@ namespace KeplerInterpreter
         bool inside_conditional = false;
         bool inside_interrupt = false;
         bool inside_loop = false;
-        int conditional_indentation = 0;
+        int desired_intendation = 0;
         bool skip_conditional = false;
-        bool killed = false;
+        public bool killed = false;
         public KeplerInterruptManager interrupts = new KeplerInterruptManager();
         public KeplerFunction c_function = null;
         // new KeplerFunction("NUL")
@@ -174,7 +174,7 @@ namespace KeplerInterpreter
                 if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
                 c_interrupt.function.lines.Add(c_line);
 
-                if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever")
+                if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever" && line.indentation == desired_intendation)
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     c_interrupt.SetForever();
@@ -185,7 +185,7 @@ namespace KeplerInterpreter
 
                     this.HandleInterrupts(true);
                 }
-                if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every")
+                if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     inside_interrupt = false;
@@ -205,7 +205,7 @@ namespace KeplerInterpreter
 
                 c_function.lines.Add(c_line);
 
-                if (line.CurrentToken().type == TokenType.EndFunction && line.Peek().token_string == c_function.name)
+                if (line.CurrentToken().type == TokenType.EndFunction && line.Peek().token_string == c_function.name && line.indentation == desired_intendation)
                 {
                     inside_function = false;
                     c_function.lines.RemoveAt(c_function.lines.Count - 1);
@@ -219,7 +219,7 @@ namespace KeplerInterpreter
             if (skip_conditional)
             {
                 // check for "endif"
-                if (c_line.CurrentToken().type == TokenType.EndConditional && c_line.indentation == conditional_indentation) skip_conditional = false;
+                if (c_line.CurrentToken().type == TokenType.EndConditional && c_line.indentation == desired_intendation) skip_conditional = false;
 
                 return;
             }
@@ -232,7 +232,7 @@ namespace KeplerInterpreter
 
                 c_conditional.lines.Add(c_line);
 
-                if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == conditional_indentation)
+                if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == desired_intendation)
                 {
                     // int stack_id = this.tracer.PushStack(String.Format("at conditional ({0}:{1}:{2})", this.filename, c_line.line - c_conditional.lines.Count, c_line.CurrentToken().start + 1));
 
@@ -297,6 +297,7 @@ namespace KeplerInterpreter
                     inside_function = true;
                     c_state.c_function.lines = new List<LineIterator>(); // clear lines in case of redefinition
                     c_function = c_state.c_function;
+                    desired_intendation = c_line.indentation;
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_function.name));
                 }
@@ -311,6 +312,7 @@ namespace KeplerInterpreter
 
                     inside_interrupt = true;
                     c_interrupt = c_state.c_interrupt;
+                    desired_intendation = c_line.indentation;
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
                 }
@@ -325,6 +327,7 @@ namespace KeplerInterpreter
 
                     inside_loop = true;
                     c_interrupt = c_state.c_interrupt;
+                    desired_intendation = c_line.indentation;
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
                 }
@@ -336,11 +339,11 @@ namespace KeplerInterpreter
                     {
                         c_conditional.lines = new List<LineIterator>();
                         inside_conditional = true;
-                        conditional_indentation = c_line.indentation;
+                        desired_intendation = c_line.indentation;
                     }
                     if (c_state.booleans["validate_conditional"] && !c_state.booleans["inside_conditional"])
                     {
-                        conditional_indentation = c_line.indentation;
+                        desired_intendation = c_line.indentation;
                         skip_conditional = true;
                     }
 
@@ -354,6 +357,11 @@ namespace KeplerInterpreter
         public void Kill()
         {
             if (verbose_debug) Console.WriteLine("INTERRUPT " + this.ID + " KILLED ON LINE" + this.c_line.line);
+
+            // hmm...
+            if (this.is_global)
+                throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { "Attempted to kill global!" });
+
             this.killed = true;
             this.c_line.Kill();
         }
@@ -378,10 +386,10 @@ namespace KeplerInterpreter
 
                 // maybe move this to when the interrupt is created?
                 // seems like creating a new interpreter could cause a bit of delay
-                Interpreter f_interpreter = new Interpreter(this.global, this);
+                Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
 
-                f_interpreter.statemachine.variables = statemachine.variables.Copy();
-                f_interpreter.statemachine.functions = statemachine.functions.Copy();
+                f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
+                f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
 
                 f_interpreter.statemachine.is_interrupt = true;
                 f_interpreter.statemachine.interrupt_id = interrupts[i].id;
