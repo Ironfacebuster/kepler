@@ -640,21 +640,16 @@ namespace KeplerStateMachine
         }
         void KillAll()
         {
-            Interpreter parent_interpreter = interpreter;
+            Interpreter parent_interpreter = this.interpreter;
             KeplerInterrupt interrupt = interpreter.interrupts.GetInterrupt(this.interrupt_id);
 
             while (true)
             {
-                if (parent_interpreter.ID != interrupt.parent.ID)
-                {
-                    parent_interpreter = parent_interpreter.parent;
-                    parent_interpreter.Kill();
-                }
-                else break;
-            }
+                if (parent_interpreter.ID == interrupt.parent.ID) break;
 
-            interrupt.parent.Kill();
-            this.interpreter.Kill();
+                parent_interpreter.Kill();
+                parent_interpreter = parent_interpreter.parent;
+            }
 
             interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
         }
