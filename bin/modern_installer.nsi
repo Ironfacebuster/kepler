@@ -12,9 +12,9 @@
 ;General
 
   ;Name and file
-  Name "Kepler Alpha 1.3"
+  Name "Kepler Alpha 1.3.2"
   !define MUI_ICON "D:\C# Projects\KeplerCompiler\bin\Resources\logo 256x256.ico" 
-  OutFile "D:\C# Projects\KeplerCompiler\bin\BUILD\kepler_v1a1.3.exe" 
+  OutFile "D:\C# Projects\KeplerCompiler\bin\BUILD\kepler_v1a1.3.2.exe" 
   Unicode True
   
   InstallDir "$PROGRAMFILES\kepler" 
