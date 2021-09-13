@@ -117,7 +117,7 @@ namespace KeplerExceptions
                     return string.Format("[{0}] Syntax Error: Unexpected start of conditional.", this.code);
                 case KeplerErrorCode.LINK_OUT_HEADER:
                     return string.Format("[{0}] Syntax Error: Cannot link file outside of Header.", this.code);
-                case KeplerErrorCode.NULL_BREAKOUT:
+                case KeplerErrorCode.UNEXP_BREAKOUT:
                     return string.Format("[{0}] Syntax Error: Unexpected breakout, nothing to break out of.", this.code);
                 case KeplerErrorCode.UNEXP_START_TOKEN: // fallthrough
                 case KeplerErrorCode.UNEXP_TOKEN:
@@ -148,6 +148,8 @@ namespace KeplerExceptions
                     return string.Format("[{0}] Declaration Error: {1} has not yet been declared.", this.code, this.args[0]);
                 case KeplerErrorCode.DECLARE_DUP:
                     return string.Format("[{0}] Declaration Error: {1} has already been declared.", this.code, this.args[0]);
+                case KeplerErrorCode.FALSE_ASSERTION:
+                    return string.Format("[{0}] Assertion Error: Assertion evaluated to {1} when True was expected!", this.code, this.args[0]);
             }
 
             return string.Format("Unexpected Error {0}", this.code);
@@ -171,7 +173,7 @@ namespace KeplerExceptions
                     // case KeplerErrorCode.UNEXP_START_COND:
                     // case KeplerErrorCode.UNEXP_END_COND:
                     // case KeplerErrorCode.LINK_OUT_HEADER:
-                    // case KeplerErrorCode.NULL_BREAKOUT:
+                    // case KeplerErrorCode.UNEXP_BREAKOUT:
                     // case KeplerErrorCode.CALL_UNDEF_FUNCT_TYPE:
                     // case KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE:
                     // case KeplerErrorCode.NULL_TEMP_VAR:
@@ -205,7 +207,7 @@ namespace KeplerExceptions
         UNEXP_END_INT,
         UNDECLARED_INT_ID,
         LINK_OUT_HEADER,
-        NULL_BREAKOUT,
+        UNEXP_BREAKOUT,
         CALL_UNDEF_FUNCT_TYPE,
         ASSIGN_UNDEF_FUNCT_TYPE,
         NULL_TEMP_VAR,
@@ -216,6 +218,7 @@ namespace KeplerExceptions
         UNASSIGNED_TYPE,
         DUP_NONPOS_ARG,
         UNDECLARED_NONPOS_ARG,
-        DECLARE_DUP
+        DECLARE_DUP,
+        FALSE_ASSERTION
     }
 }
