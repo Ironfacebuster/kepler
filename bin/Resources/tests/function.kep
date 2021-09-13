@@ -1,0 +1,14 @@
+start Header
+    function returns Int
+
+    bool is False
+end Header
+
+start function
+    ! assign global bool to true to prove functions work
+    bool is True
+end function
+
+call function
+
+assert bool equals True

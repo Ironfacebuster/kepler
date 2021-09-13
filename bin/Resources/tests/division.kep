@@ -1,0 +1,6 @@
+assert 10 / 2 equals 5 !-- int division --!
+assert u10 / u2 equals u5 !-- unsigned int division --!
+assert 10.0 / 2.0 equals 5.0 !-- float division --!
+
+!-- divide by zero returns NaN --!
+assert 1 / 0 equals NaN
