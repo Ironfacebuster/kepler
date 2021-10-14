@@ -4,12 +4,8 @@ linux_output_location = build/VS_BUILD_OUTPUT/LINUX
 publish_location = build/VS_PUBLISH_OUTPUT
 test_file = test_file.kep
 
-all: clean \
-		build \
-		test \
-		publish \
-		publish_mac \
-		publish_linux
+all: publish \
+		pack
 
 log:
 	@echo $(test_command) \
