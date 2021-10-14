@@ -5,7 +5,8 @@ publish_location = build/VS_PUBLISH_OUTPUT
 test_file = test_file.kep
 
 all: publish \
-		pack
+		pack \
+		test_local
 
 log:
 	@echo $(test_command) \
@@ -33,6 +34,14 @@ clean:
 test:
 	@ \
 	./scripts/run_tests.bat
+
+test_local:
+	@ \
+	./scripts/run_local_tests.bat
+
+run:
+	@ \
+	dotnet run --project "./src/kepler.csproj" ;
 # test:
 # 	@ \
 # 	echo -e "\u001b[36m"; \
