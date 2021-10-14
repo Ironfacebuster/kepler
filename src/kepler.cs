@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+// using System.Collections.Generic;
 using KeplerLexer;
 using Arguments;
 using KeplerInterpreter;
@@ -7,6 +7,7 @@ using KeplerVersioning;
 using KeplerStateMachine;
 using KeplerExceptions;
 using KeplerTracing;
+using KeplerVariables;
 using Help;
 using System.IO;
 
@@ -17,16 +18,6 @@ namespace KeplerCompiler
         static Tokenizer tokenizer = new Tokenizer();
         static bool verbose_debug = false;
         static bool debug = false;
-
-        static string[] recognized_arguments = new string[] {
-                "help",
-                "h",
-                "version",
-                "v",
-                "debug",
-                "file",
-                "filename"
-            };
 
         static void Main(string[] args)
         {
@@ -50,7 +41,7 @@ namespace KeplerCompiler
                     Console.WriteLine(string.Format("Unrecognized argument \"{0}\"{1}", u, closest == null ? "" : string.Format(", did you mean \"{0}\"?", closest)));
                 }
                 Console.ResetColor();
-                Environment.Exit(-1);
+                // Environment.Exit(-1);
             }
 
 
@@ -124,8 +115,12 @@ namespace KeplerCompiler
             interpreter.debug = debug;
             interpreter.tracer = tracer;
 
+            // "load" required static values
+            LoadStaticValues(interpreter);
+
             // load static values from file
-            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
+            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticFile(interpreter);
+
             // do interpretation
             while (tokenizer.HasNext() || interpreter.interrupts.HasAnyInterrupts())
             {
@@ -163,8 +158,12 @@ namespace KeplerCompiler
             interpreter.verbose_debug = verbose_debug;
             interpreter.debug = debug;
 
+            // "load" required static values
+            LoadStaticValues(interpreter);
+
             // load static values from file
-            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticValues(interpreter);
+            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticFile(interpreter);
+
 
             int line = 1;
             while (true)
@@ -215,10 +214,42 @@ namespace KeplerCompiler
             }
         }
 
+        /// <summary>
+        /// "Loads" various constant values as variables.
+        /// </summary>
         static void LoadStaticValues(Interpreter interpreter)
         {
-            interpreter.statemachine.end_on_eop = false;
+            KeplerVariableManager vars = interpreter.statemachine.variables;
 
+            KeplerVariable version_var = vars.global.DeclareVariable("$_VERSION", true);
+            version_var.SetStringValue(StaticValues._VERSION);
+            version_var.SetModifier(KeplerModifier.Constant);
+
+            KeplerVariable e = vars.global.DeclareVariable("E", true);
+            e.SetFloatValue(2.7182818284590451m);
+            e.SetModifier(KeplerModifier.Constant);
+
+            KeplerVariable pi = vars.global.DeclareVariable("PI", true);
+            pi.SetFloatValue(3.141592653589793m);
+            pi.SetModifier(KeplerModifier.Constant);
+
+            KeplerVariable tau = vars.global.DeclareVariable("TAU", true);
+            tau.SetFloatValue(6.2831853071795862m);
+            tau.SetModifier(KeplerModifier.Constant);
+
+            KeplerVariable pi_2 = vars.global.DeclareVariable("2_PI", true);
+            pi_2.SetFloatValue(6.2831853071795862m);
+            pi_2.SetModifier(KeplerModifier.Constant);
+
+            KeplerVariable nan = vars.global.DeclareVariable("NaN", true);
+            nan.SetType(KeplerType.NaN);
+            nan.SetModifier(KeplerModifier.Constant);
+
+
+        }
+
+        static void LoadStaticFile(Interpreter interpreter)
+        {
             Tokenizer t = new Tokenizer();
 
             string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
