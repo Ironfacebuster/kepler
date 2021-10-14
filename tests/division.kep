@@ -4,3 +4,5 @@ assert 15.0 / 2.0 equals 7.5 !-- float division --!
 
 !-- divide by zero returns NaN --!
 assert 1 / 0 equals NaN
+
+print "SUCCESS"

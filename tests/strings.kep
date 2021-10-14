@@ -13,3 +13,5 @@ assert "1" < 0 equals False
 !-- string concatentation --!
 assert "test" + 1 equals "test1"
 assert "test" + "string" equals "teststring"
+
+print "SUCCESS"

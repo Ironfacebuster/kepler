@@ -9,3 +9,5 @@ if False
 endif
 
 assert num equals 1
+
+print "SUCCESS"

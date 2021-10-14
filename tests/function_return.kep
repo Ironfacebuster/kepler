@@ -7,3 +7,5 @@ start function
 end function
 
 assert call function equals 1
+
+print "SUCCESS"

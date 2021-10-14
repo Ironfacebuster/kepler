@@ -1,6 +1,6 @@
 start Header
     function returns Int
-
+    
     bool is False
 end Header
 
@@ -12,3 +12,5 @@ end function
 call function
 
 assert bool equals True
+
+print "SUCCESS"

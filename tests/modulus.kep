@@ -1,3 +1,5 @@
 assert 25 % 5 equals 0.0 !-- int modulus --!
 assert u25 % u5 equals 0.0 !-- unsigned int modulus --!
 assert 25.0 % 5.0 equals 0.0 !-- float modulus --!
+
+print "SUCCESS"

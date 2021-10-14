@@ -27,3 +27,5 @@ end forever
 assert num_breakout equals True
 assert forever_count >= 1
 assert every_count >= 10
+
+print "SUCCESS"

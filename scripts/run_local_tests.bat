@@ -21,9 +21,9 @@ for %%f in ("%~dp0..\tests\*.kep") do (
     set /P RESULT=<%%f_result.txt
     del "%%f_result.txt"
 
-    rem if the command resulted in ANY output it failed
-    rem this is assuming that pass results don't print to console
-    if "!RESULT!"=="" (
+    rem if the command doesn't print "SUCCESS" it failed!
+    rem this also handles other errors, such as exiting without printing, etc.
+    if "!RESULT!"=="SUCCESS" (
         echo PASSED
         set /A PASSED=PASSED+1
     ) else (

@@ -11,3 +11,5 @@ start function
 end function
 
 call function with var1 as 1, var2 as 2
+
+print "SUCCESS"
