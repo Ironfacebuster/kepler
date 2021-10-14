@@ -26,7 +26,7 @@ After ensuring .NET is installed, you can use the following steps:
 3. Navigate your command prompt to the `VS_BUILD_OUTPUT` folder.
 4. Finally, you can run `./kepler` to enter a live interpretation mode.
 
-#### **Additionally**, when running the interpreter, you can use provide the `--file` argument and a path to a `.sc` file, or the `--help` argument to display all arguments.
+#### **Additionally**, when running the interpreter, you can use provide the `--file` argument and a path to a `.kep` file, or the `--help` argument to display all arguments.
 #### You can also use the interpreter **without building** by entering `dotnet run` in your terminal.
 
 ### Todo list

@@ -1,0 +1,13 @@
+! this is a comment
+
+!-- 
+this is a block
+of text that got
+commented out
+ --!
+
+!  assert False
+
+!--
+assert False
+--!

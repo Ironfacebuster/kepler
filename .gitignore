@@ -1,9 +1,9 @@
-/.vscode
-/bin/Debug
-/bin/BUILD
-/obj
-/VS_BUILD_OUTPUT/*
-/VS_PUBLISH_OUTPUT/*
+.vscode/*
+/obj/Debug/*
+*/VS_BUILD_OUTPUT/*
+*/VS_PUBLISH_OUTPUT/*
+*/VS_DEBUG/*
+*/build/*
 installer.nsi
 */temp
 .DS_Store

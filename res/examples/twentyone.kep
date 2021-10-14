@@ -1,0 +1,23 @@
+start Header
+    nine is 10
+    ten is 11
+    
+    count is 0
+    
+    funct returns Int
+end Header
+
+start funct
+    
+    if count >= 100
+        if nine + ten equals 21
+            throw "you stupid"
+        endif
+    endif
+    
+    count is count + 1
+    
+    call funct
+end funct
+
+call funct

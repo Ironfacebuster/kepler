@@ -1,0 +1,15 @@
+!-- string (operation) number = NaN --!
+assert "test" - 1 equals NaN
+assert "test" / 1 equals NaN
+assert "test" * 1 equals NaN
+assert "test" % 1 equals NaN
+assert "test" ^ 1 equals NaN
+
+!-- string comparison --!
+assert "true" equals "true"
+assert "1" > "0"
+assert "1" < 0 equals False
+
+!-- string concatentation --!
+assert "test" + 1 equals "test1"
+assert "test" + "string" equals "teststring"

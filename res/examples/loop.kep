@@ -1,0 +1,59 @@
+start Header
+    count is 1
+
+    funct returns Int
+    funct2 returns Int
+end Header
+
+
+! start every 1
+!     string is "Count is " + count
+!     count is count + 1
+
+!     if count % 2 equals 0.0
+!         string is string + " and is even!"
+!     endif
+
+!     if count % 2 equals 1.0
+!         string is string + " and is odd!"
+!     endif
+
+!     if count > 100
+!         breakout
+!     endif
+
+!     print string
+    
+! end every
+
+! if 1 > 0
+!     print "test"
+! endif
+
+start funct
+    ! print count
+    if count >= 50
+        count is 0
+        call funct2
+        ! breakout
+    endif
+
+    if count < 50
+        count is count + 1
+        ! print count
+
+        call funct
+    endif
+end funct
+
+start funct2
+    count is count + 1
+
+    if count > 15
+        breakout
+    endif
+
+    call funct2
+end funct2
+
+call funct

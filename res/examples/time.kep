@@ -1,0 +1,26 @@
+start Header
+    log returns String
+end Header
+
+START is 0.0
+start log
+    diff is START / 1000.0
+    print "It has been " + diff + " seconds since this started." 
+end log
+
+! start every 1
+!     ! print START
+!     START is START + 1
+! end every 
+
+! start every 5000
+!     call log
+! end every
+! call log
+
+start forever
+    START is START + 1
+    if START > 100
+        breakout
+    endif
+end forever
