@@ -1,0 +1,11 @@
+num is 0
+
+if True
+    num is 1
+endif
+
+if False
+    num is 10
+endif
+
+assert num equals 1

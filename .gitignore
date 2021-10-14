@@ -1,9 +1,12 @@
-/.vscode
-/bin/Debug
-/bin/BUILD
-/obj
-/VS_BUILD_OUTPUT/*
-/VS_PUBLISH_OUTPUT/*
+# just a generic gitignore
+# modify to your liking
+.vscode/*
+/obj/Debug/*
+*/VS_BUILD_OUTPUT/*
+*/VS_PUBLISH_OUTPUT/*
+*/VS_DEBUG/*
+/src/bin/*
+*/build/*
 installer.nsi
 */temp
 .DS_Store

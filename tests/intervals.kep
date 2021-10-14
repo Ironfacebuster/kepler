@@ -1,0 +1,29 @@
+start Header
+    every_count is 0
+    forever_count is 0
+    num_breakout is True
+end Header
+
+start forever
+    start every 1
+        every_count is every_count + 1
+        
+        if every_count > 10
+            breakout
+            
+            ! should not happen
+            num_breakout is False
+            ! throw "Did not break out of loop properly!"
+        endif
+    end every
+    
+    forever_count is forever_count + 1
+    
+    if forever_count > 1 and every_count > 10
+        breakout
+    endif
+end forever
+
+assert num_breakout equals True
+assert forever_count >= 1
+assert every_count >= 10

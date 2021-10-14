@@ -1,0 +1,49 @@
+!--
+FizzBuzz by duckboycool
+
+The software comes as is with no warranty.
+In order to use this implementation, you must include a picture
+of yourself or somebody that can't be proven to not be yourself
+in a clown costume in the project that you are using the code in.
+Otherwise, you cannot use the code for any purpose.
+
+Updated to use infinite loops
+by William H. 9/15/21
+--!
+
+start Header
+    print "Run on Kepler version " + $_VERSION
+    
+    loop is Int and is 1
+    
+    NUM is Int and is 100 and is Constant
+end Header
+
+start forever
+    line is String and is ""
+    print_loop is Boolean and is True
+    
+    if loop % 3 equals 0.0
+        line is line + "Fizz"
+        print_loop is False
+    endif
+    
+    if loop % 5 equals 0.0
+        line is line + "Buzz"
+        print_loop is False
+    endif
+    
+    if print_loop
+        print loop
+    endif
+    
+    if print_loop equals False
+        print line
+    endif
+    
+    if loop >= NUM
+        breakout
+    endif
+    
+    loop is loop + 1
+end forever

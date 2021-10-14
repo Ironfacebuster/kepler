@@ -1,0 +1,13 @@
+start Header
+    function returns Int
+    
+    function1 uses var1 as Int
+    function1 uses var2 as Int
+end Header
+
+start function
+    assert var1 equals 1
+    assert var2 equals 2
+end function
+
+call function with var1 as 1, var2 as 2

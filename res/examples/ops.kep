@@ -1,0 +1,15 @@
+start Header
+    funct1 returns Int
+end Header
+
+var1 is 0
+
+start funct1
+    var1 is var1 + 1
+
+    print "Number of loops: " + var1
+
+    call funct1
+end funct1
+
+call funct1

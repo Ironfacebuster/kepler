@@ -1,0 +1,20 @@
+start Header
+    time is 0
+
+    print_time returns Int
+end Header
+
+start every 1
+    time is time + 1
+end every
+
+start every 60000
+    call print_time
+end every
+
+start print_time
+    minutes is 1.0 * time / 60000.0
+    print minutes + " minute(s)"
+end print_time
+
+call print_time

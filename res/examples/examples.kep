@@ -1,0 +1,11 @@
+start Header
+    ex_funct returns Int
+end Header
+
+start ex_funct
+    print "Hello world!"
+end ex_funct
+
+call ex_funct
+
+print "test"

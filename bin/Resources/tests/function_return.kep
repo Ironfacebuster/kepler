@@ -1,9 +1,0 @@
-start Header
-    function returns Int
-end Header
-
-start function
-    return 1
-end function
-
-assert call function equals 1

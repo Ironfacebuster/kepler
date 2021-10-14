@@ -1,0 +1,25 @@
+int is 0
+
+print "test"
+
+start forever
+    if int > 100
+        breakout
+    endif
+    
+    ! print int
+    int is int + 1
+    int2 is 0
+    
+    start forever
+        if int2 > 100
+            breakout
+        endif
+        
+        print int2
+        int2 is int2 + 1
+    end forever
+end forever
+
+print "test"
+print "INT: " + int

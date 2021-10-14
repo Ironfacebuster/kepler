@@ -12,21 +12,21 @@ In order to build (and use) the compiler, you must have [.NET](https://dotnet.mi
 
 After ensuring .NET is installed, you can use the following steps:
 
-#### **Building and installing on Windows** (with `make`)
+#### **Building and Installing on Windows** (with `make`)
 > These steps require [NSIS](https://nsis.sourceforge.io/Main_Page), and only produces a Windows installer.
 1. Open a command prompt and navigate to the root of your local repository.
-2. Enter `make all pack` into your command prompt. Wait for all builds and tests to complete.
-3. Navigate to `/bin/BUILD` to find your newly created installation executable.
+2. Enter `make all` into your command prompt. Wait for all builds and tests to complete.
+3. Navigate to `/build` to find your newly created installation executable.
 4. Run the executable, then Kepler and associated .NET Core versions will be installed.
 5. Finally, restart any opened command prompts, and enter `kepler`!
 
-#### **Windows** (with `make`)
+#### **Building on Windows** (with `make`)
 1. Open a command prompt and navigate to the root of your local repository.
-2. In the command prompt, simply type `make`, and wait for the build and test to complete.
-3. Navigate your command prompt to the `VS_BUILD_OUTPUT` folder.
+2. In the command prompt, simply type `make publish`, and wait for the build to complete.
+3. Navigate your command prompt to the `/build/VS_BUILD_OUTPUT` folder.
 4. Finally, you can run `./kepler` to enter a live interpretation mode.
 
-#### **Additionally**, when running the interpreter, you can use provide the `--file` argument and a path to a `.sc` file, or the `--help` argument to display all arguments.
+#### **Additionally**, when running the interpreter, you can use provide the `--file` argument and a path to a `.kep` file, or the `--help` argument to display all arguments.
 #### You can also use the interpreter **without building** by entering `dotnet run` in your terminal.
 
 ### Todo list

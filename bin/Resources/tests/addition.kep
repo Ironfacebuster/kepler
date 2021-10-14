@@ -1,3 +1,0 @@
-assert 1 + 1 equals 2 !-- int addition --!
-assert u1 + u1 equals u2 !-- unsigned int addition --!
-assert 1.0 / 1.0 equals 1.0 !-- float addition --!

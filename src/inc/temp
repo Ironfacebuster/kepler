@@ -1,0 +1,171 @@
+               
+                        // variable stuff
+        public KeplerVariableManager variables = new KeplerVariableManager();
+        bool declared_variable = false;
+        bool variable_assign = false;
+        bool inside_string = false;
+        string build_string = "";
+
+        // function stuff
+        public KeplerFunctionManager functions = new KeplerFunctionManager();
+        bool declared_function = false;
+        bool function_assign = false;
+        bool inside_function = false;
+        bool closing_function = false;
+        KeplerFunction c_function = new KeplerFunction();
+
+        LineIterator c_line = new LineIterator("", 0, 0);
+        Token c_token = new Token(TokenType.UNRECOGNIZED, 0, "NUL");
+        Token p_token = new Token(TokenType.UNRECOGNIZED, 0, "NUL");
+                
+                c_line = line;
+            KeplerVariable c_variable = new KeplerVariable();
+
+            // Console.WriteLine(inside_function);
+            Console.WriteLine(line);
+
+            if (inside_function && declared_function) c_function.lines.Add(line);
+
+            while (line.HasNext())
+            {
+                p_token = c_token;
+                c_token = line.CurrentToken();
+                // Console.WriteLine(c_token);
+
+                // exit handling
+                if (c_token.type == TokenType.EOP)
+                {
+                    if (inside_function || inside_string) throw new Exception("Unexpected EOP!");
+                    Environment.Exit(0);
+                }
+
+
+                line++;
+            }
+
+            // if (declared_variable) Console.WriteLine(c_variable);
+            // Console.WriteLine("");
+            Reset();
+                
+                // if inside a function, and the name has been declared
+                // do NOT interpret lines within a function until it is called!
+               if (inside_function && declared_function)
+                {
+                    if (closing_function)
+                    {
+                        // TODO: add support for nested functions?
+                        // clean up current function
+                        // c_function.lines.RemoveAt(0); // remove first line ()
+                        c_function.lines.RemoveAt(c_function.lines.Count - 1); // remove last line
+                        ResetFunction();
+                    }
+                    else if (c_token.type == TokenType.EndFunction)
+                    {
+                        closing_function = true;
+                    }
+                }
+                else
+                    switch (c_token.type)
+                    {
+                        case TokenType.DeclareVariable:
+                            KeplerVariable m_var = variables.DeclareVariable(c_token.token_string);
+                            c_variable = m_var;
+                            declared_variable = true;
+                            break;
+                        case TokenType.GenericAssign:
+                            if (declared_variable)
+                            {
+                                variable_assign = true;
+                            }
+                            else
+                            {
+                                Console.WriteLine("GENERICASSIGN");
+                            }
+                            break;
+                        case TokenType.StaticVariableType:
+                            if (p_token.type == TokenType.AssignFunctionType)
+                            {
+                                // assign function type
+                                ValidateFunctionAssignment();
+                                Enum.TryParse(c_token.token_string, out KeplerType m_type);
+                                c_function.SetType(m_type);
+                            }
+                            else
+                            {
+                                ValidateVariableAssignment();
+                                Enum.TryParse(c_token.token_string, out KeplerType m_type);
+                                c_variable.SetType(m_type);
+                            }
+                            break;
+                        case TokenType.BooleanOperator:
+                            // only does something in evaluation
+                            break;
+                        case TokenType.StaticFloat:
+                            ValidateVariableAssignment();
+                            c_variable.SetFloatValue(float.Parse(c_token.token_string));
+                            break;
+                        case TokenType.StaticInt:
+                            ValidateVariableAssignment();
+                            c_variable.SetIntValue(int.Parse(c_token.token_string));
+                            break;
+                        case TokenType.StaticUnsignedInt:
+                            ValidateVariableAssignment();
+                            c_variable.SetUnsignedIntValue(uint.Parse(c_token.token_string.Substring(1)));
+                            break;
+                        // SetUnsignedIntValue
+                        case TokenType.StaticBoolean:
+                            ValidateVariableAssignment();
+                            c_variable.SetBoolValue(bool.Parse(c_token.token_string));
+                            break;
+                        case TokenType.StartFunction:
+                            // Console.WriteLine("STARTING FUNCTION");
+                            inside_function = true;
+                            break;
+                        case TokenType.StaticModifier:
+                            ValidateVariableAssignment();
+                            Enum.TryParse(c_token.token_string, out KeplerModifier m_mod);
+                            // Console.WriteLine(m_mod);
+                            c_variable.SetModifier(m_mod);
+                            break;
+                        case TokenType.AssignFunctionType:
+                            c_function = functions.DeclareFunction(p_token.token_string);
+                            declared_function = true;
+                            break;
+                        case TokenType.DeclareFunction:
+                            c_function = functions.DeclareFunction(c_token.token_string);
+                            declared_function = true;
+                            // Console.WriteLine("FUNCTION NAME " + c_token.token_string);
+                            break;
+                        case TokenType.DoubleQuote:
+                            inside_string = !inside_string;
+
+                            // exiting string
+                            if (!inside_string) c_variable.SetStringValue(build_string);
+                            else build_string = "";
+                            break;
+                        case TokenType.StringText:
+                            if (build_string.Length == 0)
+                                build_string = build_string + c_token.token_string;
+                            else build_string = build_string + " " + c_token.token_string;
+                            break;
+                        default:
+                            // log the token
+                            break;
+                    }
+
+        void Reset()
+        {
+            declared_variable = false;
+            variable_assign = false;
+            inside_string = false;
+
+            function_assign = false;
+        }
+
+        void ResetFunction()
+        {
+            declared_function = false;
+            inside_function = false;
+            closing_function = false;
+            c_function = new KeplerFunction(); // reset to generic undefined function
+        }

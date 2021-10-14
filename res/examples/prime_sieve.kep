@@ -1,0 +1,80 @@
+start Header
+    check_prime returns Int
+
+    test_number is 4
+    max_number is 1000
+    int_c is 2
+    finished is False
+    isprime is True
+    ! START is 0
+    TOTAL_TIME is 0
+
+    ! string starts with 2 and 3 because they're prime
+    primestring is "2, 3" 
+end Header
+
+start every 1
+    TOTAL_TIME is TOTAL_TIME + 1
+
+    if test_number >= max_number
+        breakout
+    endif
+end every
+
+start check_prime
+    int_c is 2
+    finished is False
+    isprime is True
+
+    ! this requires test_number to be set before calling
+    start forever
+
+        int_sqr is int_c * int_c
+
+        if int_sqr <= test_number
+            int_plus is int_c + 1
+
+            if test_number % int_c equals 0.0
+                isprime is False
+                finished is True
+
+                breakout
+            endif
+            if test_number % int_plus equals 0.0
+                isprime is False
+                finished is True
+
+                breakout
+            endif
+        endif
+
+        ! If int_c equals test_number, that means this number only has
+        ! the factors of 1 and itself!
+        if int_sqr >= test_number
+            isprime is True
+            finished is True
+
+            primestring is primestring + ", " + test_number
+        endif
+
+        if finished   
+            breakout
+        endif
+
+        int_c is int_c + 2
+    end forever
+end check_prime
+
+start forever
+
+    if test_number >= max_number
+        print "All primes up to " + max_number + " (" + TOTAL_TIME + "ms)"
+        print primestring
+
+        breakout
+    endif
+
+    test_number is test_number + 1
+    call check_prime
+
+end forever
