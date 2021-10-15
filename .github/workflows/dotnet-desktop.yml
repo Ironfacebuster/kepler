@@ -12,13 +12,9 @@ jobs:
 
     strategy:
       matrix:
-        configuration: [Debug, Release]
+        configuration: [Debug]
 
     runs-on: windows-latest
-
-    env:
-      PUBLISH_LOCATION: build/VS_PUBLISH_OUTPUT
-      PROJECT_LOCATION: src/kepler.csproj
 
     steps:
     - name: Checkout
@@ -35,6 +31,9 @@ jobs:
     # Publish the executable
     - name: Build Kepler executable
       run: dotnet publish --output $PUBLISH_LOCATION $PROJECT_LOCATION
+      env:
+        PUBLISH_LOCATION: "build/VS_PUBLISH_OUTPUT"
+        PROJECT_LOCATION: "src/kepler.csproj"
     
     # Run tests with a pass/fail exit
     - name: Do local tests
