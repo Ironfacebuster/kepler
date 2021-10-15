@@ -1,4 +1,4 @@
-name: .NET Core Desktop
+name: Building Executable
 
 on:
   push:
