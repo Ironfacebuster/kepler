@@ -17,7 +17,7 @@ After ensuring .NET is installed, you can use the following steps:
 1. Open a command prompt and navigate to the root of your local repository.
 2. Enter `make all` into your command prompt. Wait for all builds and tests to complete.
 3. Navigate to `/build` to find your newly created installation executable.
-4. Run the executable, then Kepler and associated .NET Core versions will be installed.
+4. Run the executable, then Kepler will be installed.
 5. Finally, restart any opened command prompts, and enter `kepler`!
 
 #### **Building on Windows** (with `make`)
