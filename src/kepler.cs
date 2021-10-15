@@ -141,8 +141,8 @@ namespace KeplerCompiler
 
             if (!headless_mode)
             {
-                Console.WriteLine(String.Format("\r\nKepler {0}", StaticValues._VERSION));
-                Console.WriteLine(String.Format("Release date: {0}", StaticValues._RELEASE));
+                Console.WriteLine(String.Format("\r\nKepler {0} ({1})", StaticValues._VERSION, StaticValues._TYPE));
+                Console.WriteLine(String.Format("Build date: {0}\r\n", StaticValues._RELEASE));
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.WriteLine("Live Interpretation");
                 Console.ForegroundColor = ConsoleColor.White;
@@ -244,8 +244,6 @@ namespace KeplerCompiler
             KeplerVariable nan = vars.global.DeclareVariable("NaN", true);
             nan.SetType(KeplerType.NaN);
             nan.SetModifier(KeplerModifier.Constant);
-
-
         }
 
         static void LoadStaticFile(Interpreter interpreter)
@@ -254,6 +252,8 @@ namespace KeplerCompiler
 
             string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             t.Load(directory + "\\kepler_static\\static_values.kep");
+
+            interpreter.statemachine.end_on_eop = false;
 
             while (t.HasNext())
             {

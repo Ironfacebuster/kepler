@@ -32,6 +32,9 @@ jobs:
       with:
         dotnet-version: 3.1.x
 
+    - name: Generate buildtime
+      run: scripts/generate_resources.bat continuous
+
     # Build the executable
     - name: Build Kepler executable
       run: dotnet build --output $env:PUBLISH_LOCATION $env:PROJECT_LOCATION

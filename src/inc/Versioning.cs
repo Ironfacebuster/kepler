@@ -1,13 +1,16 @@
 using KeplerLexer;
 using KeplerLexer.Tokens;
 using KeplerStateMachine;
+using kepler.Properties;
 
 namespace KeplerVersioning
 {
     public class StaticValues
     {
         public static string _VERSION = "v1a1.3.3";
-        public static string _RELEASE = "October 13th, 2021";
+        public static string _TYPE = Resources.type;
+        // public static string _RELEASE = "October 13th, 2021";
+        public static string _RELEASE = Resources.buildtime;
 
         public static LineIterator ReplaceMacros(LineIterator line)
         {

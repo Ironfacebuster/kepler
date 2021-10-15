@@ -7,6 +7,7 @@ linux_publish_location = build/VS_PUBLISH_OUTPUT/LINUX
 test_file = test_file.kep
 project_location = "./src/kepler.csproj"
 
+# by default "make" will produce a "release" version
 all: clean \
 		publish \
 		test_local \
@@ -25,7 +26,8 @@ publish_linux:
 # Publish (build) the executable.
 publish:
 	@echo "Publishing..."; \
-	dotnet publish --output $(publish_location) $(project_location) ;
+	./scripts/generate_resources.bat release ;
+	dotnet build --output $(publish_location) $(project_location) ;
 
 # Pack the published executable into a windows installer.
 pack:
@@ -45,7 +47,7 @@ test_local:
 	@ \
 	./scripts/run_local_tests.bat
 
-# Just an easy way of running the project without building.
+# Alias for "dotnet run" because the project isn't in the root anymore.
 run:
 	@ \
 	dotnet run --project $(project_location) ;
