@@ -166,11 +166,15 @@ namespace Arguments
                     // validate argument if a validator is found
                     if (validator != null)
                     {
+                        // if the validator has "no" arguments, and the tested argument doesn't have a default value of true
+                        if (validator.values.Length == 1 && validator.values[0] == ArgType.BoolTrue && arg.value != "true") ExitWithError(string.Format("{0} argument does not require any values!", arg.argument));
+
                         foreach (string val in validator.values)
                         {
                             if (val == ArgType.AnyValue) valid = true;
                             // if (val == ArgType.NoValue && arg.value == ArgType.BoolTrue) valid = true; // BoolTrue is the default when there is no specified value
                             if (val == arg.value) valid = true;
+                            else if (!valid) ExitWithError(string.Format("{0} is not a valid parameter value for {1}", arg.value, arg.argument));
 
                             if (valid) break;
                         }
@@ -183,20 +187,20 @@ namespace Arguments
             return invalid_arguments.ToArray();
         }
 
-        ArgType GetValidator(Argument arg)
-        {
-            ArgType validator = null;
-            foreach (ArgType v in validators)
-            {
-                if (v.argument == arg.argument)
-                {
-                    validator = v;
-                    break;
-                }
-            }
+        // ArgType GetValidator(Argument arg)
+        // {
+        //     ArgType validator = null;
+        //     foreach (ArgType v in validators)
+        //     {
+        //         if (v.argument == arg.argument)
+        //         {
+        //             validator = v;
+        //             break;
+        //         }
+        //     }
 
-            return validator;
-        }
+        //     return validator;
+        // }
 
         /// <summary>
         /// Using Levenshtein distance, this method finds the closest registered argument and returns it.
@@ -267,6 +271,14 @@ namespace Arguments
             }
             // Step 7
             return d[n, m];
+        }
+
+        void ExitWithError(string error)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(error);
+            Console.ResetColor();
+            Environment.Exit(-1);
         }
     }
 }
