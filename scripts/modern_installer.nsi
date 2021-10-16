@@ -56,11 +56,11 @@ Section "Install Kepler" SecDummy
   CreateDirectory $INSTDIR\kepler_static 
   CreateDirectory $INSTDIR\examples 
   SetOutPath $INSTDIR 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.deps.json" 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.dll" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.deps.json" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.dll" 
   File "..\build\VS_PUBLISH_OUTPUT\kepler.exe" 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.pdb" 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.pdb" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
   File "..\res\changelog.txt" 
   
   SetOutPath "$INSTDIR\kepler_static" 

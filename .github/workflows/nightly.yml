@@ -1,0 +1,42 @@
+name: Nightly Build
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+
+jobs:
+  nightly:
+    strategy:
+      matrix:
+        configuration: [Nightly]
+
+    runs-on: windows-latest
+
+    env:
+      PUBLISH_LOCATION: "build/VS_BUILD_OUTPUT/kepler"
+      ZIP_LOCATION: "build/kepler_nightly.zip"
+      ZIP_FOLDER: "build"
+      PROJECT_LOCATION: "src/kepler.csproj"
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.x
+
+    - name: Generate buildtime
+      run: scripts/generate_resources.bat nightly
+
+    # Build the executable
+    - name: Build Kepler executable
+      run: dotnet build --output $env:PUBLISH_LOCATION $env:PROJECT_LOCATION
+
+    - name: Zip executable
+      run: Compress-Archive -Path $env:PUBLISH_LOCATION -DestinationPath $env:ZIP_LOCATION
+
+    # TODO: add releasing

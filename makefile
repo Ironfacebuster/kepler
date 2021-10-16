@@ -2,6 +2,8 @@ output_location = build/VS_BUILD_OUTPUT
 mac_output_location = build/VS_BUILD_OUTPUT/MAC
 linux_output_location = build/VS_BUILD_OUTPUT/LINUX
 publish_location = build/VS_PUBLISH_OUTPUT
+nightly_location = build/nightly
+builds_location = build
 mac_publish_location = build/VS_PUBLISH_OUTPUT/MAC
 linux_publish_location = build/VS_PUBLISH_OUTPUT/LINUX
 test_file = test_file.kep
@@ -26,8 +28,16 @@ publish_linux:
 # Publish (build) the executable.
 publish:
 	@echo "Publishing..."; \
-	./scripts/generate_resources.bat release ;
-	dotnet build --output $(publish_location) $(project_location) ;
+	./scripts/generate_resources.bat release ; \
+	dotnet publish -c Release -o $(publish_location) -r win-x64 -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true $(project_location)
+
+# Create a nightly build.
+nightly:
+	@echo "Creating nightly release..."; \
+	./scripts/generate_resources.bat nightly; \
+	dotnet clean $(project_location); \
+	dotnet publish -c Debug -o $(nightly_location) -r win-x64 -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true $(project_location); \
+	tar.exe -cf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/kepler.exe"
 
 # Pack the published executable into a windows installer.
 pack:

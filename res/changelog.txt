@@ -1,5 +1,6 @@
 a1.3.3
-+ Added argument checking and an invalid argument warning.
+! Made releases single file deployments.
++ Added argument checking, unrecognized argument warning, and invalid argument parameter errors.
 + Added string "greater than", "less than", etc. comparisons.
 + Added "malformed" string error message.
 ! Fixed broken check for unexpected end of conditional.
