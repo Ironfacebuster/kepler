@@ -1,0 +1,5 @@
+This nightly build of Kepler is a self contained executable.
+
+In order to use this build, you can place it alongside your already installed Kepler executable!
+
+Run the nightly build with "kepler-nightly".

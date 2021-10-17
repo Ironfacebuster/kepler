@@ -23,7 +23,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Install the .NET Core workload
     - name: Install .NET Core
       uses: actions/setup-dotnet@v1
       with:
@@ -32,9 +31,11 @@ jobs:
     - name: Generate buildtime
       run: scripts/generate_resources.bat nightly
 
-    # Build the executable
     - name: Build Kepler executable
       run: dotnet build --output $env:PUBLISH_LOCATION $env:PROJECT_LOCATION
+
+    - name: Copy Nightly readme
+      run: cp "res/nightly.txt" "$env:PUBLISH_LOCATION/readme.txt"
 
     - name: Zip executable
       run: Compress-Archive -Path $env:PUBLISH_LOCATION -DestinationPath $env:ZIP_LOCATION
