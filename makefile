@@ -64,3 +64,8 @@ test_local:
 run:
 	@ \
 	dotnet run --project $(project_location) ;
+
+cleanup:
+	@echo Cleaning up after build... \
+	rm -rf "src/obj"; \
+	rm -rf "src/bin";
