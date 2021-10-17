@@ -1,7 +1,7 @@
 @echo off
 
 rem create resources folder if it doesn't exist already
-mkdir src/Resources
+if not exist "src/Resources" mkdir "src/Resources"
 
 if "%1" == "" (
     <nul set /p ="debug" > src/Resources/type.txt
