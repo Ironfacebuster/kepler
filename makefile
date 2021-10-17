@@ -66,6 +66,7 @@ run:
 	dotnet run --project $(project_location) ;
 
 cleanup:
-	@echo Cleaning up after build... \
+	@echo Cleaning up after build...; \
 	rm -rf "src/obj"; \
-	rm -rf "src/bin";
+	rm -rf "src/bin"; \
+	rm -rf "src/Resources";
