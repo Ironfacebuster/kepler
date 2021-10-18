@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
-using KeplerExceptions;
-using KeplerLexer.Tokens;
-using KeplerStateMachine;
+using Kepler.Exceptions;
+using Kepler.Lexer.Tokens;
+using Kepler.LogicControl;
 
 
-namespace KeplerLexer
+namespace Kepler.Lexer
 {
     public class Tokenizer
     {
@@ -178,7 +178,7 @@ namespace KeplerLexer
                     if (tokenized.Length < 2)
                     {
                         this.tokens = m_tokens;
-                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new KeplerTracing.KeplerErrorStack(), i);
+                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
                     }
                 }
                 else { m_tokens.Add(new Token(pair.type, i, tokenized)); i += pair.increment; }
@@ -189,7 +189,7 @@ namespace KeplerLexer
                     // this is not graceful but it'll have to do
                     this.tokens = m_tokens;
                     this.m_num = this.tokens.Count - 1;
-                    throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new KeplerTracing.KeplerErrorStack(), i);
+                    throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
                 }
             }
 
@@ -575,7 +575,7 @@ namespace KeplerLexer
     }
 }
 
-namespace KeplerLexer.Tokens
+namespace Kepler.Lexer.Tokens
 {
     public enum TokenType
     {

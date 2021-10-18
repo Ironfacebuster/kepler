@@ -1,12 +1,12 @@
 ﻿using System;
 // using System.Collections.Generic;
-using KeplerLexer;
+using Kepler.Lexer;
 using Arguments;
-using KeplerInterpreter;
-using KeplerVersioning;
-using KeplerStateMachine;
-using KeplerExceptions;
-using KeplerTracing;
+using Kepler.Interpreting;
+using Kepler.Versioning;
+using Kepler.LogicControl;
+using Kepler.Exceptions;
+using Kepler.Tracing;
 using KeplerVariables;
 using Help;
 using System.IO;

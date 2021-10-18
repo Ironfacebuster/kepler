@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using KeplerLexer;
-using KeplerLexer.Tokens;
+using Kepler.Lexer;
+using Kepler.Lexer.Tokens;
 using KeplerVariables;
-using KeplerInterpreter;
-using KeplerExceptions;
-// using KeplerLexer.Tokens;
+using Kepler.Interpreting;
+using Kepler.Exceptions;
+// using Kepler.Lexer.Tokens;
 using System.IO;
 
-namespace KeplerStateMachine
+namespace Kepler.LogicControl
 {
     public class StateMachine
     {

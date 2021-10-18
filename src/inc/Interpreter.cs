@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using KeplerLexer;
-using KeplerStateMachine;
-using KeplerLexer.Tokens;
+using Kepler.Lexer;
+using Kepler.LogicControl;
+using Kepler.Lexer.Tokens;
 using KeplerVariables;
-using KeplerTracing;
-using KeplerExceptions;
+using Kepler.Tracing;
+using Kepler.Exceptions;
 
-namespace KeplerInterpreter
+namespace Kepler.Interpreting
 {
     public class Interpreter
     {

@@ -1,9 +1,9 @@
-using KeplerLexer;
-using KeplerLexer.Tokens;
-using KeplerStateMachine;
+using Kepler.Lexer;
+using Kepler.Lexer.Tokens;
+using Kepler.LogicControl;
 using kepler.Properties;
 
-namespace KeplerVersioning
+namespace Kepler.Versioning
 {
     public class StaticValues
     {

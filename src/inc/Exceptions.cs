@@ -1,8 +1,8 @@
 using System;
-using KeplerTracing;
-using KeplerLexer;
+using Kepler.Tracing;
+using Kepler.Lexer;
 
-namespace KeplerExceptions
+namespace Kepler.Exceptions
 {
     // public class TokenException : Exception
     // {

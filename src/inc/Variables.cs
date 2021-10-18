@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using KeplerLexer;
-using KeplerInterpreter;
+using Kepler.Lexer;
+using Kepler.Interpreting;
 using System.Diagnostics;
 using System;
 using System.Linq;
-using KeplerExceptions;
+using Kepler.Exceptions;
 
 namespace KeplerVariables
 {
