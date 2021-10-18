@@ -119,8 +119,9 @@ namespace KeplerCompiler
             // "load" required static values
             LoadStaticValues(interpreter);
 
-            // load static values from file
-            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticFile(interpreter);
+            // this doesn't work right now because the executable is standalone
+            // load static values from file if the static directory exists
+            // if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "kepler_static\\")) LoadStaticFile(interpreter);
 
             // do interpretation
             while (tokenizer.HasNext() || interpreter.interrupts.HasAnyInterrupts())
@@ -162,9 +163,9 @@ namespace KeplerCompiler
             // "load" required static values
             LoadStaticValues(interpreter);
 
-            // load static values from file
-            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticFile(interpreter);
-
+            // this doesn't work right now because the executable is standalone
+            // load static values from file if the static directory exists
+            // if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "kepler_static\\")) LoadStaticFile(interpreter);
 
             int line = 1;
             while (true)
@@ -248,21 +249,26 @@ namespace KeplerCompiler
             nan.SetModifier(KeplerModifier.Constant);
 
             // static function
-            KeplerFunction get_start = functs.DeclareFunction("$_GETSTART", true);
+            KeplerFunction get_start = functs.DeclareFunction("$_GETSTART", true, true);
             get_start.SetType(KeplerType.String);
-            get_start.lines.Add(new LineIterator(string.Format("return \"{0}\"", DateTime.Now.Ticks), 0, 1));
-            get_start.SetType(KeplerType.String);
+
+            string START = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond).ToString();
+            get_start.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue(START);
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
 
             // dynamic function!
             KeplerFunction get_time = functs.DeclareFunction("$_GETTIME", true, true);
             get_time.SetType(KeplerType.String);
             get_time.internal_call = (interpreter, args) =>
             {
-                if (interpreter.verbose_debug)
-                    Console.WriteLine("TEST");
-                // return new Kep
                 KeplerVariable res = new KeplerVariable();
-                res.SetStringValue(DateTime.Now.Ticks.ToString());
+                res.SetStringValue((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond).ToString());
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
