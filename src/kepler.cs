@@ -249,7 +249,7 @@ namespace KeplerCompiler
             nan.SetModifier(KeplerModifier.Constant);
 
             // static function
-            KeplerFunction get_start = functs.DeclareFunction("$_GETSTART", true, true);
+            KeplerFunction get_start = functs.DeclareFunction("getstart", true, true);
             get_start.SetType(KeplerType.String);
 
             string START = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond).ToString();
@@ -263,12 +263,24 @@ namespace KeplerCompiler
             };
 
             // dynamic function!
-            KeplerFunction get_time = functs.DeclareFunction("$_GETTIME", true, true);
+            KeplerFunction get_time = functs.DeclareFunction("gettime", true, true);
             get_time.SetType(KeplerType.String);
             get_time.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
                 res.SetStringValue((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond).ToString());
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+            // input function
+            KeplerFunction get_input = functs.DeclareFunction("input", true, true);
+            get_input.SetType(KeplerType.String);
+            get_input.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue(Console.ReadLine());
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
