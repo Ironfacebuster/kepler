@@ -131,6 +131,9 @@ namespace Kepler.Exceptions
                 case KeplerErrorCode.LINK_OUT_HEADER:
                     error_string = "Syntax Error: Cannot link file outside of Header.";
                     break;
+                case KeplerErrorCode.UNEXP_RETURN:
+                    error_string = "Syntax Error: Unexpected return, nothing to return from.";
+                    break;
                 case KeplerErrorCode.UNEXP_BREAKOUT:
                     error_string = "Syntax Error: Unexpected breakout, nothing to break out of.";
                     break;
@@ -241,6 +244,7 @@ namespace Kepler.Exceptions
         UNEXP_END_INT,
         UNDECLARED_INT_ID,
         LINK_OUT_HEADER,
+        UNEXP_RETURN,
         UNEXP_BREAKOUT,
         CALL_UNDEF_FUNCT_TYPE,
         ASSIGN_UNDEF_FUNCT_TYPE,

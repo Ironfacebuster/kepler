@@ -171,7 +171,7 @@ namespace Kepler.LogicControl
 
         void HandleFunctionReturn(Token token, TokenState state)
         {
-            if (!this.interpreter.is_function) throw new Exception("Not in a function!");
+            if (!this.interpreter.is_function) throw new KeplerError(KeplerErrorCode.UNEXP_RETURN);
 
             state.booleans["return_value"] = true;
         }
