@@ -10,6 +10,7 @@ using Kepler.Tracing;
 using KeplerVariables;
 using Help;
 using System.IO;
+using System.Linq;
 
 namespace KeplerCompiler
 {
@@ -220,6 +221,7 @@ namespace KeplerCompiler
         static void LoadStaticValues(Interpreter interpreter)
         {
             KeplerVariableManager vars = interpreter.statemachine.variables;
+            KeplerFunctionManager functs = interpreter.statemachine.functions;
 
             KeplerVariable version_var = vars.global.DeclareVariable("$_VERSION", true);
             version_var.SetStringValue(StaticValues._VERSION);
@@ -244,6 +246,27 @@ namespace KeplerCompiler
             KeplerVariable nan = vars.global.DeclareVariable("NaN", true);
             nan.SetType(KeplerType.NaN);
             nan.SetModifier(KeplerModifier.Constant);
+
+            // static function
+            KeplerFunction get_start = functs.DeclareFunction("$_GETSTART", true);
+            get_start.SetType(KeplerType.String);
+            get_start.lines.Add(new LineIterator(string.Format("return \"{0}\"", DateTime.Now.Ticks), 0, 1));
+            get_start.SetType(KeplerType.String);
+
+            // dynamic function!
+            KeplerFunction get_time = functs.DeclareFunction("$_GETTIME", true, true);
+            get_time.SetType(KeplerType.String);
+            get_time.internal_call = (interpreter, args) =>
+            {
+                if (interpreter.verbose_debug)
+                    Console.WriteLine("TEST");
+                // return new Kep
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue(DateTime.Now.Ticks.ToString());
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
         }
 
         static void LoadStaticFile(Interpreter interpreter)

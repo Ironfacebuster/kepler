@@ -772,11 +772,8 @@ namespace Kepler.LogicControl
         {
             int stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
 
-            if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
-
-            function.ResetLines(); // reset line token indexes to zero
-
             Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
+
             f_interpreter.statemachine.variables = this.variables.Copy();
             f_interpreter.statemachine.functions = this.functions.Copy();
             f_interpreter.statemachine.function_type = function.type;
@@ -787,17 +784,31 @@ namespace Kepler.LogicControl
             f_interpreter.filename = this.interpreter.filename;
             f_interpreter.is_function = true;
 
-
-            // do interpretation
-            foreach (LineIterator line in function.lines)
+            if (function.is_internal)
             {
-                f_interpreter.Interpret(line);
-                if (f_interpreter.killed) break;
+                if (this.verbose_debug)
+                    Console.WriteLine("EXECUTING INTERNAL FUNCT!");
+                // call with null argument list, since arguments aren't properly implemented yet
+                f_interpreter.statemachine.SetReturnValue(function.internal_call(f_interpreter, null));
             }
+            else
+            {
+                if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
 
-            function.Reset(); // reset target, argument assignments
+                function.ResetLines(); // reset line token indexes to zero
 
-            this.interpreter.tracer.PopStack(stack_id);
+
+                // do interpretation
+                foreach (LineIterator line in function.lines)
+                {
+                    f_interpreter.Interpret(line);
+                    if (f_interpreter.killed) break;
+                }
+
+                function.Reset(); // reset target, argument assignments
+
+                this.interpreter.tracer.PopStack(stack_id);
+            }
 
             if (f_interpreter.statemachine.HasReturnValue())
             {

@@ -345,13 +345,14 @@ namespace KeplerVariables
         public IDictionary<string, KeplerFunction> global = new Dictionary<string, KeplerFunction>();
         public IDictionary<string, KeplerFunction> local = new Dictionary<string, KeplerFunction>();
 
-        public KeplerFunction DeclareFunction(string name, bool global_override)
+        public KeplerFunction DeclareFunction(string name, bool global_override, bool is_internal = false)
         {
             if (global.ContainsKey(name)) return global[name];
             if (local.ContainsKey(name)) return local[name];
 
             // functions are created the first time they're seen
             KeplerFunction n_funct = new KeplerFunction(name);
+            n_funct.is_internal = is_internal;
             if (global_override) global[name] = n_funct;
             else local[name] = n_funct;
             return n_funct;
@@ -400,11 +401,14 @@ namespace KeplerVariables
         public KeplerType type;
         public string name;
         public string id;
+        public bool is_internal = false;
+        public Func<Kepler.Interpreting.Interpreter, List<KeplerVariable>, KeplerVariable> internal_call;
 
-        public KeplerFunction(string name)
+        public KeplerFunction(string name, bool is_internal = false)
         {
             this.name = name;
             this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+            this.is_internal = is_internal;
         }
 
         public void SetType(KeplerType type)
@@ -479,11 +483,7 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            // string output = "KeplerFunction";
-            // foreach (LineIterator line in lines)
-            // {
-            //     output = output + line + "\r\n";
-            // }
+            if (this.is_internal) return string.Format("(#{0}) INTERNAL KeplerFunction {1}", id, type);
             return string.Format("(#{0}) KeplerFunction {1}", id, type);
         }
     }
