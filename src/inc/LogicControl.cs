@@ -22,12 +22,15 @@ namespace Kepler.LogicControl
 
         // every line starts with a level 1 token
         public List<TokenState> level1 = new List<TokenState>();
-        bool schedule_execute_function = false;
 
         public bool has_linked_file;
         public KeplerVariableManager linked_variables;
         public KeplerFunctionManager linked_functions;
-        public KeplerVariable return_value = new KeplerVariable();
+
+        // function things
+        bool schedule_execute_function = false;
+        public KeplerVariable function_return_value;
+        public KeplerType function_type;
 
         bool inside_header = false;
         KeplerFunction scheduled_function = new KeplerFunction("NUL");
@@ -131,7 +134,7 @@ namespace Kepler.LogicControl
             level1.Add(new TokenState(TokenType.ConditionalIf, HandleConditionalIf));
             level1.Add(new TokenState(TokenType.ConditionalElseIf, HandleConditionalElseIf));
             level1.Add(new TokenState(TokenType.ConditionalElse, HandleConditionalElse));
-            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn)); // TODO: return values!
+            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn)); // TODO: return values!
             level1.Add(StartInterval);
             level1.Add(EndInterval);
             level1.Add(StartLoop);
@@ -167,6 +170,8 @@ namespace Kepler.LogicControl
 
         void HandleFunctionReturn(Token token, TokenState state)
         {
+            if (!this.interpreter.is_function) throw new Exception("Not in a function!");
+
             state.booleans["return_value"] = true;
         }
 
@@ -209,6 +214,8 @@ namespace Kepler.LogicControl
                 throw new KeplerError(KeplerErrorCode.FALSE_ASSERTION, new string[] { result.GetValueAsBool().ToString() });
             if (state.booleans["throw_error"])
                 state.strings["error_string"] = result.GetValueAsString();
+            if (state.booleans["return_value"])
+                this.SetReturnValue(result);
         }
         KeplerVariable DoGenericOperation(Token token)
         {
@@ -451,7 +458,14 @@ namespace Kepler.LogicControl
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval((int)decimal.Parse(token.token_string));
-            // state.c_interrupt.SetInterval((int)double.Parse(token.token_string)); // cast to int
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetFloatValue(decimal.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticInt(Token token, TokenState state)
         {
@@ -461,6 +475,14 @@ namespace Kepler.LogicControl
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval(int.Parse(token.token_string));
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetIntValue(int.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticUnsignedInt(Token token, TokenState state)
         {
@@ -470,6 +492,14 @@ namespace Kepler.LogicControl
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval((int)uint.Parse(token.token_string.Substring(1))); // cast to int
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetUnsignedIntValue(uint.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticBool(Token token, TokenState state)
         {
@@ -477,6 +507,14 @@ namespace Kepler.LogicControl
                 state.left_side_operator.SetBoolValue(bool.Parse(token.token_string));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + bool.Parse(token.token_string);
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetBoolValue(bool.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
             // if (state.booleans["validate_conditional"])
             //     state.booleans["inside_conditional"] = bool.Parse(token.token_string);
         }
@@ -520,6 +558,14 @@ namespace Kepler.LogicControl
             }
             else if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + string_value;
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetStringValue(string_value);
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticModifier(Token token, TokenState state)
         {
@@ -547,7 +593,7 @@ namespace Kepler.LogicControl
             if (schedule_execute_function)
             {
                 // this.interpreter.tracer.TraceFunction(scheduled_function);
-                ExecuteFunction(scheduled_function);
+                ExecuteFunction(scheduled_function, state);
                 schedule_execute_function = false;
             }
         }
@@ -590,7 +636,7 @@ namespace Kepler.LogicControl
             }
             else if (state.booleans["return_value"])
             {
-                return_value = variables.GetVariable(token.token_string);
+                this.SetReturnValue(variables.GetVariable(token.token_string));
             }
             // else if (state.booleans["inside_interval"])
             // {
@@ -634,7 +680,7 @@ namespace Kepler.LogicControl
 
                     if (verbose_debug) Console.WriteLine(string.Format("Scheduling call of {0} to EOL", c_function.name));
                 }
-                else ExecuteFunction(c_function);
+                else ExecuteFunction(c_function, state);
 
                 // interpret lines within function
                 // interpret until "ReturnFunction" is encountered
@@ -705,7 +751,7 @@ namespace Kepler.LogicControl
             if (verbose_debug) Console.WriteLine("EXIT HEADER");
             inside_header = false;
         }
-        void ExecuteFunction(KeplerFunction function)
+        void ExecuteFunction(KeplerFunction function, TokenState state)
         {
             int stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
 
@@ -716,23 +762,51 @@ namespace Kepler.LogicControl
             Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
             f_interpreter.statemachine.variables = this.variables.Copy();
             f_interpreter.statemachine.functions = this.functions.Copy();
+            f_interpreter.statemachine.function_type = function.type;
 
             f_interpreter.verbose_debug = this.verbose_debug;
             f_interpreter.tracer = this.interpreter.tracer;
             f_interpreter.filename = this.interpreter.filename;
+            f_interpreter.is_function = true;
+
 
             // do interpretation
             foreach (LineIterator line in function.lines)
             {
                 f_interpreter.Interpret(line);
+                if (f_interpreter.killed) break;
             }
 
             function.Reset(); // reset target, argument assignments
 
             this.interpreter.tracer.PopStack(stack_id);
 
-            // if (f_interpreter.HasReturnValue())
-            //     return f_interpreter.return_value;
+            if (f_interpreter.statemachine.HasReturnValue())
+            {
+                if (this.verbose_debug)
+                {
+                    Console.WriteLine("RETURN VALUE!");
+                    Console.WriteLine(f_interpreter.statemachine.function_return_value);
+                    Console.WriteLine(function.target.id);
+                }
+
+                if (state.booleans["variable_assign"])
+                {
+
+                    state.left_side_operator.AssignValue(f_interpreter.statemachine.function_return_value);
+                    // KeplerVariable target = this.variables.GetVariableByID(function.target.id);
+                }
+            }
+        }
+
+        void SetReturnValue(KeplerVariable return_value)
+        {
+            if (this.function_type != return_value.type) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { return_value.type.ToString(), this.function_type.ToString() });
+
+            this.function_return_value = return_value;
+
+            // break out
+            this.interpreter.Kill();
         }
         KeplerVariable CreateTemporaryVariable(Token token)
         {
@@ -766,6 +840,11 @@ namespace Kepler.LogicControl
             }
 
             return var;
+        }
+
+        public bool HasReturnValue()
+        {
+            return !(this.function_return_value == null);
         }
     }
 

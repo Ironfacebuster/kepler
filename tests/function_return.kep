@@ -1,11 +1,23 @@
 start Header
     function returns Int
+    function2 returns String
 end Header
 
 start function
-    return 1
+    return 1 + 1
+    
+    ! shouldn't happen
+    return 0
 end function
 
-assert call function equals 1
+res is call function
+assert res equals 2
+
+start function2
+    return $_VERSION
+end function2
+
+res2 is call function2
+assert res2 equals $_VERSION
 
 print "SUCCESS"

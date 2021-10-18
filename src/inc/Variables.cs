@@ -56,6 +56,20 @@ namespace KeplerVariables
             throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
         }
 
+        public KeplerVariable GetVariableByID(string id)
+        {
+            // search local first
+            foreach (KeyValuePair<string, KeplerVariable> var in this.local)
+            {
+                Console.WriteLine(var.Value);
+                if (var.Value.id == id) return var.Value;
+            }
+
+            if (this.global != this) return this.global.GetVariableByID(id);
+
+            throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { string.Format("#{0} is not a valid variable ID!", id) });
+        }
+
         // allow copying of global for "scoping"
         public KeplerVariableManager Copy()
         {
@@ -83,6 +97,7 @@ namespace KeplerVariables
 
     public class KeplerVariable
     {
+        public string id = "";
         public KeplerType type = KeplerType.Unassigned;
         public KeplerModifier modifier = KeplerModifier.Variable;
         public decimal FloatValue = 0;
@@ -91,6 +106,10 @@ namespace KeplerVariables
         public string StringValue = "";
         public bool BoolValue = false;
 
+        public KeplerVariable()
+        {
+            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+        }
 
         public void SetModifier(KeplerModifier modifier)
         {
@@ -196,7 +215,7 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = string.Format("{0} {1}", this.modifier, this.type);
+            string output = string.Format("(#{0}) {1} {2}", this.id, this.modifier, this.type);
 
             switch (type)
             {

@@ -18,6 +18,7 @@ namespace Kepler.Interpreting
         public bool verbose_debug = false;
         public bool debug = false;
         public bool has_parent = false;
+        public bool is_function = false;
         public Interpreter parent;
         public bool is_global = false;
         public Interpreter global;
