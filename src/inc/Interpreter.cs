@@ -261,6 +261,12 @@ namespace Kepler.Interpreting
                     conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
                     conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
 
+                    if (this.is_function)
+                    {
+                        conditional_int.statemachine.function_type = this.statemachine.function_type;
+                        conditional_int.statemachine.function_id = this.statemachine.function_id;
+                        conditional_int.is_function = true;
+                    }
 
                     conditional_int.verbose_debug = verbose_debug;
                     conditional_int.tracer = this.tracer;

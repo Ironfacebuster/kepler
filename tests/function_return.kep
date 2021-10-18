@@ -1,6 +1,7 @@
 start Header
     function returns Int
     function2 returns String
+    function3 returns Int
 end Header
 
 start function
@@ -14,10 +15,34 @@ res is call function
 assert res equals 2
 
 start function2
-    return $_VERSION
+    if True
+        return $_VERSION
+    endif
 end function2
 
 res2 is call function2
 assert res2 equals $_VERSION
+
+! This tests function scopes
+ext_hello is "Goodbye!"
+start function3
+    start Header
+        tmp_funct returns String
+    end Header
+    
+    ! this function should not make the outer function exit
+    start tmp_funct
+        return "Hello world!"
+    end tmp_funct
+    
+    hello is call tmp_funct
+    ext_hello is call tmp_funct
+    
+    assert hello equals "Hello world!"
+end function3
+
+call function3
+
+assert ext_hello equals "Hello world!"
 
 print "SUCCESS"

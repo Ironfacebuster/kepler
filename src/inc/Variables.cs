@@ -399,10 +399,12 @@ namespace KeplerVariables
         bool has_target = false;
         public KeplerType type;
         public string name;
+        public string id;
 
         public KeplerFunction(string name)
         {
             this.name = name;
+            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
         }
 
         public void SetType(KeplerType type)
@@ -482,7 +484,7 @@ namespace KeplerVariables
             // {
             //     output = output + line + "\r\n";
             // }
-            return string.Format("KeplerFunction {0}", type);
+            return string.Format("(#{0}) KeplerFunction {1}", id, type);
         }
     }
 

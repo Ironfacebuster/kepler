@@ -31,6 +31,7 @@ namespace Kepler.LogicControl
         bool schedule_execute_function = false;
         public KeplerVariable function_return_value;
         public KeplerType function_type;
+        public string function_id;
 
         bool inside_header = false;
         KeplerFunction scheduled_function = new KeplerFunction("NUL");
@@ -734,6 +735,22 @@ namespace Kepler.LogicControl
 
             interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
         }
+
+        void KillAllByFunctionID(string function_id)
+        {
+            Interpreter parent_interpreter = this.interpreter;
+
+            while (true)
+            {
+                if (parent_interpreter.statemachine.function_id != function_id) break;
+
+                parent_interpreter.Kill();
+                parent_interpreter = parent_interpreter.parent;
+            }
+
+            this.interpreter.Kill();
+        }
+
         void HandleAssignFunctionType(Token token, TokenState state)
         {
             state.booleans["function_assign"] = true;
@@ -763,6 +780,7 @@ namespace Kepler.LogicControl
             f_interpreter.statemachine.variables = this.variables.Copy();
             f_interpreter.statemachine.functions = this.functions.Copy();
             f_interpreter.statemachine.function_type = function.type;
+            f_interpreter.statemachine.function_id = function.id;
 
             f_interpreter.verbose_debug = this.verbose_debug;
             f_interpreter.tracer = this.interpreter.tracer;
@@ -805,8 +823,19 @@ namespace Kepler.LogicControl
 
             this.function_return_value = return_value;
 
+            // simple recursive loop for now
+            Interpreter parent_interpreter = this.interpreter;
+
+            while (true)
+            {
+                if (parent_interpreter.statemachine.function_id != this.function_id) break;
+
+                parent_interpreter = parent_interpreter.parent;
+                parent_interpreter.statemachine.function_return_value = return_value;
+            }
+
             // break out
-            this.interpreter.Kill();
+            KillAllByFunctionID(this.function_id);
         }
         KeplerVariable CreateTemporaryVariable(Token token)
         {
