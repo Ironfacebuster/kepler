@@ -201,6 +201,7 @@ namespace Kepler.Interpreting
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT LOOP <{0}>", c_interrupt.id));
 
+                    // Console.WriteLine("DOING INFINITE LOOPS");
                     this.HandleInterrupts(true);
                 }
                 if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
@@ -396,48 +397,53 @@ namespace Kepler.Interpreting
 
         public void HandleInterrupts(bool only_infinite)
         {
+
             // do interrupts
-            List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
-
-            for (int i = 0; i < interrupts.Count; ++i)
+            while (this.interrupts.HasAnyInterrupts())
             {
-                KeplerInterrupt interrupt = interrupts[i];
-                if (!interrupt.isInfinite() && only_infinite) continue;
+                List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
 
-                if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
-
-                int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
-
-                KeplerFunction int_function = interrupt.function;
-
-                int_function.ResetLines();
-
-                // maybe move this to when the interrupt is created?
-                // seems like creating a new interpreter could cause a bit of delay
-                Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
-
-                f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
-                f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
-
-                f_interpreter.statemachine.is_interrupt = true;
-                f_interpreter.statemachine.interrupt_id = interrupts[i].id;
-
-                f_interpreter.verbose_debug = this.verbose_debug;
-                f_interpreter.debug = this.debug;
-                f_interpreter.tracer = this.tracer;
-                f_interpreter.filename = this.filename;
-
-                // do interpretation
-                foreach (LineIterator line in int_function.lines)
+                for (int i = 0; i < interrupts.Count; ++i)
                 {
-                    if (this.interrupts.HasInterrupt(interrupts[i].id))
-                        f_interpreter.Interpret(line);
-                    else break;
+                    KeplerInterrupt interrupt = interrupts[i];
+                    if (!interrupt.isInfinite() && only_infinite) continue;
+
+                    if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
+
+                    int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
+
+                    KeplerFunction int_function = interrupt.function;
+
+                    int_function.ResetLines();
+
+                    // maybe move this to when the interrupt is created?
+                    // seems like creating a new interpreter could cause a bit of delay
+                    Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
+
+                    f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
+                    f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
+
+                    f_interpreter.statemachine.is_interrupt = true;
+                    f_interpreter.statemachine.interrupt_id = interrupts[i].id;
+
+                    f_interpreter.verbose_debug = this.verbose_debug;
+                    f_interpreter.debug = this.debug;
+                    f_interpreter.tracer = this.tracer;
+                    f_interpreter.filename = this.filename;
+
+                    // do interpretation
+                    foreach (LineIterator line in int_function.lines)
+                    {
+                        if (this.interrupts.HasInterrupt(interrupts[i].id))
+                            f_interpreter.Interpret(line);
+                        else break;
+                    }
+
+                    interrupts[i].Reset();
+
+                    this.tracer.PopStack(stack_id);
                 }
 
-                interrupts[i].Reset();
-
-                this.tracer.PopStack(stack_id);
             }
         }
 
