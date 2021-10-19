@@ -1,0 +1,25 @@
+start Header
+    factorial returns uInt
+    
+    number is 5
+end Header
+
+start factorial
+    stop is number + 1
+    res is u1
+    count is 1
+    
+    start forever
+        if count >= stop
+            breakout
+        endif
+        
+        res is res * count
+        count is count + 1
+    end forever
+    
+    return res
+end factorial
+
+factor is call factorial
+print number + "! is " + factor
