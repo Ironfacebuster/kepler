@@ -1,21 +1,27 @@
 start Header
-    factorial returns uInt
+    factorial returns Float
     
-    number is 5
+    print "Enter a non-negative number between 1 and 27"
+    number is call input
 end Header
 
 start factorial
-    stop is number + 1
-    res is u1
+    stop is number
+    res is 1.0
     count is 1
     
+    ! max value
+    if 28 <= stop
+        throw "Cannot calculate factorial of numbers greater than 27!"
+    endif
+    
     start forever
-        if count >= stop
-            breakout
-        endif
-        
         res is res * count
         count is count + 1
+        
+        if count > stop
+            breakout
+        endif
     end forever
     
     return res
