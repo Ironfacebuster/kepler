@@ -59,10 +59,12 @@ namespace Kepler.Tracing
             return this.stack.Count - 1;
         }
 
-        public void PopStack(int index)
+        public void PopStack(int id)
         {
-            if (this.stack[index].count > 1) this.stack[index].Decrement();
-            else this.stack.Remove(this.stack[index]);
+            id = id - 1;
+
+            if (this.stack[id].count > 1) this.stack[id].Decrement();
+            else this.stack.Remove(this.stack[id]);
         }
 
         public string GetStack()
