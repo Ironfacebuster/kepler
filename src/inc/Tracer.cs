@@ -61,7 +61,8 @@ namespace Kepler.Tracing
 
         public void PopStack(int id)
         {
-            id = id - 1;
+            // TODO: better "id" system
+            if (id == this.stack.Count) id = id - 1;
 
             if (this.stack[id].count > 1) this.stack[id].Decrement();
             else this.stack.Remove(this.stack[id]);
