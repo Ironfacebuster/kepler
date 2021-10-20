@@ -235,7 +235,7 @@ namespace Kepler.LogicControl
                 Console.WriteLine(b_operand);
             }
 
-            if (token.operation == OperationType.Equality)
+            if (token.operation == OperationType.StrictEquality)
             {
                 if (a_operand.type != b_operand.type)
                     result.SetBoolValue(false);
@@ -265,6 +265,36 @@ namespace Kepler.LogicControl
                             result.SetBoolValue(false);
                             break;
                     }
+                }
+
+                return result;
+            }
+
+            if (token.operation == OperationType.Equality)
+            {
+                switch (a_operand.type)
+                {
+                    case KeplerType.Float:
+                        result.SetBoolValue(a_operand.GetValueAsFloat() == b_operand.GetValueAsFloat());
+                        break;
+                    case KeplerType.Int:
+                        result.SetBoolValue(a_operand.GetValueAsInt() == b_operand.GetValueAsInt());
+                        break;
+                    case KeplerType.uInt:
+                        result.SetBoolValue(a_operand.GetValueAsUnsignedInt() == b_operand.GetValueAsUnsignedInt());
+                        break;
+                    case KeplerType.Boolean:
+                        result.SetBoolValue(a_operand.GetValueAsBool() == b_operand.GetValueAsBool());
+                        break;
+                    case KeplerType.String:
+                        result.SetBoolValue(a_operand.GetValueAsString() == b_operand.GetValueAsString());
+                        break;
+                    case KeplerType.NaN:
+                        result.SetBoolValue(true);
+                        break;
+                    default:
+                        result.SetBoolValue(false);
+                        break;
                 }
 
                 return result;

@@ -240,6 +240,10 @@ namespace Kepler.Lexer
                         operation_token.operation = OperationType.Equality;
                         clean_up = true;
                         break;
+                    case TokenType.GenericStrictEquality:
+                        operation_token.operation = OperationType.StrictEquality;
+                        clean_up = true;
+                        break;
                     case TokenType.GenericGreaterThan:
                         operation_token.operation = OperationType.GreaterThan;
                         clean_up = true;
@@ -463,6 +467,7 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericModulo, "%", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericStrictEquality, "==", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericLessThan, "<", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericGreaterThan, ">", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericLessThanEqual, "<=", TokenMatch.any_string, TokenMatch.any_string, 0),
@@ -622,7 +627,8 @@ namespace Kepler.Lexer.Tokens
         GenericDivide,
         GenericOperation,
         GenericModulo,
-        GenericEquality, // equality comparison (if type != type, throw TypeError)
+        GenericEquality, // equality comparison (non strict, will cast)
+        GenericStrictEquality, // (if type != type, return false)
         GenericLessThan,
         GenericGreaterThan,
         GenericLessThanEqual,
@@ -694,6 +700,7 @@ namespace Kepler.Lexer.Tokens
         Multiply,
         Power,
         Modulo,
+        StrictEquality,
         Equality,
         GreaterThan,
         GreaterThanEqual,
