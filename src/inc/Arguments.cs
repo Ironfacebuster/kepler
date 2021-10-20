@@ -174,10 +174,12 @@ namespace Arguments
                             if (val == ArgType.AnyValue) valid = true;
                             // if (val == ArgType.NoValue && arg.value == ArgType.BoolTrue) valid = true; // BoolTrue is the default when there is no specified value
                             if (val == arg.value) valid = true;
-                            else if (!valid) ExitWithError(string.Format("{0} is not a valid parameter value for {1}", arg.value, arg.argument));
+
 
                             if (valid) break;
                         }
+
+                        if (!valid) ExitWithError(string.Format("{0} is not a valid parameter value for {1}", arg.value, arg.argument));
                     }
 
                     if (!valid) invalid_arguments.Add(arg.argument);
