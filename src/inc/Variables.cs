@@ -276,6 +276,8 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue ? 1 : 0;
                 case KeplerType.String:
+                    decimal new_float = 0;
+                    if (decimal.TryParse(this.StringValue, out new_float)) return (int)new_float;
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
             }
 
@@ -295,6 +297,8 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return (uint)(BoolValue ? 1 : 0);
                 case KeplerType.String:
+                    decimal new_float = 0;
+                    if (decimal.TryParse(this.StringValue, out new_float)) return (uint)new_float;
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
             }
 
@@ -314,7 +318,10 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue ? 1.0m : 0.0m;
                 case KeplerType.String:
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Float" });
+                    decimal new_float = 0;
+                    if (decimal.TryParse(this.StringValue, out new_float)) return new_float;
+                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+
             }
 
             return 0;
@@ -333,6 +340,8 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue;
                 case KeplerType.String:
+                    if (this.StringValue.ToLower() == "true") return true;
+                    if (this.StringValue.ToLower() == "false") return false;
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
             }
 
