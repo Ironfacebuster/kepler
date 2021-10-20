@@ -318,7 +318,7 @@ namespace KeplerCompiler
 
             string spaces = "";
 
-            int token_start = c_token.start + e.token_offset;
+            int token_start = Math.Min(c_token.start + e.token_offset, c_line.tokens.Count - 1);
 
             for (int i = 0; i < token_start; i++)
             {
