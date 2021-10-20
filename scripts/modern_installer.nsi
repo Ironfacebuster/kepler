@@ -86,6 +86,7 @@ Section "Example Files" ExampleFiles
   File "..\res\examples\fizzbuzz.kep" 
   File "..\res\examples\digiroot.kep" 
   File "..\res\examples\prime.kep" 
+  File "..\res\examples\input.kep" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.kep" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.kep" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.kep" 
