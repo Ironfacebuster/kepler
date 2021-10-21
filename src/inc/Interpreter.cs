@@ -189,28 +189,33 @@ namespace Kepler.Interpreting
 
                 if (line.tokens[0].type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
 
-                if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
-                c_interrupt.function.lines.Add(c_line);
-
                 if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever" && line.indentation == desired_intendation)
                 {
-                    c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    // c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    c_interrupt.Enable();
                     c_interrupt.SetForever();
                     inside_loop = false;
                     c_state.booleans["inside_loop"] = false;
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT LOOP <{0}>", c_interrupt.id));
 
-                    // Console.WriteLine("DOING INFINITE LOOPS");
-                    this.HandleInterrupts(true);
+                    this.HandleInterrupts();
                 }
-                if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
+                else if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
                 {
-                    c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    // c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     inside_interrupt = false;
                     c_state.booleans["inside_interval"] = false;
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT <{0}>", c_interrupt.id));
+
+                    c_interrupt.Enable();
+                    this.HandleInterrupts();
+                }
+                else
+                {
+                    if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
+                    c_interrupt.function.lines.Add(c_line);
                 }
 
                 return;
@@ -228,9 +233,14 @@ namespace Kepler.Interpreting
                 if (line.CurrentToken().type == TokenType.EndFunction && line.Peek().token_string == c_function.name && line.indentation == desired_intendation)
                 {
                     inside_function = false;
-                    c_function.lines.RemoveAt(c_function.lines.Count - 1);
+                    // c_function.lines.RemoveAt(c_function.lines.Count - 1);
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT <{0}>", c_function.name));
+                }
+                else
+                {
+                    c_function.lines.Add(c_line);
+
                 }
 
                 return;
@@ -342,6 +352,8 @@ namespace Kepler.Interpreting
                     c_interrupt = c_state.c_interrupt;
                     desired_intendation = c_line.indentation;
 
+                    c_interrupt.Disable();
+
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
                 }
 
@@ -395,11 +407,11 @@ namespace Kepler.Interpreting
             this.c_line.Kill();
         }
 
-        public void HandleInterrupts(bool only_infinite)
+        public void HandleInterrupts(bool only_infinite = false)
         {
 
             // do interrupts
-            while (this.interrupts.HasAnyInterrupts())
+            while (this.interrupts.HasInterrupts())
             {
                 List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
 

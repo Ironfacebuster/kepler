@@ -29,7 +29,7 @@ namespace KeplerCompiler
             arguments.AddArgument(new ArgType("help"));
             arguments.AddArgument(new ArgType("headless"));
             arguments.AddArgument(new ArgType("version"));
-            arguments.AddArgument(new ArgType("debug", new string[] { ArgType.BoolTrue, "verbose" }));
+            arguments.AddArgument(new ArgType("debug", new string[] { "verbose", ArgType.BoolTrue }));
 
             string[] unrecognized = arguments.Parse(args);
             if (unrecognized.Length > 0)
@@ -129,7 +129,7 @@ namespace KeplerCompiler
                 // Console.WriteLine(tokenizer.HasNext());
                 if (interpreter.interrupts.HasInterrupts())
                     interpreter.HandleInterrupts(false);
-                else if (tokenizer.HasNext())
+                if (tokenizer.HasNext())
                 {
                     interpreter.Interpret(tokenizer.CurrentLine());
                     tokenizer++;
@@ -174,37 +174,35 @@ namespace KeplerCompiler
                 {
                     if (interpreter.interrupts.HasInterrupts())
                         interpreter.HandleInterrupts(false);
+
+                    if (!headless_mode) Console.Write("> ");
+                    string input = Console.ReadLine();
+
+                    if (!headless_mode && input.StartsWith("."))
+                    {
+                        switch (input.Substring(1).ToLower())
+                        {
+                            case "help":
+                                Console.WriteLine(" "); // padding
+                                Console.WriteLine(".HELP    show this help menu");
+                                // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
+                                Console.WriteLine(".EXIT    exit immediately");
+                                Console.WriteLine(" "); // padding
+                                break;
+                            case "dump":
+                                interpreter.DUMP();
+                                break;
+                            case "exit":
+                                Console.Write("Exiting live interpretation...");
+                                Environment.Exit(0); // exit without error
+                                break;
+                        }
+                    }
                     else
                     {
-                        if (!headless_mode) Console.Write("> ");
-                        string input = Console.ReadLine();
+                        interpreter.Interpret(tokenizer.TokenizeLine(line, input));
 
-                        if (!headless_mode && input.StartsWith("."))
-                        {
-                            switch (input.Substring(1).ToLower())
-                            {
-                                case "help":
-                                    Console.WriteLine(" "); // padding
-                                    Console.WriteLine(".HELP    show this help menu");
-                                    // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
-                                    Console.WriteLine(".EXIT    exit immediately");
-                                    Console.WriteLine(" "); // padding
-                                    break;
-                                case "dump":
-                                    interpreter.DUMP();
-                                    break;
-                                case "exit":
-                                    Console.Write("Exiting live interpretation...");
-                                    Environment.Exit(0); // exit without error
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            interpreter.Interpret(tokenizer.TokenizeLine(line, input));
-
-                            line++;
-                        }
+                        line++;
                     }
                 }
                 catch (KeplerException e)

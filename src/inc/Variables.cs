@@ -545,6 +545,7 @@ namespace KeplerVariables
 
         public bool isValidInterrupt()
         {
+            // Console.WriteLine(string.Format("CHECKING IF {0} IS VALID", this.id));
             if (this.disabled) return false;
             if (!this.validated) return false;
             if (this.interval == -2) return true;
@@ -560,8 +561,12 @@ namespace KeplerVariables
 
         public void Disable()
         {
-            // if (verbose_debug) Console.WriteLine("DISABLE " + this.id);
             this.disabled = true;
+        }
+
+        public void Enable()
+        {
+            this.disabled = false;
         }
 
         public bool IsDisabled()
