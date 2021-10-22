@@ -63,6 +63,7 @@ namespace Kepler.Tracing
         {
             // TODO: better "id" system
             if (id == this.stack.Count) id = id - 1;
+            if (id > this.stack.Count) id = this.stack.Count - 1;
 
             if (this.stack[id].count > 1) this.stack[id].Decrement();
             else this.stack.Remove(this.stack[id]);
