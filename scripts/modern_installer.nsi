@@ -56,11 +56,11 @@ Section "Install Kepler" SecDummy
   CreateDirectory $INSTDIR\kepler_static 
   CreateDirectory $INSTDIR\examples 
   SetOutPath $INSTDIR 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.deps.json" 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.dll" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.deps.json" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.dll" 
   File "..\build\VS_PUBLISH_OUTPUT\kepler.exe" 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.pdb" 
-  File "..\build\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.pdb" 
+  ; File "..\build\VS_PUBLISH_OUTPUT\kepler.runtimeconfig.json" 
   File "..\res\changelog.txt" 
   
   SetOutPath "$INSTDIR\kepler_static" 
@@ -86,6 +86,7 @@ Section "Example Files" ExampleFiles
   File "..\res\examples\fizzbuzz.kep" 
   File "..\res\examples\digiroot.kep" 
   File "..\res\examples\prime.kep" 
+  File "..\res\examples\input.kep" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\link_test.kep" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\ops.kep" 
 ;  File "D:\C# Projects\KeplerCompiler\bin\Resources\examples\return.kep" 

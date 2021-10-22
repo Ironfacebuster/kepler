@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace KeplerTracing
+namespace Kepler.Tracing
 {
     // public class KeplerTracer
     // {
@@ -59,10 +59,13 @@ namespace KeplerTracing
             return this.stack.Count - 1;
         }
 
-        public void PopStack(int index)
+        public void PopStack(int id)
         {
-            if (this.stack[index].count > 1) this.stack[index].Decrement();
-            else this.stack.Remove(this.stack[index]);
+            // TODO: better "id" system
+            if (id == this.stack.Count) id = id - 1;
+
+            if (this.stack[id].count > 1) this.stack[id].Decrement();
+            else this.stack.Remove(this.stack[id]);
         }
 
         public string GetStack()

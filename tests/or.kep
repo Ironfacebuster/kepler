@@ -1,0 +1,17 @@
+ff is False or False
+ft is True or False
+tf is False or True
+tt is True or True
+
+str is "true" or False
+fstr is "false" or False
+
+assert ff equals False
+assert ft equals True
+assert tf equals True
+assert tt equals True
+
+assert str equals True
+assert fstr equals False
+
+print "SUCCESS"

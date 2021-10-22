@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using KeplerLexer;
-using KeplerInterpreter;
+using Kepler.Lexer;
+using Kepler.Interpreting;
 using System.Diagnostics;
 using System;
 using System.Linq;
-using KeplerExceptions;
+using Kepler.Exceptions;
 
 namespace KeplerVariables
 {
@@ -56,6 +56,20 @@ namespace KeplerVariables
             throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
         }
 
+        public KeplerVariable GetVariableByID(string id)
+        {
+            // search local first
+            foreach (KeyValuePair<string, KeplerVariable> var in this.local)
+            {
+                Console.WriteLine(var.Value);
+                if (var.Value.id == id) return var.Value;
+            }
+
+            if (this.global != this) return this.global.GetVariableByID(id);
+
+            throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { string.Format("#{0} is not a valid variable ID!", id) });
+        }
+
         // allow copying of global for "scoping"
         public KeplerVariableManager Copy()
         {
@@ -83,6 +97,7 @@ namespace KeplerVariables
 
     public class KeplerVariable
     {
+        public string id = "";
         public KeplerType type = KeplerType.Unassigned;
         public KeplerModifier modifier = KeplerModifier.Variable;
         public decimal FloatValue = 0;
@@ -91,6 +106,10 @@ namespace KeplerVariables
         public string StringValue = "";
         public bool BoolValue = false;
 
+        public KeplerVariable()
+        {
+            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+        }
 
         public void SetModifier(KeplerModifier modifier)
         {
@@ -196,7 +215,7 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = string.Format("{0} {1}", this.modifier, this.type);
+            string output = string.Format("(#{0}) {1} {2}", this.id, this.modifier, this.type);
 
             switch (type)
             {
@@ -257,6 +276,8 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue ? 1 : 0;
                 case KeplerType.String:
+                    decimal new_float = 0;
+                    if (decimal.TryParse(this.StringValue, out new_float)) return (int)new_float;
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
             }
 
@@ -276,6 +297,8 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return (uint)(BoolValue ? 1 : 0);
                 case KeplerType.String:
+                    decimal new_float = 0;
+                    if (decimal.TryParse(this.StringValue, out new_float)) return (uint)new_float;
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
             }
 
@@ -295,7 +318,10 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue ? 1.0m : 0.0m;
                 case KeplerType.String:
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Float" });
+                    decimal new_float = 0;
+                    if (decimal.TryParse(this.StringValue, out new_float)) return new_float;
+                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+
             }
 
             return 0;
@@ -314,6 +340,8 @@ namespace KeplerVariables
                 case KeplerType.Boolean:
                     return BoolValue;
                 case KeplerType.String:
+                    if (this.StringValue.ToLower() == "true") return true;
+                    if (this.StringValue.ToLower() == "false") return false;
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
             }
 
@@ -326,13 +354,14 @@ namespace KeplerVariables
         public IDictionary<string, KeplerFunction> global = new Dictionary<string, KeplerFunction>();
         public IDictionary<string, KeplerFunction> local = new Dictionary<string, KeplerFunction>();
 
-        public KeplerFunction DeclareFunction(string name, bool global_override)
+        public KeplerFunction DeclareFunction(string name, bool global_override, bool is_internal = false)
         {
             if (global.ContainsKey(name)) return global[name];
             if (local.ContainsKey(name)) return local[name];
 
             // functions are created the first time they're seen
             KeplerFunction n_funct = new KeplerFunction(name);
+            n_funct.is_internal = is_internal;
             if (global_override) global[name] = n_funct;
             else local[name] = n_funct;
             return n_funct;
@@ -380,10 +409,15 @@ namespace KeplerVariables
         bool has_target = false;
         public KeplerType type;
         public string name;
+        public string id;
+        public bool is_internal = false;
+        public Func<Kepler.Interpreting.Interpreter, List<KeplerVariable>, KeplerVariable> internal_call;
 
-        public KeplerFunction(string name)
+        public KeplerFunction(string name, bool is_internal = false)
         {
             this.name = name;
+            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+            this.is_internal = is_internal;
         }
 
         public void SetType(KeplerType type)
@@ -458,12 +492,8 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            // string output = "KeplerFunction";
-            // foreach (LineIterator line in lines)
-            // {
-            //     output = output + line + "\r\n";
-            // }
-            return string.Format("KeplerFunction {0}", type);
+            if (this.is_internal) return string.Format("(#{0}) INTERNAL KeplerFunction {1}", id, type);
+            return string.Format("(#{0}) KeplerFunction {1}", id, type);
         }
     }
 
@@ -515,6 +545,7 @@ namespace KeplerVariables
 
         public bool isValidInterrupt()
         {
+            // Console.WriteLine(string.Format("CHECKING IF {0} IS VALID", this.id));
             if (this.disabled) return false;
             if (!this.validated) return false;
             if (this.interval == -2) return true;
@@ -530,8 +561,12 @@ namespace KeplerVariables
 
         public void Disable()
         {
-            // if (verbose_debug) Console.WriteLine("DISABLE " + this.id);
             this.disabled = true;
+        }
+
+        public void Enable()
+        {
+            this.disabled = false;
         }
 
         public bool IsDisabled()

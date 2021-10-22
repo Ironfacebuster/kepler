@@ -1,15 +1,16 @@
 ﻿using System;
 // using System.Collections.Generic;
-using KeplerLexer;
+using Kepler.Lexer;
 using Arguments;
-using KeplerInterpreter;
-using KeplerVersioning;
-using KeplerStateMachine;
-using KeplerExceptions;
-using KeplerTracing;
+using Kepler.Interpreting;
+using Kepler.Versioning;
+using Kepler.LogicControl;
+using Kepler.Exceptions;
+using Kepler.Tracing;
 using KeplerVariables;
 using Help;
 using System.IO;
+using System.Linq;
 
 namespace KeplerCompiler
 {
@@ -28,22 +29,9 @@ namespace KeplerCompiler
             arguments.AddArgument(new ArgType("help"));
             arguments.AddArgument(new ArgType("headless"));
             arguments.AddArgument(new ArgType("version"));
-            arguments.AddArgument(new ArgType("debug", new string[] { ArgType.BoolTrue, "verbose" }));
+            arguments.AddArgument(new ArgType("debug", new string[] { "verbose", ArgType.BoolTrue }));
 
-            string[] unrecognized = arguments.Parse(args);
-            if (unrecognized.Length > 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("");
-                foreach (string u in unrecognized)
-                {
-                    string closest = arguments.GetClosestArgument(u);
-                    Console.WriteLine(string.Format("Unrecognized argument \"{0}\"{1}", u, closest == null ? "" : string.Format(", did you mean \"{0}\"?", closest)));
-                }
-                Console.ResetColor();
-                // Environment.Exit(-1);
-            }
-
+            arguments.Parse(args);
 
             if (arguments.HasArgument("help"))
             {
@@ -118,8 +106,9 @@ namespace KeplerCompiler
             // "load" required static values
             LoadStaticValues(interpreter);
 
-            // load static values from file
-            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticFile(interpreter);
+            // this doesn't work right now because the executable is standalone
+            // load static values from file if the static directory exists
+            // if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "kepler_static\\")) LoadStaticFile(interpreter);
 
             // do interpretation
             while (tokenizer.HasNext() || interpreter.interrupts.HasAnyInterrupts())
@@ -127,7 +116,7 @@ namespace KeplerCompiler
                 // Console.WriteLine(tokenizer.HasNext());
                 if (interpreter.interrupts.HasInterrupts())
                     interpreter.HandleInterrupts(false);
-                else if (tokenizer.HasNext())
+                if (tokenizer.HasNext())
                 {
                     interpreter.Interpret(tokenizer.CurrentLine());
                     tokenizer++;
@@ -161,9 +150,9 @@ namespace KeplerCompiler
             // "load" required static values
             LoadStaticValues(interpreter);
 
-            // load static values from file
-            if (AppDomain.CurrentDomain.BaseDirectory.Replace("\\", "/").EndsWith("kepler/")) LoadStaticFile(interpreter);
-
+            // this doesn't work right now because the executable is standalone
+            // load static values from file if the static directory exists
+            // if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "kepler_static\\")) LoadStaticFile(interpreter);
 
             int line = 1;
             while (true)
@@ -172,37 +161,35 @@ namespace KeplerCompiler
                 {
                     if (interpreter.interrupts.HasInterrupts())
                         interpreter.HandleInterrupts(false);
+
+                    if (!headless_mode) Console.Write("> ");
+                    string input = Console.ReadLine();
+
+                    if (!headless_mode && input.StartsWith("."))
+                    {
+                        switch (input.Substring(1).ToLower())
+                        {
+                            case "help":
+                                Console.WriteLine(" "); // padding
+                                Console.WriteLine(".HELP    show this help menu");
+                                // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
+                                Console.WriteLine(".EXIT    exit immediately");
+                                Console.WriteLine(" "); // padding
+                                break;
+                            case "dump":
+                                interpreter.DUMP();
+                                break;
+                            case "exit":
+                                Console.Write("Exiting live interpretation...");
+                                Environment.Exit(0); // exit without error
+                                break;
+                        }
+                    }
                     else
                     {
-                        if (!headless_mode) Console.Write("> ");
-                        string input = Console.ReadLine();
+                        interpreter.Interpret(tokenizer.TokenizeLine(line, input));
 
-                        if (!headless_mode && input.StartsWith("."))
-                        {
-                            switch (input.Substring(1).ToLower())
-                            {
-                                case "help":
-                                    Console.WriteLine(" "); // padding
-                                    Console.WriteLine(".HELP    show this help menu");
-                                    // Console.WriteLine(".DUMP    dump some debug information"); it's a secret to everybody!
-                                    Console.WriteLine(".EXIT    exit immediately");
-                                    Console.WriteLine(" "); // padding
-                                    break;
-                                case "dump":
-                                    interpreter.DUMP();
-                                    break;
-                                case "exit":
-                                    Console.Write("Exiting live interpretation...");
-                                    Environment.Exit(0); // exit without error
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            interpreter.Interpret(tokenizer.TokenizeLine(line, input));
-
-                            line++;
-                        }
+                        line++;
                     }
                 }
                 catch (KeplerException e)
@@ -220,6 +207,7 @@ namespace KeplerCompiler
         static void LoadStaticValues(Interpreter interpreter)
         {
             KeplerVariableManager vars = interpreter.statemachine.variables;
+            KeplerFunctionManager functs = interpreter.statemachine.functions;
 
             KeplerVariable version_var = vars.global.DeclareVariable("$_VERSION", true);
             version_var.SetStringValue(StaticValues._VERSION);
@@ -244,6 +232,44 @@ namespace KeplerCompiler
             KeplerVariable nan = vars.global.DeclareVariable("NaN", true);
             nan.SetType(KeplerType.NaN);
             nan.SetModifier(KeplerModifier.Constant);
+
+            // static function
+            KeplerFunction get_start = functs.DeclareFunction("getstart", true, true);
+            get_start.SetType(KeplerType.String);
+
+            string START = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond).ToString();
+            get_start.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue(START);
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+            // dynamic function!
+            KeplerFunction get_time = functs.DeclareFunction("gettime", true, true);
+            get_time.SetType(KeplerType.String);
+            get_time.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond).ToString());
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+            // input function
+            KeplerFunction get_input = functs.DeclareFunction("input", true, true);
+            get_input.SetType(KeplerType.String);
+            get_input.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue(Console.ReadLine());
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
         }
 
         static void LoadStaticFile(Interpreter interpreter)
@@ -277,7 +303,7 @@ namespace KeplerCompiler
 
             string spaces = "";
 
-            int token_start = c_token.start + e.token_offset;
+            int token_start = Math.Min(c_token.start + e.token_offset, c_line.tokens.Count - 1);
 
             for (int i = 0; i < token_start; i++)
             {

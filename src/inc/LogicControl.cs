@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using KeplerLexer;
-using KeplerLexer.Tokens;
+using Kepler.Lexer;
+using Kepler.Lexer.Tokens;
 using KeplerVariables;
-using KeplerInterpreter;
-using KeplerExceptions;
-// using KeplerLexer.Tokens;
+using Kepler.Interpreting;
+using Kepler.Exceptions;
+// using Kepler.Lexer.Tokens;
 using System.IO;
 
-namespace KeplerStateMachine
+namespace Kepler.LogicControl
 {
     public class StateMachine
     {
@@ -22,12 +22,16 @@ namespace KeplerStateMachine
 
         // every line starts with a level 1 token
         public List<TokenState> level1 = new List<TokenState>();
-        bool schedule_execute_function = false;
 
         public bool has_linked_file;
         public KeplerVariableManager linked_variables;
         public KeplerFunctionManager linked_functions;
-        public KeplerVariable return_value = new KeplerVariable();
+
+        // function things
+        bool schedule_execute_function = false;
+        public KeplerVariable function_return_value;
+        public KeplerType function_type;
+        public string function_id;
 
         bool inside_header = false;
         KeplerFunction scheduled_function = new KeplerFunction("NUL");
@@ -131,7 +135,7 @@ namespace KeplerStateMachine
             level1.Add(new TokenState(TokenType.ConditionalIf, HandleConditionalIf));
             level1.Add(new TokenState(TokenType.ConditionalElseIf, HandleConditionalElseIf));
             level1.Add(new TokenState(TokenType.ConditionalElse, HandleConditionalElse));
-            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn)); // TODO: return values!
+            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn)); // TODO: return values!
             level1.Add(StartInterval);
             level1.Add(EndInterval);
             level1.Add(StartLoop);
@@ -167,6 +171,8 @@ namespace KeplerStateMachine
 
         void HandleFunctionReturn(Token token, TokenState state)
         {
+            if (!this.interpreter.is_function) throw new KeplerError(KeplerErrorCode.UNEXP_RETURN);
+
             state.booleans["return_value"] = true;
         }
 
@@ -209,6 +215,8 @@ namespace KeplerStateMachine
                 throw new KeplerError(KeplerErrorCode.FALSE_ASSERTION, new string[] { result.GetValueAsBool().ToString() });
             if (state.booleans["throw_error"])
                 state.strings["error_string"] = result.GetValueAsString();
+            if (state.booleans["return_value"])
+                this.SetReturnValue(result);
         }
         KeplerVariable DoGenericOperation(Token token)
         {
@@ -227,7 +235,7 @@ namespace KeplerStateMachine
                 Console.WriteLine(b_operand);
             }
 
-            if (token.operation == OperationType.Equality)
+            if (token.operation == OperationType.StrictEquality)
             {
                 if (a_operand.type != b_operand.type)
                     result.SetBoolValue(false);
@@ -262,6 +270,36 @@ namespace KeplerStateMachine
                 return result;
             }
 
+            if (token.operation == OperationType.Equality)
+            {
+                switch (a_operand.type)
+                {
+                    case KeplerType.Float:
+                        result.SetBoolValue(a_operand.GetValueAsFloat() == b_operand.GetValueAsFloat());
+                        break;
+                    case KeplerType.Int:
+                        result.SetBoolValue(a_operand.GetValueAsInt() == b_operand.GetValueAsInt());
+                        break;
+                    case KeplerType.uInt:
+                        result.SetBoolValue(a_operand.GetValueAsUnsignedInt() == b_operand.GetValueAsUnsignedInt());
+                        break;
+                    case KeplerType.Boolean:
+                        result.SetBoolValue(a_operand.GetValueAsBool() == b_operand.GetValueAsBool());
+                        break;
+                    case KeplerType.String:
+                        result.SetBoolValue(a_operand.GetValueAsString() == b_operand.GetValueAsString());
+                        break;
+                    case KeplerType.NaN:
+                        result.SetBoolValue(true);
+                        break;
+                    default:
+                        result.SetBoolValue(false);
+                        break;
+                }
+
+                return result;
+            }
+
             if (a_operand.type == KeplerType.NaN || b_operand.type == KeplerType.NaN)
             {
                 // doing any operation to a NaN results in a NaN
@@ -276,7 +314,13 @@ namespace KeplerStateMachine
                 result.SetStringValue(a_operand.GetValueAsString() + b_operand.GetValueAsString());
                 return result;
             }
-            else if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) && (token.operation != OperationType.GreaterThan && token.operation != OperationType.GreaterThanEqual && token.operation != OperationType.LessThan && token.operation != OperationType.LessThanEqual))
+            else if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) &&
+            (token.operation != OperationType.GreaterThan &&
+            token.operation != OperationType.GreaterThanEqual &&
+            token.operation != OperationType.LessThan &&
+            token.operation != OperationType.LessThanEqual &&
+            token.operation != OperationType.And &&
+            token.operation != OperationType.Or))
             {
                 result.SetType(KeplerType.NaN);
                 return result;
@@ -451,7 +495,14 @@ namespace KeplerStateMachine
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval((int)decimal.Parse(token.token_string));
-            // state.c_interrupt.SetInterval((int)double.Parse(token.token_string)); // cast to int
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetFloatValue(decimal.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticInt(Token token, TokenState state)
         {
@@ -461,6 +512,14 @@ namespace KeplerStateMachine
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval(int.Parse(token.token_string));
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetIntValue(int.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticUnsignedInt(Token token, TokenState state)
         {
@@ -470,6 +529,14 @@ namespace KeplerStateMachine
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval((int)uint.Parse(token.token_string.Substring(1))); // cast to int
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetUnsignedIntValue(uint.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticBool(Token token, TokenState state)
         {
@@ -477,6 +544,14 @@ namespace KeplerStateMachine
                 state.left_side_operator.SetBoolValue(bool.Parse(token.token_string));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + bool.Parse(token.token_string);
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetBoolValue(bool.Parse(token.token_string));
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
             // if (state.booleans["validate_conditional"])
             //     state.booleans["inside_conditional"] = bool.Parse(token.token_string);
         }
@@ -520,6 +595,14 @@ namespace KeplerStateMachine
             }
             else if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + string_value;
+            if (state.booleans["return_value"])
+            {
+                KeplerVariable new_variable = new KeplerVariable();
+                new_variable.SetStringValue(string_value);
+                new_variable.SetModifier(KeplerModifier.Constant);
+
+                this.SetReturnValue(new_variable);
+            }
         }
         void HandleStaticModifier(Token token, TokenState state)
         {
@@ -547,7 +630,7 @@ namespace KeplerStateMachine
             if (schedule_execute_function)
             {
                 // this.interpreter.tracer.TraceFunction(scheduled_function);
-                ExecuteFunction(scheduled_function);
+                ExecuteFunction(scheduled_function, state);
                 schedule_execute_function = false;
             }
         }
@@ -590,7 +673,7 @@ namespace KeplerStateMachine
             }
             else if (state.booleans["return_value"])
             {
-                return_value = variables.GetVariable(token.token_string);
+                this.SetReturnValue(variables.GetVariable(token.token_string));
             }
             // else if (state.booleans["inside_interval"])
             // {
@@ -634,7 +717,7 @@ namespace KeplerStateMachine
 
                     if (verbose_debug) Console.WriteLine(string.Format("Scheduling call of {0} to EOL", c_function.name));
                 }
-                else ExecuteFunction(c_function);
+                else ExecuteFunction(c_function, state);
 
                 // interpret lines within function
                 // interpret until "ReturnFunction" is encountered
@@ -677,6 +760,7 @@ namespace KeplerStateMachine
         {
             Interpreter parent_interpreter = this.interpreter;
             KeplerInterrupt interrupt = interpreter.interrupts.GetInterrupt(this.interrupt_id);
+            interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
 
             while (true)
             {
@@ -685,9 +769,23 @@ namespace KeplerStateMachine
                 parent_interpreter.Kill();
                 parent_interpreter = parent_interpreter.parent;
             }
-
-            interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
         }
+
+        void KillAllByFunctionID(string function_id)
+        {
+            Interpreter parent_interpreter = this.interpreter;
+
+            while (true)
+            {
+                if (parent_interpreter.statemachine.function_id != function_id) break;
+
+                parent_interpreter.Kill();
+                parent_interpreter = parent_interpreter.parent;
+            }
+
+            this.interpreter.Kill();
+        }
+
         void HandleAssignFunctionType(Token token, TokenState state)
         {
             state.booleans["function_assign"] = true;
@@ -705,34 +803,87 @@ namespace KeplerStateMachine
             if (verbose_debug) Console.WriteLine("EXIT HEADER");
             inside_header = false;
         }
-        void ExecuteFunction(KeplerFunction function)
+        void ExecuteFunction(KeplerFunction function, TokenState state)
         {
             int stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
 
-            if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
-
-            function.ResetLines(); // reset line token indexes to zero
-
             Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
+
             f_interpreter.statemachine.variables = this.variables.Copy();
             f_interpreter.statemachine.functions = this.functions.Copy();
+            f_interpreter.statemachine.function_type = function.type;
+            f_interpreter.statemachine.function_id = function.id;
 
             f_interpreter.verbose_debug = this.verbose_debug;
             f_interpreter.tracer = this.interpreter.tracer;
             f_interpreter.filename = this.interpreter.filename;
+            f_interpreter.is_function = true;
 
-            // do interpretation
-            foreach (LineIterator line in function.lines)
+            if (function.is_internal)
             {
-                f_interpreter.Interpret(line);
+                if (this.verbose_debug)
+                    Console.WriteLine("EXECUTING INTERNAL FUNCT!");
+                // call with null argument list, since arguments aren't properly implemented yet
+                f_interpreter.statemachine.SetReturnValue(function.internal_call(f_interpreter, null));
+            }
+            else
+            {
+                if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
+
+                function.ResetLines(); // reset line token indexes to zero
+                function.Reset();
+
+
+                // do interpretation
+                foreach (LineIterator line in function.lines)
+                {
+                    // Console.WriteLine(line);
+                    f_interpreter.Interpret(line);
+                    if (f_interpreter.killed) break;
+                }
+
+                function.Reset(); // reset target, argument assignments
+
+                this.interpreter.tracer.PopStack(stack_id);
             }
 
-            function.Reset(); // reset target, argument assignments
+            if (f_interpreter.statemachine.HasReturnValue())
+            {
+                if (this.verbose_debug)
+                {
+                    Console.WriteLine("RETURN VALUE!");
+                    Console.WriteLine(f_interpreter.statemachine.function_return_value);
+                    Console.WriteLine(function.target.id);
+                }
 
-            this.interpreter.tracer.PopStack(stack_id);
+                if (state.booleans["variable_assign"])
+                {
 
-            // if (f_interpreter.HasReturnValue())
-            //     return f_interpreter.return_value;
+                    state.left_side_operator.AssignValue(f_interpreter.statemachine.function_return_value);
+                    // KeplerVariable target = this.variables.GetVariableByID(function.target.id);
+                }
+            }
+        }
+
+        void SetReturnValue(KeplerVariable return_value)
+        {
+            if (this.function_type != return_value.type) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { return_value.type.ToString(), this.function_type.ToString() });
+
+            this.function_return_value = return_value;
+
+            // simple recursive loop for now
+            Interpreter parent_interpreter = this.interpreter;
+
+            while (true)
+            {
+                if (parent_interpreter.statemachine.function_id != this.function_id) break;
+
+                parent_interpreter = parent_interpreter.parent;
+                parent_interpreter.statemachine.function_return_value = return_value;
+            }
+
+            // break out
+            KillAllByFunctionID(this.function_id);
         }
         KeplerVariable CreateTemporaryVariable(Token token)
         {
@@ -766,6 +917,11 @@ namespace KeplerStateMachine
             }
 
             return var;
+        }
+
+        public bool HasReturnValue()
+        {
+            return !(this.function_return_value == null);
         }
     }
 

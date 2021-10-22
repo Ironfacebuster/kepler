@@ -5,9 +5,32 @@
 */VS_BUILD_OUTPUT/*
 */VS_PUBLISH_OUTPUT/*
 */VS_DEBUG/*
+
+# dotnet autogen files
 /src/bin/*
-*/build/*
+/src/obj/Debug/*
+/src/obj/Release/*
+
+# old nsi installer script
 installer.nsi
+
+# other things
 */temp
-.DS_Store
 *.xcf
+
+# hidden autogen macos files 
+.DS_Store
+
+# nightly build folder
+build/nightly
+
+# auto generated build files
+*/buildtime.txt
+*/type.txt
+src/obj/*
+
+src/.vs/*
+
+# build folder
+*/build/*
+build/*

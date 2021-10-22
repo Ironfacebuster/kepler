@@ -1,13 +1,13 @@
-using KeplerLexer;
-using KeplerLexer.Tokens;
-using KeplerStateMachine;
+using Kepler.Lexer;
+using Kepler.Lexer.Tokens;
+using Kepler.LogicControl;
 using kepler.Properties;
 
-namespace KeplerVersioning
+namespace Kepler.Versioning
 {
     public class StaticValues
     {
-        public static string _VERSION = "v1a1.3.3";
+        public static string _VERSION = "v1a1.4";
         public static string _TYPE = Resources.type;
         // public static string _RELEASE = "October 13th, 2021";
         public static string _RELEASE = Resources.buildtime;

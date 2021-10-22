@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
-using KeplerExceptions;
-using KeplerLexer.Tokens;
-using KeplerStateMachine;
+using Kepler.Exceptions;
+using Kepler.Lexer.Tokens;
+using Kepler.LogicControl;
 
 
-namespace KeplerLexer
+namespace Kepler.Lexer
 {
     public class Tokenizer
     {
@@ -178,7 +178,7 @@ namespace KeplerLexer
                     if (tokenized.Length < 2)
                     {
                         this.tokens = m_tokens;
-                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new KeplerTracing.KeplerErrorStack(), i);
+                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
                     }
                 }
                 else { m_tokens.Add(new Token(pair.type, i, tokenized)); i += pair.increment; }
@@ -189,7 +189,7 @@ namespace KeplerLexer
                     // this is not graceful but it'll have to do
                     this.tokens = m_tokens;
                     this.m_num = this.tokens.Count - 1;
-                    throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new KeplerTracing.KeplerErrorStack(), i);
+                    throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
                 }
             }
 
@@ -238,6 +238,10 @@ namespace KeplerLexer
                         break;
                     case TokenType.GenericEquality:
                         operation_token.operation = OperationType.Equality;
+                        clean_up = true;
+                        break;
+                    case TokenType.GenericStrictEquality:
+                        operation_token.operation = OperationType.StrictEquality;
                         clean_up = true;
                         break;
                     case TokenType.GenericGreaterThan:
@@ -294,30 +298,27 @@ namespace KeplerLexer
                 operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
                 bool clean_up = false;
 
-                switch (peek.type)
+
+                bool current_valid = (m_tokens[i].type == TokenType.GenericOperation || IsStaticValue(m_tokens[i]) || m_tokens[i].type == TokenType.DeclareVariable);
+                bool next_valid = (far_peek.type == TokenType.GenericOperation || IsStaticValue(far_peek) || far_peek.type == TokenType.DeclareVariable);
+
+                if (current_valid && next_valid)
                 {
-                    // AND
-                    case TokenType.BooleanOperator:
-                        if ((m_tokens[i].type == TokenType.GenericOperation || m_tokens[i].type == TokenType.StaticBoolean) && (far_peek.type == TokenType.GenericOperation || far_peek.type == TokenType.StaticBoolean))
-                        {
+                    switch (peek.type)
+                    {
+                        // AND
+                        case TokenType.BooleanOperator:
                             operation_token.operation = OperationType.And;
                             clean_up = true;
-                        }
-                        else i++;
-                        break;
-                    // OR
-                    case TokenType.OrOperator:
-                        if ((m_tokens[i].type == TokenType.GenericOperation || m_tokens[i].type == TokenType.StaticBoolean) && (far_peek.type == TokenType.GenericOperation || far_peek.type == TokenType.StaticBoolean))
-                        {
+                            break;
+                        // OR
+                        case TokenType.OrOperator:
                             operation_token.operation = OperationType.Or;
                             clean_up = true;
-                        }
-                        else i++;
-                        break;
-                    default:
-                        i++;
-                        break;
+                            break;
+                    }
                 }
+                else i++;
 
                 if (clean_up)
                 {
@@ -348,6 +349,25 @@ namespace KeplerLexer
             if (m_tokens.Count == 0) m_tokens.Add(new Token(TokenType.EOL, 0, "EOL"));
 
             this.tokens = m_tokens;
+        }
+
+        private bool IsStaticValue(Token token)
+        {
+            switch (token.type)
+            {
+                case TokenType.StaticBoolean:
+                    return true;
+                case TokenType.StaticFloat:
+                    return true;
+                case TokenType.StaticInt:
+                    return true;
+                case TokenType.StaticString:
+                    return true;
+                case TokenType.StaticUnsignedInt:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private TokenMatch GetTokenType(string token, string peek, string previous)
@@ -463,6 +483,7 @@ namespace KeplerLexer
                 new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericModulo, "%", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericStrictEquality, "==", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericLessThan, "<", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericGreaterThan, ">", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericLessThanEqual, "<=", TokenMatch.any_string, TokenMatch.any_string, 0),
@@ -575,7 +596,7 @@ namespace KeplerLexer
     }
 }
 
-namespace KeplerLexer.Tokens
+namespace Kepler.Lexer.Tokens
 {
     public enum TokenType
     {
@@ -622,7 +643,8 @@ namespace KeplerLexer.Tokens
         GenericDivide,
         GenericOperation,
         GenericModulo,
-        GenericEquality, // equality comparison (if type != type, throw TypeError)
+        GenericEquality, // equality comparison (non strict, will cast)
+        GenericStrictEquality, // (if type != type, return false)
         GenericLessThan,
         GenericGreaterThan,
         GenericLessThanEqual,
@@ -694,6 +716,7 @@ namespace KeplerLexer.Tokens
         Multiply,
         Power,
         Modulo,
+        StrictEquality,
         Equality,
         GreaterThan,
         GreaterThanEqual,

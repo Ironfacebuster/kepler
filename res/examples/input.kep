@@ -1,0 +1,33 @@
+! this is an example, don't ever do password verification like this!
+
+count is 1
+validated is False
+
+start forever
+    if count > 3
+        print ""
+        print "Too many incorrect attempts! Try again later."
+        breakout
+    endif
+    
+    print ""
+    print "Attempt " + count
+    print "Type your password: "
+    string is call input
+    
+    if string equals "password1"
+        print ""
+        print "Correct password!"
+        validated is True
+        breakout
+    endif
+    
+    print ""
+    print "Incorrect password!"
+    
+    count is count + 1
+end forever
+
+if validated
+    print "Here's your super secure password protected content!"
+endif

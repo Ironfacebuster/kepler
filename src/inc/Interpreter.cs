@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using KeplerLexer;
-using KeplerStateMachine;
-using KeplerLexer.Tokens;
+using Kepler.Lexer;
+using Kepler.LogicControl;
+using Kepler.Lexer.Tokens;
 using KeplerVariables;
-using KeplerTracing;
-using KeplerExceptions;
+using Kepler.Tracing;
+using Kepler.Exceptions;
 
-namespace KeplerInterpreter
+namespace Kepler.Interpreting
 {
     public class Interpreter
     {
@@ -18,6 +18,7 @@ namespace KeplerInterpreter
         public bool verbose_debug = false;
         public bool debug = false;
         public bool has_parent = false;
+        public bool is_function = false;
         public Interpreter parent;
         public bool is_global = false;
         public Interpreter global;
@@ -194,21 +195,25 @@ namespace KeplerInterpreter
                 if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever" && line.indentation == desired_intendation)
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    c_interrupt.Enable();
                     c_interrupt.SetForever();
                     inside_loop = false;
                     c_state.booleans["inside_loop"] = false;
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT LOOP <{0}>", c_interrupt.id));
 
-                    this.HandleInterrupts(true);
+                    this.HandleInterrupts();
                 }
-                if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
+                else if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     inside_interrupt = false;
                     c_state.booleans["inside_interval"] = false;
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT <{0}>", c_interrupt.id));
+
+                    c_interrupt.Enable();
+                    this.HandleInterrupts();
                 }
 
                 return;
@@ -260,6 +265,12 @@ namespace KeplerInterpreter
                     conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
                     conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
 
+                    if (this.is_function)
+                    {
+                        conditional_int.statemachine.function_type = this.statemachine.function_type;
+                        conditional_int.statemachine.function_id = this.statemachine.function_id;
+                        conditional_int.is_function = true;
+                    }
 
                     conditional_int.verbose_debug = verbose_debug;
                     conditional_int.tracer = this.tracer;
@@ -334,6 +345,8 @@ namespace KeplerInterpreter
                     c_interrupt = c_state.c_interrupt;
                     desired_intendation = c_line.indentation;
 
+                    c_interrupt.Disable();
+
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
                 }
 
@@ -387,50 +400,55 @@ namespace KeplerInterpreter
             this.c_line.Kill();
         }
 
-        public void HandleInterrupts(bool only_infinite)
+        public void HandleInterrupts(bool only_infinite = false)
         {
+
             // do interrupts
-            List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
-
-            for (int i = 0; i < interrupts.Count; ++i)
+            while (this.interrupts.HasInterrupts())
             {
-                KeplerInterrupt interrupt = interrupts[i];
-                if (!interrupt.isInfinite() && only_infinite) continue;
+                List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
 
-                if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
-
-                int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
-
-                KeplerFunction int_function = interrupt.function;
-
-                int_function.ResetLines();
-
-                // maybe move this to when the interrupt is created?
-                // seems like creating a new interpreter could cause a bit of delay
-                Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
-
-                f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
-                f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
-
-                f_interpreter.statemachine.is_interrupt = true;
-                f_interpreter.statemachine.interrupt_id = interrupts[i].id;
-
-                f_interpreter.verbose_debug = this.verbose_debug;
-                f_interpreter.debug = this.debug;
-                f_interpreter.tracer = this.tracer;
-                f_interpreter.filename = this.filename;
-
-                // do interpretation
-                foreach (LineIterator line in int_function.lines)
+                for (int i = 0; i < interrupts.Count; ++i)
                 {
-                    if (this.interrupts.HasInterrupt(interrupts[i].id))
-                        f_interpreter.Interpret(line);
-                    else break;
+                    KeplerInterrupt interrupt = interrupts[i];
+                    if (!interrupt.isInfinite() && only_infinite) continue;
+
+                    if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
+
+                    int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
+
+                    KeplerFunction int_function = interrupt.function;
+
+                    int_function.ResetLines();
+
+                    // maybe move this to when the interrupt is created?
+                    // seems like creating a new interpreter could cause a bit of delay
+                    Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
+
+                    f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
+                    f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
+
+                    f_interpreter.statemachine.is_interrupt = true;
+                    f_interpreter.statemachine.interrupt_id = interrupts[i].id;
+
+                    f_interpreter.verbose_debug = this.verbose_debug;
+                    f_interpreter.debug = this.debug;
+                    f_interpreter.tracer = this.tracer;
+                    f_interpreter.filename = this.filename;
+
+                    // do interpretation
+                    foreach (LineIterator line in int_function.lines)
+                    {
+                        if (this.interrupts.HasInterrupt(interrupts[i].id))
+                            f_interpreter.Interpret(line);
+                        else break;
+                    }
+
+                    interrupts[i].Reset();
+
+                    this.tracer.PopStack(stack_id);
                 }
 
-                interrupts[i].Reset();
-
-                this.tracer.PopStack(stack_id);
             }
         }
 

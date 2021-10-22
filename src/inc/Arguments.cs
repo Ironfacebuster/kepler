@@ -51,7 +51,7 @@ namespace Arguments
 
     public class ArgumentList
     {
-
+        public bool error_on_invalid_parameter = true;
         List<Argument> arguments = new List<Argument>();
         List<string> invalid_arguments = new List<string>();
         List<ArgType> validators = new List<ArgType>();
@@ -115,9 +115,9 @@ namespace Arguments
         }
 
         /// <summary>
-        /// Parse an array of string arguments to a usable set of data, and return any unrecognized arguments.
+        /// Parse an array of string arguments to a usable set of data, and warn of any invalid arguments.
         /// </summary>
-        public string[] Parse(string[] args)
+        public void Parse(string[] args)
         {
             for (var i = 0; i < args.Length;)
             {
@@ -166,40 +166,58 @@ namespace Arguments
                     // validate argument if a validator is found
                     if (validator != null)
                     {
+                        // if the validator has "no" arguments, and the tested argument doesn't have a default value of true
+                        if (validator.values.Length == 1 && validator.values[0] == ArgType.BoolTrue && arg.value != "true") ExitWithError(string.Format("{0} argument does not require any values!", arg.argument));
+
                         foreach (string val in validator.values)
                         {
                             if (val == ArgType.AnyValue) valid = true;
                             // if (val == ArgType.NoValue && arg.value == ArgType.BoolTrue) valid = true; // BoolTrue is the default when there is no specified value
                             if (val == arg.value) valid = true;
 
+
                             if (valid) break;
                         }
+
+                        if (!valid && error_on_invalid_parameter) ExitWithError(string.Format("{0} is not a valid parameter value for {1}", arg.value, arg.argument));
                     }
 
                     if (!valid) invalid_arguments.Add(arg.argument);
                 }
             }
 
-            return invalid_arguments.ToArray();
-        }
-
-        ArgType GetValidator(Argument arg)
-        {
-            ArgType validator = null;
-            foreach (ArgType v in validators)
+            string[] unrecognized = invalid_arguments.ToArray();
+            if (unrecognized.Length > 0)
             {
-                if (v.argument == arg.argument)
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("");
+                foreach (string u in unrecognized)
                 {
-                    validator = v;
-                    break;
+                    string closest = this.GetClosestArgument(u);
+                    Console.WriteLine(string.Format("Unrecognized argument \"{0}\"{1}", u, closest == null ? "" : string.Format(", did you mean \"{0}\"?", closest)));
                 }
+                Console.ResetColor();
             }
-
-            return validator;
         }
+
+        // ArgType GetValidator(Argument arg)
+        // {
+        //     ArgType validator = null;
+        //     foreach (ArgType v in validators)
+        //     {
+        //         if (v.argument == arg.argument)
+        //         {
+        //             validator = v;
+        //             break;
+        //         }
+        //     }
+
+        //     return validator;
+        // }
 
         /// <summary>
         /// Using Levenshtein distance, this method finds the closest registered argument and returns it.
+        /// If a match is not found, null is returned.
         /// </summary>
         public string GetClosestArgument(string arg)
         {
@@ -267,6 +285,14 @@ namespace Arguments
             }
             // Step 7
             return d[n, m];
+        }
+
+        void ExitWithError(string error)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(error);
+            Console.ResetColor();
+            Environment.Exit(-1);
         }
     }
 }
