@@ -459,6 +459,7 @@ namespace KeplerVariables
         {
             ResetLines();
             // foreach(LineIterator line in lines) line.m_num = 0;
+
             arguments = new Dictionary<string, KeplerVariable>(); // reset assigned arguments
             target = new KeplerVariable(); // reset target to empty variable
             has_target = true;
@@ -583,6 +584,8 @@ namespace KeplerVariables
     public class KeplerInterruptManager
     {
         public List<KeplerInterrupt> interrupts = new List<KeplerInterrupt>();
+        public KeplerInterruptManager global;
+        public KeplerInterruptManager parent;
         // public Interpreter global;
 
         public void Add(KeplerInterrupt interrupt)
@@ -618,8 +621,18 @@ namespace KeplerVariables
         public KeplerInterrupt GetInterrupt(int id)
         {
             for (int i = 0; i < this.interrupts.Count; ++i)
+            {
                 if (this.interrupts[i].id == id) return this.interrupts[i];
+            }
 
+            if (this.parent != null)
+            {
+                return this.parent.GetInterrupt(id);
+            }
+            else if (this.global != null)
+            {
+                return this.global.GetInterrupt(id);
+            }
             // if (this.has_parent)
             //     return this.parent.GetInterrupt(id);
 

@@ -569,8 +569,8 @@ namespace Kepler.LogicControl
                 m_tokenizer.Load(string_value);
 
                 Interpreter m_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
-                m_interpreter.verbose_debug = verbose_debug;
-                m_interpreter.debug = interpreter.debug;
+                m_interpreter.verbose_debug = this.interpreter.verbose_debug;
+                m_interpreter.debug = this.interpreter.debug;
                 m_interpreter.statemachine.linked_file = true;
                 m_interpreter.tracer = this.interpreter.tracer;
                 m_interpreter.filename = Path.GetFileName(string_value);
@@ -760,10 +760,11 @@ namespace Kepler.LogicControl
         {
             Interpreter parent_interpreter = this.interpreter;
             KeplerInterrupt interrupt = interpreter.interrupts.GetInterrupt(this.interrupt_id);
-            interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
+            interrupt.Disable();
 
             while (true)
             {
+                // Console.WriteLine(string.Format("{0} -> {1}", parent_interpreter.ID, parent_interpreter.is_global));
                 if (parent_interpreter.ID == interrupt.parent.ID) break;
 
                 parent_interpreter.Kill();
@@ -814,7 +815,8 @@ namespace Kepler.LogicControl
             f_interpreter.statemachine.function_type = function.type;
             f_interpreter.statemachine.function_id = function.id;
 
-            f_interpreter.verbose_debug = this.verbose_debug;
+            f_interpreter.verbose_debug = this.interpreter.verbose_debug;
+            f_interpreter.debug = this.interpreter.debug;
             f_interpreter.tracer = this.interpreter.tracer;
             f_interpreter.filename = this.interpreter.filename;
             f_interpreter.is_function = true;
