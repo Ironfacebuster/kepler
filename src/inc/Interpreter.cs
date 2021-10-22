@@ -189,9 +189,12 @@ namespace Kepler.Interpreting
 
                 if (line.tokens[0].type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
 
+                if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
+                c_interrupt.function.lines.Add(c_line);
+
                 if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever" && line.indentation == desired_intendation)
                 {
-                    // c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     c_interrupt.Enable();
                     c_interrupt.SetForever();
                     inside_loop = false;
@@ -203,7 +206,7 @@ namespace Kepler.Interpreting
                 }
                 else if (inside_interrupt && line.CurrentToken().type == TokenType.EndInterval && line.Peek().token_string == "every" && line.indentation == desired_intendation)
                 {
-                    // c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
+                    c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
                     inside_interrupt = false;
                     c_state.booleans["inside_interval"] = false;
 
@@ -211,11 +214,6 @@ namespace Kepler.Interpreting
 
                     c_interrupt.Enable();
                     this.HandleInterrupts();
-                }
-                else
-                {
-                    if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
-                    c_interrupt.function.lines.Add(c_line);
                 }
 
                 return;
@@ -233,14 +231,9 @@ namespace Kepler.Interpreting
                 if (line.CurrentToken().type == TokenType.EndFunction && line.Peek().token_string == c_function.name && line.indentation == desired_intendation)
                 {
                     inside_function = false;
-                    // c_function.lines.RemoveAt(c_function.lines.Count - 1);
+                    c_function.lines.RemoveAt(c_function.lines.Count - 1);
 
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT <{0}>", c_function.name));
-                }
-                else
-                {
-                    c_function.lines.Add(c_line);
-
                 }
 
                 return;
