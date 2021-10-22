@@ -298,30 +298,27 @@ namespace Kepler.Lexer
                 operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
                 bool clean_up = false;
 
-                switch (peek.type)
+
+                bool current_valid = (m_tokens[i].type == TokenType.GenericOperation || IsStaticValue(m_tokens[i]) || m_tokens[i].type == TokenType.DeclareVariable);
+                bool next_valid = (far_peek.type == TokenType.GenericOperation || IsStaticValue(far_peek) || far_peek.type == TokenType.DeclareVariable);
+
+                if (current_valid && next_valid)
                 {
-                    // AND
-                    case TokenType.BooleanOperator:
-                        if ((m_tokens[i].type == TokenType.GenericOperation || m_tokens[i].type == TokenType.StaticBoolean) && (far_peek.type == TokenType.GenericOperation || far_peek.type == TokenType.StaticBoolean))
-                        {
+                    switch (peek.type)
+                    {
+                        // AND
+                        case TokenType.BooleanOperator:
                             operation_token.operation = OperationType.And;
                             clean_up = true;
-                        }
-                        else i++;
-                        break;
-                    // OR
-                    case TokenType.OrOperator:
-                        if ((m_tokens[i].type == TokenType.GenericOperation || m_tokens[i].type == TokenType.StaticBoolean) && (far_peek.type == TokenType.GenericOperation || far_peek.type == TokenType.StaticBoolean))
-                        {
+                            break;
+                        // OR
+                        case TokenType.OrOperator:
                             operation_token.operation = OperationType.Or;
                             clean_up = true;
-                        }
-                        else i++;
-                        break;
-                    default:
-                        i++;
-                        break;
+                            break;
+                    }
                 }
+                else i++;
 
                 if (clean_up)
                 {
@@ -352,6 +349,25 @@ namespace Kepler.Lexer
             if (m_tokens.Count == 0) m_tokens.Add(new Token(TokenType.EOL, 0, "EOL"));
 
             this.tokens = m_tokens;
+        }
+
+        private bool IsStaticValue(Token token)
+        {
+            switch (token.type)
+            {
+                case TokenType.StaticBoolean:
+                    return true;
+                case TokenType.StaticFloat:
+                    return true;
+                case TokenType.StaticInt:
+                    return true;
+                case TokenType.StaticString:
+                    return true;
+                case TokenType.StaticUnsignedInt:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private TokenMatch GetTokenType(string token, string peek, string previous)

@@ -314,7 +314,13 @@ namespace Kepler.LogicControl
                 result.SetStringValue(a_operand.GetValueAsString() + b_operand.GetValueAsString());
                 return result;
             }
-            else if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) && (token.operation != OperationType.GreaterThan && token.operation != OperationType.GreaterThanEqual && token.operation != OperationType.LessThan && token.operation != OperationType.LessThanEqual))
+            else if ((a_operand.type == KeplerType.String || b_operand.type == KeplerType.String) &&
+            (token.operation != OperationType.GreaterThan &&
+            token.operation != OperationType.GreaterThanEqual &&
+            token.operation != OperationType.LessThan &&
+            token.operation != OperationType.LessThanEqual &&
+            token.operation != OperationType.And &&
+            token.operation != OperationType.Or))
             {
                 result.SetType(KeplerType.NaN);
                 return result;
@@ -754,6 +760,7 @@ namespace Kepler.LogicControl
         {
             Interpreter parent_interpreter = this.interpreter;
             KeplerInterrupt interrupt = interpreter.interrupts.GetInterrupt(this.interrupt_id);
+            interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
 
             while (true)
             {
@@ -762,8 +769,6 @@ namespace Kepler.LogicControl
                 parent_interpreter.Kill();
                 parent_interpreter = parent_interpreter.parent;
             }
-
-            interpreter.interrupts.GetInterrupt(this.interrupt_id).Disable();
         }
 
         void KillAllByFunctionID(string function_id)
@@ -826,11 +831,13 @@ namespace Kepler.LogicControl
                 if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
 
                 function.ResetLines(); // reset line token indexes to zero
+                function.Reset();
 
 
                 // do interpretation
                 foreach (LineIterator line in function.lines)
                 {
+                    // Console.WriteLine(line);
                     f_interpreter.Interpret(line);
                     if (f_interpreter.killed) break;
                 }
