@@ -100,7 +100,6 @@ namespace KeplerCompiler
             interpreter.filename = Path.GetFileName(filename);
             interpreter.debug = debug;
             interpreter.verbose_debug = verbose_debug;
-            interpreter.debug = debug;
             interpreter.tracer = tracer;
 
             // "load" required static values
@@ -113,7 +112,6 @@ namespace KeplerCompiler
             // do interpretation
             while (tokenizer.HasNext() || interpreter.interrupts.HasAnyInterrupts())
             {
-                // Console.WriteLine(tokenizer.HasNext());
                 if (interpreter.interrupts.HasInterrupts())
                     interpreter.HandleInterrupts(false);
                 if (tokenizer.HasNext())
@@ -326,7 +324,7 @@ namespace KeplerCompiler
             Console.WriteLine(c_line.GetString());
 
             Console.ForegroundColor = ConsoleColor.Red;
-            // Console.WriteLine(spaces + "^ ");
+
             Console.Write(spaces);
             int marker_length = c_line.tokens.Count > 0 ? token_start > c_line.tokens.Count - 1 ? 1 : c_line.tokens[token_start].token_string.Length : 0;
 

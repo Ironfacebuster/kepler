@@ -98,7 +98,7 @@ namespace Kepler.Exceptions
         public string GetErrorString()
         {
             string error_string = "Unknown Error";
-            // Console.WriteLine(string.Format("Error Code: {0}", this.code));
+
             switch (this.code)
             {
                 case KeplerErrorCode.INVAL_FILE:
