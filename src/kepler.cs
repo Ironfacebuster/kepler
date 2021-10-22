@@ -31,20 +31,7 @@ namespace KeplerCompiler
             arguments.AddArgument(new ArgType("version"));
             arguments.AddArgument(new ArgType("debug", new string[] { "verbose", ArgType.BoolTrue }));
 
-            string[] unrecognized = arguments.Parse(args);
-            if (unrecognized.Length > 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("");
-                foreach (string u in unrecognized)
-                {
-                    string closest = arguments.GetClosestArgument(u);
-                    Console.WriteLine(string.Format("Unrecognized argument \"{0}\"{1}", u, closest == null ? "" : string.Format(", did you mean \"{0}\"?", closest)));
-                }
-                Console.ResetColor();
-                // Environment.Exit(-1);
-            }
-
+            arguments.Parse(args);
 
             if (arguments.HasArgument("help"))
             {
