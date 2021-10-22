@@ -858,9 +858,8 @@ namespace Kepler.LogicControl
                     Console.WriteLine(function.target.id);
                 }
 
-                if (state.booleans["variable_assign"])
+                if (state.booleans["variable_assign"] && state.left_side_operator != null)
                 {
-
                     state.left_side_operator.AssignValue(f_interpreter.statemachine.function_return_value);
                     // KeplerVariable target = this.variables.GetVariableByID(function.target.id);
                 }
