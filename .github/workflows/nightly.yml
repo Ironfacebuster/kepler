@@ -21,8 +21,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
       with:
+        ref: "nightly"
         fetch-depth: 0
 
+    # Install the .NET Core workload
     - name: Install .NET Core
       uses: actions/setup-dotnet@v1
       with:
@@ -36,7 +38,7 @@ jobs:
 
     - name: Copy Nightly readme
       run: cp "res/nightly.txt" "$env:PUBLISH_LOCATION/readme.txt"
-
+      
     - name: Zip executable
       run: Compress-Archive -Path $env:PUBLISH_LOCATION -DestinationPath $env:ZIP_LOCATION
 
