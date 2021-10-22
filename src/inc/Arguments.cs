@@ -51,7 +51,7 @@ namespace Arguments
 
     public class ArgumentList
     {
-
+        public bool error_on_invalid_parameter = true;
         List<Argument> arguments = new List<Argument>();
         List<string> invalid_arguments = new List<string>();
         List<ArgType> validators = new List<ArgType>();
@@ -115,9 +115,9 @@ namespace Arguments
         }
 
         /// <summary>
-        /// Parse an array of string arguments to a usable set of data, and return any unrecognized arguments.
+        /// Parse an array of string arguments to a usable set of data, and warn of any invalid arguments.
         /// </summary>
-        public string[] Parse(string[] args)
+        public void Parse(string[] args)
         {
             for (var i = 0; i < args.Length;)
             {
@@ -179,14 +179,25 @@ namespace Arguments
                             if (valid) break;
                         }
 
-                        if (!valid) ExitWithError(string.Format("{0} is not a valid parameter value for {1}", arg.value, arg.argument));
+                        if (!valid && error_on_invalid_parameter) ExitWithError(string.Format("{0} is not a valid parameter value for {1}", arg.value, arg.argument));
                     }
 
                     if (!valid) invalid_arguments.Add(arg.argument);
                 }
             }
 
-            return invalid_arguments.ToArray();
+            string[] unrecognized = invalid_arguments.ToArray();
+            if (unrecognized.Length > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("");
+                foreach (string u in unrecognized)
+                {
+                    string closest = this.GetClosestArgument(u);
+                    Console.WriteLine(string.Format("Unrecognized argument \"{0}\"{1}", u, closest == null ? "" : string.Format(", did you mean \"{0}\"?", closest)));
+                }
+                Console.ResetColor();
+            }
         }
 
         // ArgType GetValidator(Argument arg)
@@ -206,6 +217,7 @@ namespace Arguments
 
         /// <summary>
         /// Using Levenshtein distance, this method finds the closest registered argument and returns it.
+        /// If a match is not found, null is returned.
         /// </summary>
         public string GetClosestArgument(string arg)
         {
