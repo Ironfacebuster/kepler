@@ -1,12 +1,22 @@
-a1.3.3
-! Made releases single file deployments.
+a1.4
++ Added functions returning values.
++ Added string to Boolean casting.
++ Added string to number (Int, uInt, Float) casting.
++ Added a strict comparison, "==". This returns False if types are not equal.
 + Added argument checking, unrecognized argument warning, and invalid argument parameter errors.
 + Added string "greater than", "less than", etc. comparisons.
 + Added "malformed" string error message.
++ Added "throw" statement for controlling code flow and custom errors.
++ Added an unrecognized argument warning.
++ Added an error if an argument is passed with a value when it doesn't take any.
+! Improved "and" and "or" operations.
+! Changed "equals" to be a non-strict comparison. This will attempt to cast the values to be like type, and compare them.
+! Made releases single file deployments.
 ! Fixed broken check for unexpected end of conditional.
 ! Modified "--debug" behavior so that a "tree" is printed for the line by default, with an optional "verbose" value providing more verbose debug information.
 ! Implemented basic "headless" mode.
-+ Added "throw" statement for controlling code flow and custom errors.
+! Temporarily disabled loading of static_values.kep
+! Moved default static values out of static_values.kep
 
 a1.3.2
 ! Fixed typo in "UNEXP_END_LOOP" error string.
