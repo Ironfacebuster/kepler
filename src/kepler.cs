@@ -1,16 +1,15 @@
-﻿using System;
+﻿using Arguments;
+using Help;
+using Kepler.Exceptions;
+using Kepler.Interpreting;
 // using System.Collections.Generic;
 using Kepler.Lexer;
-using Arguments;
-using Kepler.Interpreting;
-using Kepler.Versioning;
 using Kepler.LogicControl;
-using Kepler.Exceptions;
 using Kepler.Tracing;
+using Kepler.Versioning;
 using KeplerVariables;
-using Help;
+using System;
 using System.IO;
-using System.Linq;
 
 namespace KeplerCompiler
 {
@@ -268,6 +267,57 @@ namespace KeplerCompiler
 
                 return res;
             };
+
+            KeplerFunction get_key = functs.DeclareFunction("getkey", true, true);
+            get_key.SetType(KeplerType.String);
+            string last_key = "";
+
+            get_key.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+
+                if (Console.KeyAvailable)
+                {
+                    last_key = Console.ReadKey().Key.ToString();
+
+                }
+
+                res.SetStringValue(last_key);
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+            KeplerFunction resetkey = functs.DeclareFunction("resetkey", true, true);
+            resetkey.SetType(KeplerType.String);
+
+            resetkey.internal_call = (interpreter, args) =>
+            {
+                last_key = "";
+                return null;
+            };
+
+            KeplerFunction clearscreen = functs.DeclareFunction("clear", true, true);
+            clearscreen.SetType(KeplerType.String);
+
+            clearscreen.internal_call = (interpreter, args) =>
+            {
+                Console.Clear();
+                return null;
+            };
+
+            KeplerFunction f_random = functs.DeclareFunction("f_random", true, true);
+            f_random.SetType(KeplerType.Float);
+            f_random.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetFloatValue((decimal)((float)new Random().Next(513) / 512f));
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+
         }
 
         static void LoadStaticFile(Interpreter interpreter)
