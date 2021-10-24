@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Kepler.Lexer;
-using Kepler.Interpreting;
-using System.Diagnostics;
-using System;
-using System.Linq;
 using Kepler.Exceptions;
+using Kepler.Interpreting;
+using Kepler.Lexer;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace KeplerVariables
 {
@@ -108,7 +108,7 @@ namespace KeplerVariables
 
         public KeplerVariable()
         {
-            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+            this.id = Guid.NewGuid().ToString("N");
         }
 
         public void SetModifier(KeplerModifier modifier)
@@ -416,7 +416,7 @@ namespace KeplerVariables
         public KeplerFunction(string name, bool is_internal = false)
         {
             this.name = name;
-            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+            this.id = Guid.NewGuid().ToString("N");
             this.is_internal = is_internal;
         }
 
@@ -563,11 +563,14 @@ namespace KeplerVariables
         public void Disable()
         {
             this.disabled = true;
+            this.stopWatch.Stop();
         }
 
         public void Enable()
         {
             this.disabled = false;
+
+            this.stopWatch.Start();
         }
 
         public bool IsDisabled()
