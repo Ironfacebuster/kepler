@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
+using Kepler.Exceptions;
+using Kepler.Interpreting;
 using Kepler.Lexer;
 using Kepler.Lexer.Tokens;
 using KeplerVariables;
-using Kepler.Interpreting;
-using Kepler.Exceptions;
+using System;
+using System.Collections.Generic;
 // using Kepler.Lexer.Tokens;
 using System.IO;
 
@@ -159,8 +159,10 @@ namespace Kepler.LogicControl
 
         public TokenState GetLevelOneToken(Token token)
         {
-            foreach (TokenState state in level1)
-                if (state.type == token.type) return state;
+            for (int i = 0; i < level1.Count; ++i)
+            {
+                if (level1[i].type == token.type) return level1[i];
+            }
 
             throw new KeplerError(KeplerErrorCode.UNEXP_START_TOKEN, new string[] { token.token_string });
         }
@@ -826,7 +828,10 @@ namespace Kepler.LogicControl
                 if (this.verbose_debug)
                     Console.WriteLine("EXECUTING INTERNAL FUNCT!");
                 // call with null argument list, since arguments aren't properly implemented yet
-                f_interpreter.statemachine.SetReturnValue(function.internal_call(f_interpreter, null));
+                KeplerVariable result = function.internal_call(f_interpreter, null);
+
+                if (result != null)
+                    f_interpreter.statemachine.SetReturnValue(result);
             }
             else
             {
@@ -835,12 +840,10 @@ namespace Kepler.LogicControl
                 function.ResetLines(); // reset line token indexes to zero
                 function.Reset();
 
-
                 // do interpretation
-                foreach (LineIterator line in function.lines)
+                for (int i = 0; i < function.lines.Count; ++i)
                 {
-                    // Console.WriteLine(line);
-                    f_interpreter.Interpret(line);
+                    f_interpreter.Interpret(function.lines[i]);
                     if (f_interpreter.killed) break;
                 }
 
@@ -1029,9 +1032,10 @@ namespace Kepler.LogicControl
 
         TokenState GetNextState(TokenState current_state, Token peek)
         {
-            foreach (TokenState state in current_state.child_states)
-                if (state.type == peek.type) return state;
-
+            for (int i = 0; i < current_state.child_states.Length; ++i)
+            {
+                if (current_state.child_states[i].type == peek.type) return current_state.child_states[i];
+            }
 
             if (peek.type == TokenType.EOL) throw new KeplerError(KeplerErrorCode.UNEXP_EOL);
 

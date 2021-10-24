@@ -1,6 +1,6 @@
-using System;
-using Kepler.Tracing;
 using Kepler.Lexer;
+using Kepler.Tracing;
+using System;
 
 namespace Kepler.Exceptions
 {
