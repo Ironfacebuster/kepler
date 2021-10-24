@@ -1,11 +1,11 @@
+using Kepler.Exceptions;
+using Kepler.Lexer;
+using Kepler.Lexer.Tokens;
+using Kepler.LogicControl;
+using Kepler.Tracing;
+using KeplerVariables;
 using System;
 using System.Collections.Generic;
-using Kepler.Lexer;
-using Kepler.LogicControl;
-using Kepler.Lexer.Tokens;
-using KeplerVariables;
-using Kepler.Tracing;
-using Kepler.Exceptions;
 
 namespace Kepler.Interpreting
 {
@@ -447,9 +447,10 @@ namespace Kepler.Interpreting
 
                     // Console.WriteLine("START INTERP. INTERRUPT");
                     // do interpretation
-                    foreach (LineIterator line in int_function.lines)
+                    for (int l = 0; l < int_function.lines.Count; ++l)
                     {
-                        // Console.WriteLine(line);
+                        LineIterator line = int_function.lines[l];
+
                         if (this.interrupts.HasInterrupt(interrupts[i].id))
                             f_interpreter.Interpret(line);
                         else break;

@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Linq;
 using Kepler.Exceptions;
 using Kepler.Lexer.Tokens;
 using Kepler.LogicControl;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 
 namespace Kepler.Lexer
@@ -522,9 +522,9 @@ namespace Kepler.Lexer
             // else if (tokenized == "}") m_tokens.Add(new Token(TokenType.EndStaticList, i));
             // else if (tokenized == "Header") m_tokens.Add(new Token(TokenType.DeclareHeader, i));
 
-            foreach (var pair in tokens)
+            for (int i = 0; i < tokens.Length; ++i)
             {
-                if (pair.Match(token, peek, previous)) return pair;
+                if (tokens[i].Match(token, peek, previous)) return tokens[i];
             }
 
             return new TokenMatch(TokenType.UNRECOGNIZED, null, null, null, 0);
@@ -534,9 +534,9 @@ namespace Kepler.Lexer
         {
             string tostring = "";
 
-            foreach (var item in this.tokens)
+            for (int i = 0; i < this.tokens.Count; ++i)
             {
-                tostring = tostring + item.token_string + " ";
+                tostring = tostring + this.tokens[i].token_string + " ";
             }
 
             return tostring;
@@ -555,9 +555,9 @@ namespace Kepler.Lexer
             // string tostring = tab + "LineIterator:\r\nLine: " + this.line + "\r\nTokens:\r\n";
             string tostring = string.Format("{0}LineIterator (Line {1}) [m_num: {2}]:\r\n{0}Tokens:\r\n", tab, this.line, this.m_num);
 
-            foreach (var item in this.tokens)
+            for (int c = 0; c < this.tokens.Count; ++c)
             {
-                tostring = tostring + tab + item.ToString() + "\r\n";
+                tostring = tostring + tab + this.tokens[c].ToString() + "\r\n";
             }
 
             return tostring;
