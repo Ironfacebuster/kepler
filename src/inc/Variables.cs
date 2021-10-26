@@ -281,7 +281,7 @@ namespace KeplerVariables
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
             }
 
-            return 0;
+            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
         }
 
         public uint GetValueAsUnsignedInt()
@@ -302,7 +302,7 @@ namespace KeplerVariables
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
             }
 
-            return 0;
+            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
         }
 
         public decimal GetValueAsFloat()
@@ -324,7 +324,7 @@ namespace KeplerVariables
 
             }
 
-            return 0;
+            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Float" });
         }
 
         public bool GetValueAsBool()
@@ -345,7 +345,7 @@ namespace KeplerVariables
                     throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
             }
 
-            return false;
+            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
         }
     }
 

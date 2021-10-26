@@ -260,6 +260,10 @@ namespace Kepler.Lexer
                         operation_token.operation = OperationType.LessThanEqual;
                         clean_up = true;
                         break;
+                    case TokenType.CastType:
+                        operation_token.operation = OperationType.CastType;
+                        clean_up = true;
+                        break;
                     default:
                         i++;
                         break;
@@ -441,6 +445,7 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.StaticVariableType, "List", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticVariableType, "Boolean", TokenMatch.any_string, TokenMatch.any_string, 0),
 
+
                 new TokenMatch(TokenType.StartArguments, "with", TokenMatch.any_string, TokenMatch.any_string, 0), // "with" defines the start of StartArguments
                 new TokenMatch(TokenType.StartPositionalArguments, "using", TokenMatch.any_string, TokenMatch.any_string, 0), // "using" defines the start of positional arguments
                 new TokenMatch(TokenType.PositionalArgumentAssignment, "as", TokenMatch.any_string, TokenMatch.any_string, 0), // "as" is a PositionalArgumentAssignment
@@ -488,6 +493,7 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.GenericGreaterThan, ">", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericLessThanEqual, "<=", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericGreaterThanEqual, ">=", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.CastType, "cast", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 // generic tokens
                 new TokenMatch(TokenType.Generic, "!", TokenMatch.any_string,TokenMatch.any_string,0),
@@ -608,6 +614,7 @@ namespace Kepler.Lexer.Tokens
         DeclareVariable, // context dependant! if DeclareVariable is FIRST token and it doesn't already exist, CREATE the variable. otherwise, access the variable
         StaticVariableType,
         StaticModifier,
+        CastType,
 
         // header things
         DeclareHeader, // context dependant! MUST follow a StartHeader!
@@ -723,7 +730,8 @@ namespace Kepler.Lexer.Tokens
         LessThan,
         LessThanEqual,
         And,
-        Or
+        Or,
+        CastType
     }
     public class Float
     {

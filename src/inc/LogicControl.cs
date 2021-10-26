@@ -226,9 +226,42 @@ namespace Kepler.LogicControl
             {
                 Console.WriteLine(String.Format("Doing Generic Operation \"{0}\"", token.operation));
             }
-            KeplerVariable result = new KeplerVariable();
 
+            KeplerVariable result = new KeplerVariable();
             KeplerVariable a_operand = CreateTemporaryVariable(token.a);
+
+            if (token.operation == OperationType.CastType)
+            {
+                if (token.b.type != TokenType.StaticVariableType) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { token.b.token_string });
+                Enum.TryParse(token.b.token_string, out KeplerType m_type);
+
+                // result.SetType(m_type);
+
+                switch (m_type)
+                {
+                    case KeplerType.Float:
+                        result.SetFloatValue(a_operand.GetValueAsFloat());
+                        break;
+                    case KeplerType.Int:
+                        result.SetIntValue(a_operand.GetValueAsInt());
+                        break;
+                    case KeplerType.uInt:
+                        result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt());
+                        break;
+                    case KeplerType.Boolean:
+                        result.SetBoolValue(a_operand.GetValueAsBool());
+                        break;
+                    case KeplerType.String:
+                        result.SetStringValue(a_operand.GetValueAsString());
+                        break;
+                    default:
+                        throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { a_operand.type.ToString(), m_type.ToString() });
+                }
+
+                return result;
+            }
+
+            // create b_operand after making sure we're not casting
             KeplerVariable b_operand = CreateTemporaryVariable(token.b);
 
             if (verbose_debug)
@@ -971,6 +1004,7 @@ namespace Kepler.LogicControl
         {
             booleans["declared_variable"] = false;
             booleans["declared_function"] = false;
+            booleans["casting_variable"] = false;
             booleans["variable_assign"] = false;
             booleans["validate_conditional"] = false;
             booleans["validate_assertion"] = false;
