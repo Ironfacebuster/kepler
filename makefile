@@ -13,7 +13,8 @@ project_location = "./src/kepler.csproj"
 all: clean \
 		publish \
 		test_local \
-		pack 
+		pack \
+		cleanup
 
 # build:
 # 	@cp -R ./bin/Resources/examples ./$(output_location); \
@@ -61,9 +62,10 @@ test_local:
 	./scripts/run_local_tests.bat
 
 # Alias for "dotnet run" because the project isn't in the root anymore.
-run:
+debug:
 	@ \
-	dotnet run --project $(project_location) ;
+	"scripts/generate_resources.bat" debug; \
+	dotnet run --project $(project_location) --debug;
 
 cleanup:
 	@echo Cleaning up after build...; \
