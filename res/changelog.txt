@@ -1,3 +1,7 @@
+a1.4.1
++ Added explicit type casting.
++ Added f_random, getkey, and resetkey internal functions.
+
 a1.4
 + Added functions returning values.
 + Added string to Boolean casting.
