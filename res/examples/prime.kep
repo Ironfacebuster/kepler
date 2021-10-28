@@ -9,6 +9,11 @@ start Header
 end Header
 
 print ""
+print "Please enter a number to check if it is prime: "
+inp is call input
+test_number is inp cast Int
+
+print ""
 print "Checking if " + test_number + " is prime..."
 print "This could take a while..."
 print ""
