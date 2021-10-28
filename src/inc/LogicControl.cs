@@ -261,6 +261,11 @@ namespace Kepler.LogicControl
                 return result;
             }
 
+            if (token.operation == OperationType.Invert)
+            {
+                result.SetBoolValue(!a_operand.GetValueAsBool());
+                return result;
+            }
             // create b_operand after making sure we're not casting
             KeplerVariable b_operand = CreateTemporaryVariable(token.b);
 
@@ -1131,23 +1136,25 @@ namespace Kepler.LogicControl
             Boolean match_previous = false;
             Boolean match_peek = false;
 
-            if ((string.IsNullOrEmpty(this.peek) && string.IsNullOrEmpty(peek)) || this.peek == peek) match_peek = true;
-            if (!string.IsNullOrEmpty(this.peek) && this.peek == any_string) match_peek = true;
+            // if match_peek is already true, don't check the next time
+            if (!match_peek && ((string.IsNullOrEmpty(this.peek) && string.IsNullOrEmpty(peek)) || this.peek == peek)) match_peek = true;
+            if (!match_peek && (!string.IsNullOrEmpty(this.peek) && this.peek == any_string)) match_peek = true;
 
-            if ((string.IsNullOrEmpty(this.prev) && string.IsNullOrEmpty(previous)) || this.prev == previous) match_previous = true;
-            if (!string.IsNullOrEmpty(this.prev) && this.prev == any_string) match_previous = true;
+            // if match_previous is already true, don't check the next time
+            if (!match_previous && ((string.IsNullOrEmpty(this.prev) && string.IsNullOrEmpty(previous)) || this.prev == previous)) match_previous = true;
+            if (!match_previous && (!string.IsNullOrEmpty(this.prev) && this.prev == any_string)) match_previous = true;
 
-            if ((string.IsNullOrEmpty(this.string_token) && string.IsNullOrEmpty(token)) || this.string_token == token) match_token = true;
-
-            if (!string.IsNullOrEmpty(this.string_token))
+            // if match_token is already true, don't check the next time
+            if (!match_token && ((string.IsNullOrEmpty(this.string_token) && string.IsNullOrEmpty(token)) || this.string_token == token)) match_token = true;
+            if (!match_token && !string.IsNullOrEmpty(this.string_token))
             {
                 if (this.string_token == any_string) match_token = true;
-                if (this.string_token == eval_float && Double.TryParse(token, out double f) && token.IndexOf(".") != -1) match_token = true;
-                if (this.string_token == eval_int && Int32.TryParse(token, out int i) && token.IndexOf(".") == -1) match_token = true;
+                if (!match_token && (this.string_token == eval_float && Decimal.TryParse(token, out decimal f) && token.IndexOf(".") != -1)) match_token = true;
+                if (!match_token && (this.string_token == eval_int && Int32.TryParse(token, out int i) && token.IndexOf(".") == -1)) match_token = true;
                 // if (this.string_token == eval_ufloat && Double.TryParse(token.Substring(1), out double uf) && (new Regex(@"u[0-9]*.[0-9]*").Match(token).Length == 1)) match_token = true;
                 // if (this.string_token == eval_uint && Int32.TryParse(token.Substring(1), out int ui) && (new Regex(@"u[0-9]*").Match(token).Length == 1)) match_token = true;
-                if (this.string_token == eval_ufloat && Double.TryParse(token.Substring(1), out double uf) && token.IndexOf(".") != -1 && token[0] == 'u') match_token = true;
-                if (this.string_token == eval_uint && Int32.TryParse(token.Substring(1), out int ui) && token.IndexOf(".") == -1 && token[0] == 'u') match_token = true;
+                if (!match_token && (this.string_token == eval_ufloat && Decimal.TryParse(token.Substring(1), out decimal uf) && token.IndexOf(".") != -1 && token[0] == 'u')) match_token = true;
+                if (!match_token && (this.string_token == eval_uint && Int32.TryParse(token.Substring(1), out int ui) && token.IndexOf(".") == -1 && token[0] == 'u')) match_token = true;
             }
 
             if (match_token && match_peek && match_previous) return true;
