@@ -492,7 +492,7 @@ namespace Kepler.Interpreting
             if (token.a != null)
             {
                 PrintToken(token.a, indentation + 1, " A: ");
-                PrintToken(token.b, indentation + 1, " B: ");
+                if (token.b != null) PrintToken(token.b, indentation + 1, " B: ");
             }
         }
     }
