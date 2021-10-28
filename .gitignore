@@ -17,6 +17,7 @@ installer.nsi
 # other things
 */temp
 *.xcf
+*\launchSettings.json
 
 # hidden autogen macos files 
 .DS_Store
