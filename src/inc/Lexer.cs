@@ -196,10 +196,10 @@ namespace Kepler.Lexer
             // Operations pass
             for (int i = 0; i < m_tokens.Count;)
             {
-                if (i == m_tokens.Count - 2 || i == m_tokens.Count - 1)
+                if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
                 {
                     i++;
-                    continue;
+                    break;
                 }
 
                 Token peek = m_tokens[i + 1];
@@ -278,7 +278,6 @@ namespace Kepler.Lexer
                     // remove combined tokens
                     m_tokens.RemoveAt(i + 1);
                     m_tokens.RemoveAt(i + 1);
-
                     // assign combined token
                     m_tokens[i] = operation_token;
                 }
@@ -288,10 +287,10 @@ namespace Kepler.Lexer
             for (int i = 1; i < m_tokens.Count;)
             {
 
-                if (i == m_tokens.Count - 2 || i == m_tokens.Count - 1)
+                if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
                 {
                     i++;
-                    continue;
+                    break;
                 }
 
                 Token peek = m_tokens[i + 1];
@@ -301,7 +300,6 @@ namespace Kepler.Lexer
                 operation_token.start = i;
                 operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
                 bool clean_up = false;
-
 
                 bool current_valid = (m_tokens[i].type == TokenType.GenericOperation || IsStaticValue(m_tokens[i]) || m_tokens[i].type == TokenType.DeclareVariable);
                 bool next_valid = (far_peek.type == TokenType.GenericOperation || IsStaticValue(far_peek) || far_peek.type == TokenType.DeclareVariable);
@@ -348,6 +346,29 @@ namespace Kepler.Lexer
                 equality.b = new Token(TokenType.StaticBoolean, 3, "True");
 
                 m_tokens[1] = equality;
+            }
+
+            // final pass, for single token operations
+            for (int i = 0; i < m_tokens.Count; ++i)
+            {
+                if (i >= m_tokens.Count - 1)
+                {
+                    break;
+                }
+
+                Token peek = m_tokens[i + 1];
+
+                if (m_tokens[i].type == TokenType.BooleanInvert)
+                {
+                    Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
+
+                    operation_token.operation = OperationType.Invert;
+                    operation_token.a = peek;
+                    operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string;
+
+                    m_tokens.RemoveAt(i + 1);
+                    m_tokens[i] = operation_token;
+                }
             }
 
             if (m_tokens.Count == 0) m_tokens.Add(new Token(TokenType.EOL, 0, "EOL"));
@@ -423,6 +444,7 @@ namespace Kepler.Lexer
 
                 new TokenMatch(TokenType.BooleanOperator, "and", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.OrOperator, "or", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.BooleanInvert, "not", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "equals", TokenMatch.any_string, 0),
                 // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "is", TokenMatch.any_string, 0),
@@ -607,6 +629,7 @@ namespace Kepler.Lexer.Tokens
     public enum TokenType
     {
         BooleanOperator,
+        BooleanInvert,
         OrOperator,
         ConstantValue,
 
@@ -731,7 +754,8 @@ namespace Kepler.Lexer.Tokens
         LessThanEqual,
         And,
         Or,
-        CastType
+        Invert,
+        CastType,
     }
     public class Float
     {
