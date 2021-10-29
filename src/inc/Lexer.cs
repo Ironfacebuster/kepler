@@ -349,12 +349,9 @@ namespace Kepler.Lexer
             }
 
             // final pass, for single token operations
-            for (int i = 0; i < m_tokens.Count; ++i)
+            // this pass is reversed
+            for (int i = m_tokens.Count - 2; i >= 1; --i)
             {
-                if (i >= m_tokens.Count - 1)
-                {
-                    break;
-                }
 
                 Token peek = m_tokens[i + 1];
 
@@ -645,7 +642,6 @@ namespace Kepler.Lexer.Tokens
         EndHeader,
 
 
-        NonToken, // inverter token: invert the result of the following tokens
         GenericAssign, // "is" action dependant on context
 
         Generic,
@@ -695,7 +691,7 @@ namespace Kepler.Lexer.Tokens
         StaticInt,
         StaticFloat,
         StaticUnsignedInt,
-        StaticUnsignedFloat,
+        // StaticUnsignedFloat,
         StartStaticArray,
         EndStaticArray,
         StartStaticList,
