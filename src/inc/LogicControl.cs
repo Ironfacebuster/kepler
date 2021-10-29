@@ -134,7 +134,7 @@ namespace Kepler.LogicControl
             // set up level 1 token states
             level1.Add(new TokenState(TokenType.ConditionalIf, HandleConditionalIf));
             level1.Add(new TokenState(TokenType.ConditionalElseIf, HandleConditionalElseIf));
-            level1.Add(new TokenState(TokenType.ConditionalElse, HandleConditionalElse));
+            level1.Add(new TokenState(TokenType.ConditionalElse, new TokenState[] { EOL }, HandleConditionalElse));
             level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn)); // TODO: return values!
             level1.Add(StartInterval);
             level1.Add(EndInterval);

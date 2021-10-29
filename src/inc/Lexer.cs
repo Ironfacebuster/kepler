@@ -338,7 +338,7 @@ namespace Kepler.Lexer
             }
 
             // conditional virtual equality
-            if (m_tokens.Count == 2 && m_tokens[0].type == TokenType.StartConditional)
+            if (m_tokens.Count == 2 && (m_tokens[0].type == TokenType.StartConditional || m_tokens[0].type == TokenType.ConditionalElseIf))
             {
                 Token equality = new Token(TokenType.GenericOperation, 1, m_tokens[1].token_string);
                 equality.operation = OperationType.Equality;
@@ -358,12 +358,14 @@ namespace Kepler.Lexer
                 if (m_tokens[i].type == TokenType.BooleanInvert)
                 {
                     Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
-
-                    operation_token.operation = OperationType.Invert;
-                    operation_token.a = peek;
+                    operation_token.start = i;
                     operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string;
+                    operation_token.operation = OperationType.Invert;
+                    operation_token.a = m_tokens[i + 1];
 
+                    // remove combined tokens
                     m_tokens.RemoveAt(i + 1);
+                    // assign combined token
                     m_tokens[i] = operation_token;
                 }
             }
@@ -474,9 +476,9 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.AssignFunctionType, "returns", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.AssignNonPositionalArgument, "uses", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.FunctionReturn, "return", TokenMatch.any_string, null, 0),
-                // new TokenMatch(TokenType.ConditionalIf, "if", TokenMatch.any_string, null, 0),
-                // new TokenMatch(TokenType.ConditionalElse, "else", "else", null, 0),
-                // new TokenMatch(TokenType.ConditionalElseIf, "else", "if", null, 1), // i++
+                new TokenMatch(TokenType.ConditionalIf, "if", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.ConditionalElse, "else", null, null, 0),
+                new TokenMatch(TokenType.ConditionalElseIf, "elseif", TokenMatch.any_string, null, 0),
                 new TokenMatch(TokenType.GenericAssign, "is", TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 // modifiers
