@@ -1,13 +1,33 @@
-num is 0
+if_1 is False
+if_2 is True
+elseif_1 is False
+elseif_2 is False
+else_1 is False
 
 if True
-    num is 1
+    if_1 is True
 endif
 
 if False
-    num is 10
+    if_2 is False
 endif
 
-assert num equals 1
+if False
+    assert False equals True
+elseif True
+    elseif_1 is True
+endif
+
+if False
+    assert False equals True
+else
+    else_1 is True
+endif
+
+assert if_1 equals True
+assert if_2 equals True
+assert elseif_1 equals True
+assert elseif_2 equals True
+assert else_1 equals True
 
 print "SUCCESS"
