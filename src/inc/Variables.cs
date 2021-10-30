@@ -498,6 +498,19 @@ namespace KeplerVariables
         }
     }
 
+    public class KeplerConditional
+    {
+        public KeplerFunction main_function;
+        public List<KeplerFunction> elseifs;
+        public KeplerFunction else_function;
+
+        public KeplerConditional()
+        {
+            main_function = new KeplerFunction("conditional_main");
+            else_function = new KeplerFunction("conditional_else");
+            elseifs = new List<KeplerFunction>();
+        }
+    }
     public class KeplerInterrupt
     {
         Stopwatch stopWatch = new Stopwatch();

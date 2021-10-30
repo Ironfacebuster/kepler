@@ -194,7 +194,7 @@ namespace Kepler.LogicControl
         {
             if (!state.booleans["inside_conditional"]) throw new KeplerError(KeplerErrorCode.UNEXP_END_COND);
             // enter "validate_conditional"
-            state.booleans["validate_conditional"] = false;
+            // state.booleans["validate_conditional"] = false;
             state.booleans["inside_conditional"] = false;
         }
 
@@ -212,7 +212,7 @@ namespace Kepler.LogicControl
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + result.GetValueAsString();
             if (state.booleans["validate_conditional"])
-                state.booleans["inside_conditional"] = result.GetValueAsBool();
+                state.booleans["validated_conditional"] = result.GetValueAsBool();
             if (state.booleans["validate_assertion"] && result.GetValueAsBool() != true)
                 throw new KeplerError(KeplerErrorCode.FALSE_ASSERTION, new string[] { result.GetValueAsBool().ToString() });
             if (state.booleans["throw_error"])
@@ -220,7 +220,7 @@ namespace Kepler.LogicControl
             if (state.booleans["return_value"])
                 this.SetReturnValue(result);
         }
-        KeplerVariable DoGenericOperation(Token token)
+        public KeplerVariable DoGenericOperation(Token token)
         {
             if (verbose_debug)
             {
@@ -686,11 +686,11 @@ namespace Kepler.LogicControl
         }
         void HandleConditionalElseIf(Token token, TokenState state)
         {
-            state.booleans["inside_if_statement"] = true;
+            if (!state.booleans["inside_if_statement"]) throw new KeplerError(KeplerErrorCode.UNEXP_START_COND);
         }
         void HandleConditionalElse(Token token, TokenState state)
         {
-            state.booleans["inside_if_statement"] = true;
+            if (!state.booleans["inside_if_statement"]) throw new KeplerError(KeplerErrorCode.UNEXP_START_COND);
         }
         void HandleDeclareVariable(Token token, TokenState state)
         {
@@ -1013,6 +1013,7 @@ namespace Kepler.LogicControl
             booleans["casting_variable"] = false;
             booleans["variable_assign"] = false;
             booleans["validate_conditional"] = false;
+            booleans["validated_conditional"] = false;
             booleans["validate_assertion"] = false;
             booleans["inside_conditional"] = false;
             booleans["function_assign"] = false;
