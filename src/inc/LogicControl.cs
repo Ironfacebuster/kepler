@@ -278,7 +278,7 @@ namespace Kepler.LogicControl
             if (token.operation == OperationType.StrictEquality)
             {
                 if (a_operand.type != b_operand.type)
-                    result.SetBoolValue(false);
+                    throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { a_operand.type.ToString(), b_operand.type.ToString() });
                 else
                 {
                     switch (a_operand.type)
@@ -846,7 +846,7 @@ namespace Kepler.LogicControl
         }
         void ExecuteFunction(KeplerFunction function, TokenState state)
         {
-            int stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
+            string stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
 
             Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
 
@@ -887,8 +887,9 @@ namespace Kepler.LogicControl
 
                 function.Reset(); // reset target, argument assignments
 
-                this.interpreter.tracer.PopStack(stack_id);
             }
+
+            this.interpreter.tracer.PopStack(stack_id);
 
             if (f_interpreter.statemachine.HasReturnValue())
             {

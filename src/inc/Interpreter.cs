@@ -423,7 +423,7 @@ namespace Kepler.Interpreting
 
                     if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
 
-                    int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
+                    string stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
 
                     KeplerFunction int_function = interrupt.function;
 

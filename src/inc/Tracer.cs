@@ -1,5 +1,7 @@
 using System;
+using System.Text;
 using System.Collections.Generic;
+using Kepler.Exceptions;
 
 namespace Kepler.Tracing
 {
@@ -50,48 +52,99 @@ namespace Kepler.Tracing
     public class KeplerErrorStack
     {
         List<KeplerTrace> stack = new List<KeplerTrace>();
+        // Dictionary<string, KeplerTrace> stack = new Dictionary<string, KeplerTrace>();
+        static Random gen = new Random();
 
-        public int PushStack(string n)
+        public string PushStack(string n)
         {
-            if (this.stack.Count > 0 && this.stack[0].message == n) this.stack[0] = this.stack[0].Increment();
-            else this.stack.Insert(0, new KeplerTrace(n, 1));
+            string id = new Guid(CreateMD5(n)).ToString();
+            bool had_already = false;
 
-            return this.stack.Count - 1;
+            for (int i = 0; i < stack.Count; i++)
+            {
+                if (stack[i].ID == id)
+                {
+                    this.stack[i].Increment();
+                    had_already = true;
+                }
+            }
+
+            if (!had_already)
+            {
+                stack.Add(new KeplerTrace(id, n, 1));
+            }
+
+            // if (this.stack.ContainsKey(id))
+            //     this.stack[id] = this.stack[id].Increment();
+            // else
+            //     this.stack[id] = new KeplerTrace(n, 1);
+
+            return id;
         }
 
-        public void PopStack(int id)
+        public void PopStack(string id)
         {
-            // TODO: better "id" system
-            if (id == this.stack.Count) id = id - 1;
-            if (id > this.stack.Count) id = this.stack.Count - 1;
+            bool found_key = false;
+            for (int i = 0; i < stack.Count; ++i)
+            {
+                if (stack[i].ID == id)
+                {
+                    if (this.stack[i].count > 1)
+                        this.stack[i].Decrement();
+                    else
+                        stack.RemoveAt(i);
 
-            if (this.stack[id].count > 1) this.stack[id].Decrement();
-            else this.stack.Remove(this.stack[id]);
+                    found_key = true;
+                }
+            }
+
+            if (!found_key) throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { "ID not found in tracer stack." });
         }
 
         public string GetStack()
         {
             string stacked = "";
-            int i = 0;
-            int max = Math.Min(10, this.stack.Count);
+            // int i = 0;
+            int max = Math.Min(10, this.stack.Count - 1);
 
-            while (i < max)
+            for (int i = max; i >= 0; --i)
             {
                 stacked = stacked + "\r\n\t" + this.stack[i].ToString();
-                i++;
             }
 
             return stacked;
+        }
+
+        static string CreateMD5(string input)
+        {
+            // Use input string to calculate MD5 hash
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                // Convert the byte array to hexadecimal string
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("X2"));
+                }
+
+                md5.Dispose();
+                return sb.ToString();
+            }
         }
     }
 
     struct KeplerTrace
     {
+        public string ID;
         public int count;
         public string message;
 
-        public KeplerTrace(string message, int count)
+        public KeplerTrace(string ID, string message, int count)
         {
+            this.ID = ID;
             this.message = message;
             this.count = count;
         }
@@ -106,12 +159,12 @@ namespace Kepler.Tracing
 
         public KeplerTrace Increment()
         {
-            return new KeplerTrace(this.message, this.count + 1);
+            return new KeplerTrace(this.ID, this.message, this.count + 1);
         }
 
         public KeplerTrace Decrement()
         {
-            return new KeplerTrace(this.message, this.count - 1);
+            return new KeplerTrace(this.ID, this.message, this.count - 1);
         }
     }
 }
