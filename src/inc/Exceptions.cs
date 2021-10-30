@@ -156,11 +156,14 @@ namespace Kepler.Exceptions
                 case KeplerErrorCode.INVALID_TYPE_ASSIGN:
                     error_string = string.Format("Type Error: Attempted to assign type {0} to {1}.", this.args[0], this.args[1]);
                     break;
+                case KeplerErrorCode.STRICT_TYPE_EQUALITY:
+                    error_string = string.Format("Type Error: Cannot strictly compare type {0} to {1}.", this.args[0], this.args[1]);
+                    break;
                 case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
                     error_string = "Type Error: Assignment to constant variable.";
                     break;
                 case KeplerErrorCode.INVALID_CAST:
-                    error_string = string.Format("Type Error: Unable to cast type {0} to {1}!", this.args[0], this.args[1]);
+                    error_string = string.Format("Type Error: Unable to implicitly cast type {0} to {1}!", this.args[0], this.args[1]);
                     break;
                 case KeplerErrorCode.UNASSIGNED_TYPE:
                     error_string = string.Format("Type Error: \"{0}\" does not have a defined type.", this.args[0]);
@@ -251,6 +254,7 @@ namespace Kepler.Exceptions
         NULL_TEMP_VAR,
         INVALID_TYPE_ASSIGN,
         ASSIGN_CONSTANT_VAR,
+        STRICT_TYPE_EQUALITY,
         INVALID_CAST,
         UNDECLARED,
         UNASSIGNED_TYPE,

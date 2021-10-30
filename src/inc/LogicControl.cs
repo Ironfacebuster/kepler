@@ -278,7 +278,7 @@ namespace Kepler.LogicControl
             if (token.operation == OperationType.StrictEquality)
             {
                 if (a_operand.type != b_operand.type)
-                    throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { a_operand.type.ToString(), b_operand.type.ToString() });
+                    throw new KeplerError(KeplerErrorCode.STRICT_TYPE_EQUALITY, new string[] { a_operand.type.ToString(), b_operand.type.ToString() });
                 else
                 {
                     switch (a_operand.type)
