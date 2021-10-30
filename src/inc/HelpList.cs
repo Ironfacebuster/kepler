@@ -44,8 +44,6 @@ namespace Help
 
                 Console.WriteLine(opt.argument + normalized + opt.description);
             }
-
-            Console.WriteLine("");
         }
 
         public void AddOption(string argument, string description)
