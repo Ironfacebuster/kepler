@@ -306,10 +306,11 @@ namespace KeplerCompiler
                 return null;
             };
 
-            KeplerFunction f_random = functs.DeclareFunction("f_random", true, true);
+            KeplerFunction f_random = functs.DeclareFunction("random", true, true);
             f_random.SetType(KeplerType.Float);
             f_random.internal_call = (interpreter, args) =>
             {
+                // TODO: add range arguments
                 KeplerVariable res = new KeplerVariable();
                 res.SetFloatValue((decimal)((float)new Random().Next(513) / 512f));
                 res.SetModifier(KeplerModifier.Constant);
@@ -317,7 +318,16 @@ namespace KeplerCompiler
                 return res;
             };
 
+            KeplerFunction random_int = functs.DeclareFunction("random_int", true, true);
+            random_int.SetType(KeplerType.Int);
+            random_int.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetIntValue(new Random().Next(255));
+                res.SetModifier(KeplerModifier.Constant);
 
+                return res;
+            };
         }
 
         static void LoadStaticFile(Interpreter interpreter)
