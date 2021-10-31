@@ -75,11 +75,11 @@ namespace KeplerCompiler
                 Console.ForegroundColor = ConsoleColor.Red;
 
                 Console.WriteLine("");
-                // #if DEBUG
+#if DEBUG
                 Console.Write(e);
-                // #else
-                //                         Console.Write(e.Message);
-                // #endif
+#else
+                                        Console.Write(e.Message);
+#endif
 
                 Console.ResetColor(); // reset the color back to default
                 Console.WriteLine("");
@@ -398,7 +398,7 @@ namespace KeplerCompiler
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Write(e.message);
 
-            if (show_trace)
+            if (show_trace && e.stack != null)
             {
                 Console.ForegroundColor = ConsoleColor.Gray;
                 Console.Write(e.stack.GetStack());
