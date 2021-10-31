@@ -114,7 +114,7 @@ namespace Kepler.Lexer
             string math_chars = "[\\/\\+\\*\\%\\^](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // math character selector
             string comp_chars = "(\\>\\=)|(\\<\\=)|(\\>)|(\\<)(?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // comparison character selector
             string singlets = "[\\!\\@\\#\\&\\(\\)](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // single character selector
-            // string single_quote = "\"((?![\\S\\s]*\")|(?=[\\S\\s]*\"))";
+                                                                                    // string single_quote = "\"((?![\\S\\s]*\")|(?=[\\S\\s]*\"))";
 
             // Transform code so that it's actually parseable
             string modified_line = line.Replace("\t", " "); // replace tabs with spaces
@@ -122,7 +122,7 @@ namespace Kepler.Lexer
             modified_line = Regex.Replace(modified_line, math_chars, " $0 "); // select math characters and add spaces
             modified_line = Regex.Replace(modified_line, comp_chars, " $0 "); // select math characters and add spaces
             modified_line = Regex.Replace(modified_line, singlets, " $0 "); // select singlet characters and add spaces
-            // modified_line = Regex.Replace(modified_line, single_quote, " $0 ");
+                                                                            // modified_line = Regex.Replace(modified_line, single_quote, " $0 ");
 
             // split by spaces, unless inside quotation marks.
             List<string> final_split = Regex.Matches(modified_line, @"[\""].+?[\""]|[^ ]+")
@@ -132,247 +132,246 @@ namespace Kepler.Lexer
 
             List<Token> m_tokens = new List<Token>();
 
-            // try
-            // {
-            Boolean in_string = false; // store if entered a string token
-
-            for (int i = 0; i < final_split.Count; ++i)
+            try
             {
-                string tokenized = final_split[i];
-                if (tokenized.Length == 0) continue;
 
-                TokenMatch pair = new TokenMatch(TokenType.UNRECOGNIZED, null, null, null, 0);
+                // try
+                // {
+                Boolean in_string = false; // store if entered a string token
 
-                // if we're at the beginning of this line.
-                if (i == 0)
+                for (int i = 0; i < final_split.Count; ++i)
                 {
-                    if (final_split.Count == 1)
-                        pair = GetTokenType(tokenized, null, null);
-                    else
-                        pair = GetTokenType(tokenized, final_split[Math.Min(i + 1, final_split.Count - 1)], null);
-                }
-                else
-                {
-                    if (i + 1 < final_split.Count)
-                        pair = GetTokenType(tokenized, final_split[i + 1], final_split[i - 1]);
-                    else
-                        // handle tokens at the end of the line
-                        pair = GetTokenType(tokenized, null, final_split[i - 1]);
-                }
+                    string tokenized = final_split[i];
+                    if (tokenized.Length == 0) continue;
 
-                // if (pair.type == TokenType.DoubleQuote) in_string = !in_string;
-                if (tokenized.StartsWith("\"")) in_string = true;
+                    TokenMatch pair = new TokenMatch(TokenType.UNRECOGNIZED, null, null, null, 0);
 
-                int count = 1;
-                while (count <= pair.increment)
-                {
-                    // Console.WriteLine(count);
-                    tokenized = tokenized + " " + final_split[i + count];
-                    count++;
-                }
-
-                if (in_string)
-                {
-                    m_tokens.Add(new Token(TokenType.StaticString, i, tokenized));
-
-                    if (tokenized.Length < 2)
+                    // if we're at the beginning of this line.
+                    if (i == 0)
                     {
+                        if (final_split.Count == 1)
+                            pair = GetTokenType(tokenized, null, null);
+                        else
+                            pair = GetTokenType(tokenized, final_split[Math.Min(i + 1, final_split.Count - 1)], null);
+                    }
+                    else
+                    {
+                        if (i + 1 < final_split.Count)
+                            pair = GetTokenType(tokenized, final_split[i + 1], final_split[i - 1]);
+                        else
+                            // handle tokens at the end of the line
+                            pair = GetTokenType(tokenized, null, final_split[i - 1]);
+                    }
+
+                    // if (pair.type == TokenType.DoubleQuote) in_string = !in_string;
+                    if (tokenized.StartsWith("\"")) in_string = true;
+
+                    int count = 1;
+                    while (count <= pair.increment)
+                    {
+                        // Console.WriteLine(count);
+                        tokenized = tokenized + " " + final_split[i + count];
+                        count++;
+                    }
+
+                    if (in_string)
+                    {
+                        m_tokens.Add(new Token(TokenType.StaticString, i, tokenized));
+
+                        if (tokenized.Length < 2)
+                        {
+                            this.tokens = m_tokens;
+                            throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
+                        }
+                    }
+                    else { m_tokens.Add(new Token(pair.type, i, tokenized)); i += pair.increment; }
+
+                    if (tokenized.EndsWith("\"")) in_string = false;
+                    if (tokenized.StartsWith("\"") && !tokenized.EndsWith("\""))
+                    {
+                        // this is not graceful but it'll have to do
                         this.tokens = m_tokens;
-                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
+                        this.m_num = this.tokens.Count - 1;
+                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
                     }
                 }
-                else { m_tokens.Add(new Token(pair.type, i, tokenized)); i += pair.increment; }
 
-                if (tokenized.EndsWith("\"")) in_string = false;
-                if (tokenized.StartsWith("\"") && !tokenized.EndsWith("\""))
+                // Operations pass
+                for (int i = 0; i < m_tokens.Count;)
                 {
-                    // this is not graceful but it'll have to do
-                    this.tokens = m_tokens;
-                    this.m_num = this.tokens.Count - 1;
-                    throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
-                }
-            }
-
-            // Operations pass
-            for (int i = 0; i < m_tokens.Count;)
-            {
-                if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
-                {
-                    i++;
-                    break;
-                }
-
-                Token peek = m_tokens[i + 1];
-                Token far_peek = m_tokens[i + 2];
-
-                Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
-                operation_token.start = i;
-                operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
-                bool clean_up = false;
-
-                switch (peek.type)
-                {
-                    case TokenType.GenericAdd:
-                        operation_token.operation = OperationType.Add;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericSubtract:
-                        operation_token.operation = OperationType.Subtract;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericMultiply:
-                        operation_token.operation = OperationType.Multiply;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericPower:
-                        operation_token.operation = OperationType.Power;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericDivide:
-                        operation_token.operation = OperationType.Divide;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericModulo:
-                        operation_token.operation = OperationType.Modulo;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericEquality:
-                        operation_token.operation = OperationType.Equality;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericStrictEquality:
-                        operation_token.operation = OperationType.StrictEquality;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericGreaterThan:
-                        operation_token.operation = OperationType.GreaterThan;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericGreaterThanEqual:
-                        operation_token.operation = OperationType.GreaterThanEqual;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericLessThan:
-                        operation_token.operation = OperationType.LessThan;
-                        clean_up = true;
-                        break;
-                    case TokenType.GenericLessThanEqual:
-                        operation_token.operation = OperationType.LessThanEqual;
-                        clean_up = true;
-                        break;
-                    case TokenType.CastType:
-                        operation_token.operation = OperationType.CastType;
-                        clean_up = true;
-                        break;
-                    default:
-                        i++;
-                        break;
-                }
-
-                if (clean_up)
-                {
-                    // assign tokens
-                    operation_token.a = m_tokens[i];
-                    operation_token.b = m_tokens[i + 2];
-
-                    // remove combined tokens
-                    m_tokens.RemoveAt(i + 1);
-                    m_tokens.RemoveAt(i + 1);
-                    // assign combined token
-                    m_tokens[i] = operation_token;
-                }
-            }
-
-            // Combine
-            for (int i = 1; i < m_tokens.Count;)
-            {
-
-                if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
-                {
-                    i++;
-                    break;
-                }
-
-                Token peek = m_tokens[i + 1];
-                Token far_peek = m_tokens[i + 2];
-
-                Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
-                operation_token.start = i;
-                operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
-                bool clean_up = false;
-
-                bool current_valid = (m_tokens[i].type == TokenType.GenericOperation || IsStaticValue(m_tokens[i]) || m_tokens[i].type == TokenType.DeclareVariable);
-                bool next_valid = (far_peek.type == TokenType.GenericOperation || IsStaticValue(far_peek) || far_peek.type == TokenType.DeclareVariable);
-
-                if (current_valid && next_valid)
-                {
-                    switch (peek.type)
+                    if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
                     {
-                        // AND
-                        case TokenType.BooleanOperator:
-                            operation_token.operation = OperationType.And;
-                            clean_up = true;
-                            break;
-                        // OR
-                        case TokenType.OrOperator:
-                            operation_token.operation = OperationType.Or;
-                            clean_up = true;
-                            break;
+                        break;
                     }
-                }
-                else i++;
 
-                if (clean_up)
-                {
-                    // assign tokens
-                    operation_token.a = m_tokens[i];
-                    operation_token.b = m_tokens[i + 2];
+                    Token peek = m_tokens[i + 1];
+                    Token far_peek = m_tokens[i + 2];
 
-                    // remove combined tokens
-                    m_tokens.RemoveAt(i + 1);
-                    m_tokens.RemoveAt(i + 1);
-
-                    // assign combined token
-                    m_tokens[i] = operation_token;
-                }
-            }
-
-            // conditional virtual equality
-            if (m_tokens.Count == 2 && (m_tokens[0].type == TokenType.StartConditional || m_tokens[0].type == TokenType.ConditionalElseIf))
-            {
-                Token equality = new Token(TokenType.GenericOperation, 1, m_tokens[1].token_string);
-                equality.operation = OperationType.Equality;
-                equality.a = m_tokens[1];
-                equality.b = new Token(TokenType.StaticBoolean, 3, "True");
-
-                m_tokens[1] = equality;
-            }
-
-            // final pass, for single token operations
-            // this pass is reversed
-            for (int i = m_tokens.Count - 2; i >= 1; --i)
-            {
-
-                Token peek = m_tokens[i + 1];
-
-                if (m_tokens[i].type == TokenType.BooleanInvert)
-                {
                     Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
                     operation_token.start = i;
-                    operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string;
-                    operation_token.operation = OperationType.Invert;
-                    operation_token.a = m_tokens[i + 1];
+                    operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
+                    bool clean_up = true;
 
-                    // remove combined tokens
-                    m_tokens.RemoveAt(i + 1);
-                    // assign combined token
-                    m_tokens[i] = operation_token;
+                    switch (peek.type)
+                    {
+                        case TokenType.GenericAdd:
+                            operation_token.operation = OperationType.Add;
+                            break;
+                        case TokenType.GenericSubtract:
+                            operation_token.operation = OperationType.Subtract;
+                            break;
+                        case TokenType.GenericMultiply:
+                            operation_token.operation = OperationType.Multiply;
+                            break;
+                        case TokenType.GenericPower:
+                            operation_token.operation = OperationType.Power;
+                            break;
+                        case TokenType.GenericDivide:
+                            operation_token.operation = OperationType.Divide;
+                            break;
+                        case TokenType.GenericModulo:
+                            operation_token.operation = OperationType.Modulo;
+                            break;
+                        case TokenType.GenericEquality:
+                            operation_token.operation = OperationType.Equality;
+                            break;
+                        case TokenType.GenericStrictEquality:
+                            operation_token.operation = OperationType.StrictEquality;
+                            break;
+                        case TokenType.GenericGreaterThan:
+                            operation_token.operation = OperationType.GreaterThan;
+                            break;
+                        case TokenType.GenericGreaterThanEqual:
+                            operation_token.operation = OperationType.GreaterThanEqual;
+                            break;
+                        case TokenType.GenericLessThan:
+                            operation_token.operation = OperationType.LessThan;
+                            break;
+                        case TokenType.GenericLessThanEqual:
+                            operation_token.operation = OperationType.LessThanEqual;
+                            break;
+                        case TokenType.CastType:
+                            operation_token.operation = OperationType.CastType;
+                            break;
+                        default:
+                            i++;
+                            clean_up = false;
+                            break;
+                    }
+
+                    if (clean_up)
+                    {
+                        // assign tokens
+                        operation_token.a = m_tokens[i];
+                        operation_token.b = m_tokens[i + 2];
+
+                        // remove combined tokens
+                        m_tokens.RemoveAt(i + 1);
+                        m_tokens.RemoveAt(i + 1);
+                        // assign combined token
+                        m_tokens[i] = operation_token;
+                    }
                 }
+
+                // Combine
+                for (int i = 1; i < m_tokens.Count;)
+                {
+                    if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
+                    {
+                        break;
+                    }
+
+                    Token peek = m_tokens[i + 1];
+                    Token far_peek = m_tokens[i + 2];
+
+                    Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
+                    operation_token.start = i;
+                    operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
+                    bool clean_up = false;
+
+                    bool current_valid = (m_tokens[i].type == TokenType.GenericOperation || IsStaticValue(m_tokens[i]) || m_tokens[i].type == TokenType.DeclareVariable);
+                    bool next_valid = (far_peek.type == TokenType.GenericOperation || IsStaticValue(far_peek) || far_peek.type == TokenType.DeclareVariable);
+
+                    if (current_valid && next_valid)
+                    {
+                        switch (peek.type)
+                        {
+                            // AND
+                            case TokenType.BooleanOperator:
+                                operation_token.operation = OperationType.And;
+                                clean_up = true;
+                                break;
+                            // OR
+                            case TokenType.OrOperator:
+                                operation_token.operation = OperationType.Or;
+                                clean_up = true;
+                                break;
+                        }
+                    }
+
+                    if (clean_up)
+                    {
+                        // assign tokens
+                        operation_token.a = m_tokens[i];
+                        operation_token.b = m_tokens[i + 2];
+
+                        // remove combined tokens
+                        m_tokens.RemoveAt(i + 1);
+                        m_tokens.RemoveAt(i + 1);
+
+                        // assign combined token
+                        m_tokens[i] = operation_token;
+                    }
+                    else i++;
+                }
+
+                // conditional virtual equality
+                if (m_tokens.Count == 2 && (m_tokens[0].type == TokenType.StartConditional || m_tokens[0].type == TokenType.ConditionalElseIf))
+                {
+                    Token equality = new Token(TokenType.GenericOperation, 1, m_tokens[1].token_string);
+                    equality.operation = OperationType.Equality;
+                    equality.a = m_tokens[1];
+                    equality.b = new Token(TokenType.StaticBoolean, 3, "True");
+
+                    m_tokens[1] = equality;
+                }
+
+                // final pass, for single token operations
+                // this pass is reversed
+                for (int i = m_tokens.Count - 2; i >= 1; --i)
+                {
+                    Token peek = m_tokens[i + 1];
+
+                    if (m_tokens[i].type == TokenType.BooleanInvert)
+                    {
+                        Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
+                        operation_token.start = i;
+                        operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string;
+                        operation_token.operation = OperationType.Invert;
+                        operation_token.a = m_tokens[i + 1];
+
+                        // remove combined tokens
+                        m_tokens.RemoveAt(i + 1);
+                        // assign combined token
+                        m_tokens[i] = operation_token;
+                    }
+                }
+
+                if (m_tokens.Count == 0) m_tokens.Add(new Token(TokenType.EOL, 0, "EOL"));
+
+                this.tokens = m_tokens;
             }
+            catch (KeplerError e)
+            {
+                this.tokens = new List<Token>();
 
-            if (m_tokens.Count == 0) m_tokens.Add(new Token(TokenType.EOL, 0, "EOL"));
+                foreach (string s in line.Split(' '))
+                {
+                    this.tokens.Add(new Token(TokenType.Generic, m_tokens.Count, s));
+                }
 
-            this.tokens = m_tokens;
+                throw new KeplerException(this, e.GetErrorString(), null);
+            }
         }
 
         private bool IsStaticValue(Token token)
@@ -445,9 +444,6 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.OrOperator, "or", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.BooleanInvert, "not", TokenMatch.any_string, TokenMatch.any_string, 0),
 
-                // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "equals", TokenMatch.any_string, 0),
-                // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "is", TokenMatch.any_string, 0),
-
                 // static types
                 new TokenMatch(TokenType.StaticVariableType, "Float", null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticVariableType, "uFloat", null, TokenMatch.any_string, 0),
@@ -466,13 +462,13 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.StaticVariableType, "List", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticVariableType, "Boolean", TokenMatch.any_string, TokenMatch.any_string, 0),
 
-
+                // argument things
                 new TokenMatch(TokenType.StartArguments, "with", TokenMatch.any_string, TokenMatch.any_string, 0), // "with" defines the start of StartArguments
                 new TokenMatch(TokenType.StartPositionalArguments, "using", TokenMatch.any_string, TokenMatch.any_string, 0), // "using" defines the start of positional arguments
                 new TokenMatch(TokenType.PositionalArgumentAssignment, "as", TokenMatch.any_string, TokenMatch.any_string, 0), // "as" is a PositionalArgumentAssignment
                 new TokenMatch(TokenType.PositionalArgument, TokenMatch.any_string, TokenMatch.any_string, "as", 0), // any string AFTER "as" is a PositionalArgument
                 // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "and", TokenMatch.any_string, 0), // any string before "and" is a DeclareVariable, if it isn't after "as"
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "as", TokenMatch.any_string, 0), // any string BEFORE "as" is a DeclareVariable
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "as", TokenMatch.valid_variable, 0), // any string BEFORE "as" is a DeclareVariable
                 new TokenMatch(TokenType.AssignFunctionType, "returns", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.AssignNonPositionalArgument, "uses", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.FunctionReturn, "return", TokenMatch.any_string, null, 0),
@@ -491,7 +487,6 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, null, TokenMatch.any_string, 0),
-                // new TokenMatch(TokenType.StaticUnsignedFloat, TokenMatch.eval_ufloat, null, TokenMatch.any_string, 0),
 
                 // static values before operators
                 new TokenMatch(TokenType.StaticBoolean, "True", TokenMatch.any_string, TokenMatch.any_string, 0),
@@ -499,7 +494,6 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, TokenMatch.any_string, TokenMatch.any_string, 0),
-                // new TokenMatch(TokenType.StaticUnsignedFloat, TokenMatch.eval_ufloat, TokenMatch.any_string, TokenMatch.any_string, 0),
 
                 // operations
                 new TokenMatch(TokenType.GenericAdd, "+", TokenMatch.any_string, TokenMatch.any_string, 0),
@@ -532,10 +526,11 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.PositionalArgumentAssignment, "as", null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, null, "as", 0),
                 new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, TokenMatch.any_string, "as", 0),
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0),
-            // since these "pairs" are checked from top to bottom, this final DeclareVariable is just in case
+
+                // variable things
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, TokenMatch.any_string, 0),
         };
 
             // if (tokenized == "True" || tokenized == "False") m_tokens.Add(new Token(TokenType.StaticBoolean, i));
@@ -554,7 +549,8 @@ namespace Kepler.Lexer
                 if (tokens[i].Match(token, peek, previous)) return tokens[i];
             }
 
-            return new TokenMatch(TokenType.UNRECOGNIZED, null, null, null, 0);
+            throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { "Unrecognized token: " + token });
+            // return new TokenMatch(TokenType.UNRECOGNIZED, null, null, null, 0);
         }
 
         public string GetString()
