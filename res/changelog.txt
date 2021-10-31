@@ -1,6 +1,10 @@
 a1.4.1
++ Added "else" and "elseif" statement to conditionals.
++ Made implicit casting error more detailed.
 + Added explicit type casting.
-+ Added f_random, getkey, and resetkey internal functions.
++ Added random, getkey, and resetkey internal functions.
+! Improved variable declaration detection.
+! Fixed error tracing.
 
 a1.4
 + Added functions returning values.
