@@ -295,11 +295,11 @@ end update_segments
 
 start move_apple
     min_x is board_size_x - 1
-    x_rand is call f_random
+    x_rand is call random
     apple_x is x_rand * min_x
     
     min_y is board_size_y - 1
-    y_rand is call f_random
+    y_rand is call random
     apple_y is y_rand * board_size_y
 end move_apple
 
@@ -328,11 +328,11 @@ start reset_game
         scalex is max_board_x - min_board_x
         scaley is max_board_y - min_board_y
         
-        new_x is call f_random
+        new_x is call random
         new_x is new_x * scalex
         board_size_x is 1 * board_size_x + min_board_x
         
-        new_y is call f_random
+        new_y is call random
         new_y is new_y * scaley
         board_size_y is 1 * board_size_y + min_board_y
         
@@ -444,14 +444,11 @@ start every 250
     
     if last_move equals "UpArrow"
         snake_head_y is snake_head_y - 1
-    endif
-    if last_move equals "DownArrow"
+    elseif last_move equals "DownArrow"
         snake_head_y is snake_head_y + 1
-    endif
-    if last_move equals "LeftArrow"
+    elseif last_move equals "LeftArrow"
         snake_head_x is snake_head_x - 1
-    endif
-    if last_move equals "RightArrow"
+    elseif last_move equals "RightArrow"
         snake_head_x is snake_head_x + 1
     endif
     
