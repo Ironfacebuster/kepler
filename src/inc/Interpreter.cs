@@ -341,6 +341,8 @@ namespace Kepler.Interpreting
                                     {
                                         conditional_int.Interpret(c_conditional.elseifs[i].lines[j]);
                                     }
+
+                                    do_else = false;
                                     break;
                                 }
                             }
