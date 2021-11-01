@@ -61,7 +61,7 @@ namespace KeplerVariables
             // search local first
             foreach (KeyValuePair<string, KeplerVariable> var in this.local)
             {
-                Console.WriteLine(var.Value);
+                // Console.WriteLine(var.Value);
                 if (var.Value.id == id) return var.Value;
             }
 
@@ -215,7 +215,7 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = string.Format("(#{0}) {1} {2}", this.id, this.modifier, this.type);
+            string output = string.Format("({0}) {1} {2}", this.id, this.modifier, this.type);
 
             switch (type)
             {
@@ -411,7 +411,7 @@ namespace KeplerVariables
         public string name;
         public string id;
         public bool is_internal = false;
-        public Func<Kepler.Interpreting.Interpreter, List<KeplerVariable>, KeplerVariable> internal_call;
+        public Func<Kepler.Interpreting.Interpreter, IDictionary<string, KeplerVariable>, KeplerVariable> internal_call;
 
         public KeplerFunction(string name, bool is_internal = false)
         {
@@ -445,6 +445,15 @@ namespace KeplerVariables
             AssertNPArgument(name);
 
             non_positional_arguments[name] = type;
+        }
+
+        public void SetNonPositional(string name, KeplerVariable value)
+        {
+            AssertNPArgument(name);
+
+            value.ValidateType(non_positional_arguments[name]);
+
+            arguments[name] = value;
         }
 
         public void ResetLines()
@@ -493,8 +502,34 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            if (this.is_internal) return string.Format("(#{0}) INTERNAL KeplerFunction {1}", id, type);
-            return string.Format("(#{0}) KeplerFunction {1}", id, type);
+            string format_string = "";
+
+            if (this.is_internal) format_string = string.Format("({0}) INTERNAL KeplerFunction {1}", id, type);
+            else format_string = string.Format("({0}) KeplerFunction {1}", id, type);
+
+            if (this.non_positional_arguments.Count > 0)
+            {
+                format_string = format_string + " [";
+                foreach (KeyValuePair<string, KeplerType> pair in non_positional_arguments)
+                {
+                    format_string = format_string + pair.Key + ":" + pair.Value.ToString() + ", ";
+                }
+                format_string = format_string.Substring(0, format_string.Length - 2);
+                format_string = format_string + "]";
+            }
+
+            if (this.positional_arguments.Count > 0)
+            {
+                format_string = format_string + " {";
+                foreach (KeyValuePair<string, KeplerType> pair in positional_arguments)
+                {
+                    format_string = format_string + pair.Key + ":" + pair.Value.ToString() + ", ";
+                }
+                format_string = format_string.Substring(0, format_string.Length - 2);
+                format_string = format_string + "}";
+            }
+
+            return format_string;
         }
     }
 
