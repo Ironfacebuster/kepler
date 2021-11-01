@@ -113,8 +113,8 @@ namespace Kepler.Lexer
             Regex inline_comment = new Regex("((!--)[\\w|\\s]*(--!))"); // remove inline comments
             string math_chars = "[\\/\\+\\*\\%\\^](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // math character selector
             string comp_chars = "(\\>\\=)|(\\<\\=)|(\\>)|(\\<)(?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // comparison character selector
-            string singlets = "[\\!\\@\\#\\&\\(\\)](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // single character selector
-                                                                                    // string single_quote = "\"((?![\\S\\s]*\")|(?=[\\S\\s]*\"))";
+            string singlets = "[\\,\\!\\@\\#\\&\\(\\)](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // single character selector
+                                                                                       // string single_quote = "\"((?![\\S\\s]*\")|(?=[\\S\\s]*\"))";
 
             // Transform code so that it's actually parseable
             string modified_line = line.Replace("\t", " "); // replace tabs with spaces
@@ -395,161 +395,9 @@ namespace Kepler.Lexer
 
         private TokenMatch GetTokenType(string token, string peek, string previous)
         {
-
-            TokenMatch[] tokens = new TokenMatch[] {
-                new TokenMatch(TokenType.EOP, "EOP", "EOP", null, 0), // End of Program token
-                new TokenMatch(TokenType.EOP, "EOP", null, null, 0), // End of Program token
-
-                new TokenMatch(TokenType.StartAssertion, "assert", TokenMatch.any_string, null, 0), // Assertion token
-
-                // looping things
-                new TokenMatch(TokenType.StartInterval, "start", "every", null, 0),
-                new TokenMatch(TokenType.EndInterval, "end", "every", null, 0),
-                new TokenMatch(TokenType.DeclareInterval, "every", TokenMatch.any_string, "start", 0),
-                new TokenMatch(TokenType.DeclareInterval, "every", TokenMatch.any_string, "end", 0),
-
-                new TokenMatch(TokenType.StartLoop, "start", "forever", null, 0),
-                new TokenMatch(TokenType.EndLoop, "end", "forever", null, 0),
-                new TokenMatch(TokenType.DeclareLoop, "forever", TokenMatch.any_string, "start", 0),
-                new TokenMatch(TokenType.DeclareLoop, "forever", TokenMatch.any_string, "end", 0),
-                new TokenMatch(TokenType.BreakOut, "breakout", null, null, 0),
-
-                // new TokenMatch(TokenType.DoubleQuote, "\"", TokenMatch.any_string, TokenMatch.any_string, 0), // handle doublequote
-                // new TokenMatch(TokenType.DoubleQuote, "\"", null, TokenMatch.any_string, 0), // handle doublequote at end of line
-                new TokenMatch(TokenType.StartConditional, "if", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.EndConditional, "endif", null, null, 0),
-
-                new TokenMatch(TokenType.StartHeader, "start", "Header", null, 0),
-                new TokenMatch(TokenType.EndHeader, "end", "Header", null, 0),
-                new TokenMatch(TokenType.DeclareHeader, "Header", null, "start", 0),
-                new TokenMatch(TokenType.DeclareHeader, "Header", null, "end", 0),
-                new TokenMatch(TokenType.LinkFile, "link", TokenMatch.any_string, null, 0),  // linking files
-                new TokenMatch(TokenType.ThrowError, "throw", TokenMatch.any_string, null, 0),  // throwing errors
-                new TokenMatch(TokenType.ConsolePrint, "print", TokenMatch.any_string, null, 0), // print to console command
-                new TokenMatch(TokenType.StartFunction, "start", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.EndFunction, "end", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, null, "start", 0), // handle functions with no arguments
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, null, "end", 0), // handle functions with no arguments
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "start", 0),
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "end", 0),
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, "uses", null, 0), // any string that comes before "uses" is a function declaration
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, "returns", null, 0),
-
-                new TokenMatch(TokenType.StartStaticArray, "[", null, null, 0),
-                new TokenMatch(TokenType.EndStaticArray, "]", null, null, 0),
-                new TokenMatch(TokenType.StartStaticList, "{", null, null, 0),
-                new TokenMatch(TokenType.EndStaticList, "}", null, null, 0),
-
-                new TokenMatch(TokenType.BooleanOperator, "and", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.OrOperator, "or", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.BooleanInvert, "not", TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                // static types
-                new TokenMatch(TokenType.StaticVariableType, "Float", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "uFloat", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Int", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "uInt", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "String", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Array", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "List", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Boolean", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Float", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "uFloat", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Int", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "uInt", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "String", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Array", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "List", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticVariableType, "Boolean", TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                // argument things
-                new TokenMatch(TokenType.StartArguments, "with", TokenMatch.any_string, TokenMatch.any_string, 0), // "with" defines the start of StartArguments
-                new TokenMatch(TokenType.StartPositionalArguments, "using", TokenMatch.any_string, TokenMatch.any_string, 0), // "using" defines the start of positional arguments
-                new TokenMatch(TokenType.PositionalArgumentAssignment, "as", TokenMatch.any_string, TokenMatch.any_string, 0), // "as" is a PositionalArgumentAssignment
-                new TokenMatch(TokenType.PositionalArgument, TokenMatch.any_string, TokenMatch.any_string, "as", 0), // any string AFTER "as" is a PositionalArgument
-                // new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "and", TokenMatch.any_string, 0), // any string before "and" is a DeclareVariable, if it isn't after "as"
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.any_string, "as", TokenMatch.valid_variable, 0), // any string BEFORE "as" is a DeclareVariable
-                new TokenMatch(TokenType.AssignFunctionType, "returns", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.AssignNonPositionalArgument, "uses", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.FunctionReturn, "return", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.ConditionalIf, "if", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.ConditionalElse, "else", null, null, 0),
-                new TokenMatch(TokenType.ConditionalElseIf, "elseif", TokenMatch.any_string, null, 0),
-                new TokenMatch(TokenType.GenericAssign, "is", TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                // modifiers
-                new TokenMatch(TokenType.StaticModifier, "Constant", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticModifier, "Variable", TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                // static values
-                new TokenMatch(TokenType.StaticBoolean, "True", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticBoolean, "False", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticString, TokenMatch.eval_string, null, TokenMatch.any_string, 0),
-
-                // static values before operators
-                new TokenMatch(TokenType.StaticBoolean, "True", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticBoolean, "False", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                // operations
-                new TokenMatch(TokenType.GenericAdd, "+", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericSubtract, "-", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericMultiply, "*", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericPower, "^", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericModulo, "%", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericStrictEquality, "==", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericLessThan, "<", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericGreaterThan, ">", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericLessThanEqual, "<=", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.GenericGreaterThanEqual, ">=", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.CastType, "cast", TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                // generic tokens
-                new TokenMatch(TokenType.Generic, "!", TokenMatch.any_string,TokenMatch.any_string,0),
-                new TokenMatch(TokenType.Generic, "@", TokenMatch.any_string,TokenMatch.any_string,0),
-                new TokenMatch(TokenType.Generic, "#", TokenMatch.any_string,TokenMatch.any_string,0),
-                new TokenMatch(TokenType.Generic, "$", TokenMatch.any_string,TokenMatch.any_string,0),
-                new TokenMatch(TokenType.Generic, "&", TokenMatch.any_string,TokenMatch.any_string,0),
-                new TokenMatch(TokenType.Generic, "(", TokenMatch.any_string,TokenMatch.any_string,0),
-                new TokenMatch(TokenType.Generic, ")", TokenMatch.any_string,TokenMatch.any_string,0),
-
-                new TokenMatch(TokenType.CallFunction, "call", TokenMatch.any_string, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "call", 0),
-
-                new TokenMatch(TokenType.NonPositionalArgument, TokenMatch.any_string, "as", null, 0),
-                new TokenMatch(TokenType.PositionalArgumentAssignment, "as", null, TokenMatch.any_string, 0),
-                new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, null, "as", 0),
-                new TokenMatch(TokenType.PositionalArgumentAssignment, TokenMatch.any_string, TokenMatch.any_string, "as", 0),
-
-                // variable things
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
-                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, TokenMatch.any_string, 0),
-
-                new TokenMatch(TokenType.Generic, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0) // catch anything that isn't a keyword or valid variable name
-        };
-
-            // if (tokenized == "True" || tokenized == "False") m_tokens.Add(new Token(TokenType.StaticBoolean, i));
-            // else if (tokenized == "Int" || tokenized == "uInt") m_tokens.Add(new Token(TokenType.StaticVariableType, i));
-            // else if (tokenized == "Float" || tokenized == "uFloat") m_tokens.Add(new Token(TokenType.StaticVariableType, i));
-            // else if (tokenized == "String") m_tokens.Add(new Token(TokenType.StaticVariableType, i));
-            // else if (tokenized == "Array") m_tokens.Add(new Token(TokenType.StaticVariableType, i));
-            // else if (tokenized == "List") m_tokens.Add(new Token(TokenType.StaticVariableType, i));
-            // else if (tokenized == "Boolean") m_tokens.Add(new Token(TokenType.StaticVariableType, i));
-            // else if (tokenized == "]") m_tokens.Add(new Token(TokenType.EndStaticArray, i));
-            // else if (tokenized == "}") m_tokens.Add(new Token(TokenType.EndStaticList, i));
-            // else if (tokenized == "Header") m_tokens.Add(new Token(TokenType.DeclareHeader, i));
-
-            for (int i = 0; i < tokens.Length; ++i)
+            for (int i = 0; i < match_tokens.Length; ++i)
             {
-                if (tokens[i].Match(token, peek, previous)) return tokens[i];
+                if (match_tokens[i].Match(token, peek, previous)) return match_tokens[i];
             }
 
             throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { "Unrecognized token: " + token });
@@ -618,6 +466,134 @@ namespace Kepler.Lexer
         {
             this.killed = true;
         }
+
+        static TokenMatch[] match_tokens = new TokenMatch[] {
+                new TokenMatch(TokenType.EOP, "EOP", "EOP", null, 0), // End of Program token
+                new TokenMatch(TokenType.EOP, "EOP", null, null, 0), // End of Program token
+
+                new TokenMatch(TokenType.StartAssertion, "assert", TokenMatch.any_string, null, 0), // Assertion token
+
+                // looping things
+                new TokenMatch(TokenType.StartInterval, "start", "every", null, 0),
+                new TokenMatch(TokenType.EndInterval, "end", "every", null, 0),
+                new TokenMatch(TokenType.DeclareInterval, "every", TokenMatch.any_string, "start", 0),
+                new TokenMatch(TokenType.DeclareInterval, "every", TokenMatch.any_string, "end", 0),
+
+                new TokenMatch(TokenType.StartLoop, "start", "forever", null, 0),
+                new TokenMatch(TokenType.EndLoop, "end", "forever", null, 0),
+                new TokenMatch(TokenType.DeclareLoop, "forever", TokenMatch.any_string, "start", 0),
+                new TokenMatch(TokenType.DeclareLoop, "forever", TokenMatch.any_string, "end", 0),
+                new TokenMatch(TokenType.BreakOut, "breakout", null, null, 0),
+
+                // new TokenMatch(TokenType.DoubleQuote, "\"", TokenMatch.any_string, TokenMatch.any_string, 0), // handle doublequote
+                // new TokenMatch(TokenType.DoubleQuote, "\"", null, TokenMatch.any_string, 0), // handle doublequote at end of line
+                new TokenMatch(TokenType.StartConditional, "if", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.EndConditional, "endif", null, null, 0),
+
+                new TokenMatch(TokenType.StartHeader, "start", "Header", null, 0),
+                new TokenMatch(TokenType.EndHeader, "end", "Header", null, 0),
+                new TokenMatch(TokenType.DeclareHeader, "Header", null, "start", 0),
+                new TokenMatch(TokenType.DeclareHeader, "Header", null, "end", 0),
+                new TokenMatch(TokenType.LinkFile, "link", TokenMatch.any_string, null, 0),  // linking files
+                new TokenMatch(TokenType.ThrowError, "throw", TokenMatch.any_string, null, 0),  // throwing errors
+                new TokenMatch(TokenType.ConsolePrint, "print", TokenMatch.any_string, null, 0), // print to console command
+                new TokenMatch(TokenType.StartFunction, "start", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.EndFunction, "end", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, null, "start", 0), // handle functions with no arguments
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, null, "end", 0), // handle functions with no arguments
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "start", 0),
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "end", 0),
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, "uses", null, 0), // any string that comes before "uses" is a function declaration
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, "returns", null, 0),
+
+                new TokenMatch(TokenType.StartStaticArray, "[", null, null, 0),
+                new TokenMatch(TokenType.EndStaticArray, "]", null, null, 0),
+                new TokenMatch(TokenType.StartStaticList, "{", null, null, 0),
+                new TokenMatch(TokenType.EndStaticList, "}", null, null, 0),
+
+                new TokenMatch(TokenType.BooleanOperator, "and", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.BooleanOperator, ",", TokenMatch.any_string, TokenMatch.any_string, 0), // alias for "and"
+                new TokenMatch(TokenType.OrOperator, "or", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.BooleanInvert, "not", TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                // static types
+                new TokenMatch(TokenType.StaticVariableType, "Float", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "uFloat", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Int", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "uInt", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "String", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Array", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "List", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Boolean", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Float", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "uFloat", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Int", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "uInt", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "String", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Array", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "List", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticVariableType, "Boolean", TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                new TokenMatch(TokenType.AssignFunctionType, "returns", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.FunctionReturn, "return", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.ConditionalIf, "if", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.ConditionalElse, "else", null, null, 0),
+                new TokenMatch(TokenType.ConditionalElseIf, "elseif", TokenMatch.any_string, null, 0),
+                new TokenMatch(TokenType.GenericAssign, "is", TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                // modifiers
+                new TokenMatch(TokenType.StaticModifier, "Constant", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticModifier, "Variable", TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                // static values
+                new TokenMatch(TokenType.StaticBoolean, "True", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticBoolean, "False", null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticString, TokenMatch.eval_string, null, TokenMatch.any_string, 0),
+
+                // static values before operators
+                new TokenMatch(TokenType.StaticBoolean, "True", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticBoolean, "False", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                // operations
+                new TokenMatch(TokenType.GenericAdd, "+", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericSubtract, "-", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericMultiply, "*", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericPower, "^", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericModulo, "%", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericEquality, "equals", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericStrictEquality, "==", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericLessThan, "<", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericGreaterThan, ">", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericLessThanEqual, "<=", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.GenericGreaterThanEqual, ">=", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.CastType, "cast", TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                // generic tokens
+                new TokenMatch(TokenType.Generic, "!", TokenMatch.any_string,TokenMatch.any_string,0),
+                new TokenMatch(TokenType.Generic, "@", TokenMatch.any_string,TokenMatch.any_string,0),
+                new TokenMatch(TokenType.Generic, "#", TokenMatch.any_string,TokenMatch.any_string,0),
+                new TokenMatch(TokenType.Generic, "$", TokenMatch.any_string,TokenMatch.any_string,0),
+                new TokenMatch(TokenType.Generic, "&", TokenMatch.any_string,TokenMatch.any_string,0),
+                new TokenMatch(TokenType.Generic, "(", TokenMatch.any_string,TokenMatch.any_string,0),
+                new TokenMatch(TokenType.Generic, ")", TokenMatch.any_string,TokenMatch.any_string,0),
+
+                new TokenMatch(TokenType.CallFunction, "call", TokenMatch.any_string, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.DeclareFunction, TokenMatch.any_string, TokenMatch.any_string, "call", 0),
+
+                // variable things
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
+                new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                new TokenMatch(TokenType.Generic, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0) // catch anything that isn't a keyword or valid variable name
+        };
     }
 }
 
@@ -675,11 +651,6 @@ namespace Kepler.Lexer.Tokens
         GenericGreaterThan,
         GenericLessThanEqual,
         GenericGreaterThanEqual,
-
-        AssignNonPositionalArgument,
-        PositionalArgument,
-        PositionalArgumentAssignment,
-        NonPositionalArgument,
 
         // conditions
         ConditionalIf,
