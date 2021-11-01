@@ -5,6 +5,7 @@ using Kepler.Lexer.Tokens;
 using KeplerVariables;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 // using Kepler.Lexer.Tokens;
 using System.IO;
 
@@ -1139,7 +1140,7 @@ namespace Kepler.LogicControl
             Boolean match_peek = false;
 
             // if match_peek is already true, don't check the next time
-            if (!match_peek && ((string.IsNullOrEmpty(this.peek) && string.IsNullOrEmpty(peek)) || this.peek == peek)) match_peek = true;
+            if ((string.IsNullOrEmpty(this.peek) && string.IsNullOrEmpty(peek)) || this.peek == peek) match_peek = true;
             if (!match_peek && (!string.IsNullOrEmpty(this.peek) && this.peek == any_string)) match_peek = true;
             if (!match_peek && (!string.IsNullOrEmpty(this.peek) && (this.peek == valid_variable && IsValidIdentifier(peek)))) match_peek = true;
 
@@ -1156,8 +1157,6 @@ namespace Kepler.LogicControl
                 if (!match_token && this.string_token == any_string) match_token = true;
                 if (!match_token && (this.string_token == eval_float && Decimal.TryParse(token, out decimal f) && token.IndexOf(".") != -1)) match_token = true;
                 if (!match_token && (this.string_token == eval_int && Int32.TryParse(token, out int i) && token.IndexOf(".") == -1)) match_token = true;
-                // if (this.string_token == eval_ufloat && Double.TryParse(token.Substring(1), out double uf) && (new Regex(@"u[0-9]*.[0-9]*").Match(token).Length == 1)) match_token = true;
-                // if (this.string_token == eval_uint && Int32.TryParse(token.Substring(1), out int ui) && (new Regex(@"u[0-9]*").Match(token).Length == 1)) match_token = true;
                 if (!match_token && (this.string_token == eval_ufloat && Decimal.TryParse(token.Substring(1), out decimal uf) && token.IndexOf(".") != -1 && token[0] == 'u')) match_token = true;
                 if (!match_token && (this.string_token == eval_uint && Int32.TryParse(token.Substring(1), out int ui) && token.IndexOf(".") == -1 && token[0] == 'u')) match_token = true;
             }
@@ -1171,22 +1170,21 @@ namespace Kepler.LogicControl
         {
             if (string.IsNullOrEmpty(token) || token.Length == 0) return false;
 
-            string start_char = token[0].ToString();
-            if (start_char == "!" || start_char == "@" || start_char == "#" || start_char == "%" ||
-            start_char == "^" || start_char == "&" || start_char == "*" || start_char == "=" || start_char == "-" ||
-            start_char == "[" || start_char == "]" || start_char == "{" || start_char == "}") return false;
-            int i = 0;
-            if (int.TryParse(start_char, out i)) return false;
+            if (disallowed_start.IsMatch(token[0].ToString())) return false;
+            if (disallowed_characters.IsMatch(token)) return false;
 
             return true;
         }
 
-        public static string any_string = "$ANYSTRING"; // if the string is any string
-        public static string valid_variable = "$VALIDVAR"; // check if the string is a valid variable
-        public static string eval_int = "$EVALINT"; // if the string parses to an valid integer
-        public static string eval_float = "$EVALFLOAT"; // if the string parses to a valid float
-        public static string eval_uint = "$EVALUINT"; // if the string parses to an valid integer
-        public static string eval_ufloat = "$EVALUFLOAT"; // if the string parses to a valid float
+        static Regex disallowed_characters = new Regex("[!@#%^&*()[\\]{}\\\\/]"); // disallowed characters in a variable name
+        static Regex disallowed_start = new Regex("(\\d)"); // disallowed start of a variable name
+        public static string any_string = "$ ANYSTRING"; // if the string is any string
+        public static string valid_variable = "$ VALIDVAR"; // check if the string is a valid variable
+        public static string eval_int = "$ EVALINT"; // if the string parses to an valid integer
+        public static string eval_float = "$ EVALFLOAT"; // if the string parses to a valid float
+        public static string eval_string = "$ EVALSTRING"; // if the string starts and ends with a quotation mark (strings are properly created later)
+        public static string eval_uint = "$ EVALUINT"; // if the string parses to an valid integer
+        public static string eval_ufloat = "$ EVALUFLOAT"; // if the string parses to a valid float
     }
 
 }

@@ -487,6 +487,7 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.StaticInt, TokenMatch.eval_int, null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticFloat, TokenMatch.eval_float, null, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.StaticUnsignedInt, TokenMatch.eval_uint, null, TokenMatch.any_string, 0),
+                new TokenMatch(TokenType.StaticString, TokenMatch.eval_string, null, TokenMatch.any_string, 0),
 
                 // static values before operators
                 new TokenMatch(TokenType.StaticBoolean, "True", TokenMatch.any_string, TokenMatch.any_string, 0),
@@ -531,6 +532,8 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, "return", 0), // any text following a "return" that isn't tokenized as a StaticType
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, null, TokenMatch.any_string, 0), // any string at the end of a line is assumed to be a variable name
                 new TokenMatch(TokenType.DeclareVariable, TokenMatch.valid_variable, TokenMatch.any_string, TokenMatch.any_string, 0),
+
+                new TokenMatch(TokenType.Generic, TokenMatch.any_string, TokenMatch.any_string, TokenMatch.any_string, 0) // catch anything that isn't a keyword or valid variable name
         };
 
             // if (tokenized == "True" || tokenized == "False") m_tokens.Add(new Token(TokenType.StaticBoolean, i));
@@ -550,7 +553,6 @@ namespace Kepler.Lexer
             }
 
             throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { "Unrecognized token: " + token });
-            // return new TokenMatch(TokenType.UNRECOGNIZED, null, null, null, 0);
         }
 
         public string GetString()
