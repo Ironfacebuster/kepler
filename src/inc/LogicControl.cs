@@ -57,7 +57,7 @@ namespace Kepler.LogicControl
 
             // level 2 states
             TokenState DeclareHeader = new TokenState(TokenType.DeclareHeader, new TokenState[] { EOL }, NullHandle);
-            TokenState DeclareFunction = new TokenState(TokenType.DeclareFunction, new TokenState[] { EOL }, HandleDeclareFunction);
+            TokenState DeclareFunction = new TokenState(TokenType.DeclareFunction, HandleDeclareFunction);
             TokenState DeclareVariable = new TokenState(TokenType.DeclareVariable, HandleDeclareVariable);
             TokenState AssignFunctionType = new TokenState(TokenType.AssignFunctionType, HandleAssignFunctionType);
 
@@ -67,6 +67,7 @@ namespace Kepler.LogicControl
             TokenState OrOperator = new TokenState(TokenType.OrOperator, NullHandle);
             TokenState StaticVariableType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StaticFunctionType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
+            TokenState StartArguments = new TokenState(TokenType.StartArguments, HandleStartArguments);
 
             // static values
             TokenState StaticFloat = new TokenState(TokenType.StaticFloat, new TokenState[] { BooleanOperator, EOL }, HandleStaticFloat);
@@ -103,10 +104,6 @@ namespace Kepler.LogicControl
             TokenState GenericOperation = new TokenState(TokenType.GenericOperation, HandleGenericOperation);
             GenericOperation.child_states = new TokenState[] { GenericOperation, BooleanOperator, EOL };
 
-            // function argument stuff
-            TokenState AssignNonPositionalArgument = new TokenState(TokenType.AssignNonPositionalArgument, HandleAssignNonPositionalArgument);
-            TokenState PositionalArgumentAssignment = new TokenState(TokenType.PositionalArgumentAssignment, HandlePositionalArgumentAssignment);
-
             // linking stuff
             TokenState LinkFile = new TokenState(TokenType.LinkFile, new TokenState[] { StaticString }, HandleLinkFile);
             TokenState ThrowError = new TokenState(TokenType.ThrowError, new TokenState[] { StaticString, DeclareVariable, GenericOperation }, HandleThrowError);
@@ -114,15 +111,17 @@ namespace Kepler.LogicControl
 
             TokenState StartAssertion = new TokenState(TokenType.StartAssertion, new TokenState[] { GenericOperation }, HandleStartAssertion);
 
+            // function things
+            DeclareFunction.child_states = new TokenState[] { StartArguments, EOL };
+            StartArguments.child_states = new TokenState[] { DeclareVariable };
+
             // ASSIGN RECURSIVE CHILD STATES
             GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, GenericOperation };
-            AssignFunction.child_states = new TokenState[] { AssignFunctionType, AssignNonPositionalArgument };
+            AssignFunction.child_states = new TokenState[] { AssignFunctionType };
             AssignFunctionType.child_states = new TokenState[] { StaticVariableType };
             ConsolePrint.child_states = new TokenState[] { GenericOperation, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType };
 
-            DeclareVariable.child_states = new TokenState[] { PositionalArgumentAssignment, EOL };
-            PositionalArgumentAssignment.child_states = new TokenState[] { StaticVariableType };
-            AssignNonPositionalArgument.child_states = new TokenState[] { DeclareVariable };
+            DeclareVariable.child_states = new TokenState[] { EOL };
 
             StaticVariableType.child_states = new TokenState[] { BooleanOperator, EOL };
             StaticFunctionType.child_states = new TokenState[] { BooleanOperator, EOL };
@@ -136,7 +135,7 @@ namespace Kepler.LogicControl
             level1.Add(new TokenState(TokenType.ConditionalIf, HandleConditionalIf));
             level1.Add(new TokenState(TokenType.ConditionalElseIf, HandleConditionalElseIf));
             level1.Add(new TokenState(TokenType.ConditionalElse, new TokenState[] { EOL }, HandleConditionalElse));
-            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn)); // TODO: return values!
+            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn));
             level1.Add(StartInterval);
             level1.Add(EndInterval);
             level1.Add(StartLoop);
@@ -504,17 +503,9 @@ namespace Kepler.LogicControl
         {
             state.booleans["calling_function"] = true;
         }
-        void HandleAssignNonPositionalArgument(Token token, TokenState state)
-        {
-            state.booleans["assigning_function_variables"] = true;
-        }
-        void HandlePositionalArgumentAssignment(Token token, TokenState state)
-        {
-            state.booleans["assigning_function_variables_type"] = true;
-        }
+
         void HandleGenericAssign(Token token, TokenState state)
         {
-
             if (state.booleans["declared_variable"])
             {
                 state.booleans["variable_assign"] = true;
@@ -740,6 +731,7 @@ namespace Kepler.LogicControl
         void HandleDeclareFunction(Token token, TokenState state)
         {
             KeplerFunction c_function = functions.GetFunction(token.token_string);
+
             // TODO: execute function after arguments are assigned
             if (state.booleans["calling_function"])
             {
@@ -769,6 +761,14 @@ namespace Kepler.LogicControl
                 state.booleans["declared_function"] = true;
             }
         }
+
+        void HandleStartArguments(Token token, TokenState state)
+        {
+            if (!state.booleans["calling_function"]) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN);
+
+            state.booleans["inside_arguments"] = true;
+        }
+
         void HandleStartInterval(Token token, TokenState state)
         {
             if (state.booleans["inside_interval"]) throw new KeplerError(KeplerErrorCode.UNEXP_START_INT);
@@ -862,12 +862,18 @@ namespace Kepler.LogicControl
             f_interpreter.filename = this.interpreter.filename;
             f_interpreter.is_function = true;
 
+            // validate arguments
+            if (function.HasArguments())
+            {
+
+            }
+
             if (function.is_internal)
             {
                 if (this.verbose_debug)
                     Console.WriteLine("EXECUTING INTERNAL FUNCT!");
                 // call with null argument list, since arguments aren't properly implemented yet
-                KeplerVariable result = function.internal_call(f_interpreter, null);
+                KeplerVariable result = function.internal_call(f_interpreter, function.arguments);
 
                 if (result != null)
                     f_interpreter.statemachine.SetReturnValue(result);
@@ -1009,6 +1015,7 @@ namespace Kepler.LogicControl
 
         void AssignDefaultBools()
         {
+            booleans["assigned_a_operand"] = false;
             booleans["declared_variable"] = false;
             booleans["declared_function"] = false;
             booleans["casting_variable"] = false;
@@ -1017,20 +1024,24 @@ namespace Kepler.LogicControl
             booleans["validated_conditional"] = false;
             booleans["validate_assertion"] = false;
             booleans["inside_conditional"] = false;
-            booleans["function_assign"] = false;
             booleans["assigning_function_variables"] = false;
             booleans["assigning_function_variables_type"] = false;
             booleans["closing_function"] = false;
             booleans["inside_function"] = false;
             booleans["inside_interval"] = false;
             booleans["inside_loop"] = false;
+
+            booleans["function_assign"] = false;
             booleans["calling_function"] = false;
+            booleans["inside_arguments"] = false;
+
             booleans["inside_if_statement"] = false;
+
             booleans["inside_header"] = false;
             booleans["link_file"] = false;
-            booleans["throw_error"] = false;
+
             booleans["console_print"] = false;
-            booleans["assigned_a_operand"] = false;
+            booleans["throw_error"] = false;
             booleans["return_value"] = false;
         }
 
