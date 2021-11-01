@@ -137,65 +137,52 @@ start calc_line
         if cur_x equals apple_x and cur_y equals apple_y
             line is line + "@"
             draw_empty is False
-        endif
-        
-        if drawn_parts < snake_length
-            if draw_empty equals True and cur_x equals snake_head_x and cur_y equals snake_head_y
+        elseif drawn_parts < snake_length
+            if cur_x equals snake_head_x and cur_y equals snake_head_y
                 line is line + snake_head_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb1_x and cur_y equals sb1_y and snake_length > 1
+            elseif cur_x equals sb1_x and cur_y equals sb1_y and snake_length > 1
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb2_x and cur_y equals sb2_y and snake_length > 2
+            elseif cur_x equals sb2_x and cur_y equals sb2_y and snake_length > 2
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb3_x and cur_y equals sb3_y and snake_length > 3
+            elseif cur_x equals sb3_x and cur_y equals sb3_y and snake_length > 3
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb4_x and cur_y equals sb4_y and snake_length > 4
+            elseif cur_x equals sb4_x and cur_y equals sb4_y and snake_length > 4
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb5_x and cur_y equals sb5_y and snake_length > 5
+            elseif cur_x equals sb5_x and cur_y equals sb5_y and snake_length > 5
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb6_x and cur_y equals sb6_y and snake_length > 6
+            elseif cur_x equals sb6_x and cur_y equals sb6_y and snake_length > 6
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb7_x and cur_y equals sb7_y and snake_length > 7
+            elseif cur_x equals sb7_x and cur_y equals sb7_y and snake_length > 7
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb8_x and cur_y equals sb8_y and snake_length > 8
+            elseif cur_x equals sb8_x and cur_y equals sb8_y and snake_length > 8
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb9_x and cur_y equals sb9_y and snake_length > 9
+            elseif cur_x equals sb9_x and cur_y equals sb9_y and snake_length > 9
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb10_x and cur_y equals sb10_y and snake_length > 10
+            elseif cur_x equals sb10_x and cur_y equals sb10_y and snake_length > 10
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            endif
-            if draw_empty equals True and cur_x equals sb11_x and cur_y equals sb11_y and snake_length > 11
+            elseif cur_x equals sb11_x and cur_y equals sb11_y and snake_length > 11
                 line is line + snake_body_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
@@ -217,54 +204,37 @@ start calc_line
 end calc_line
 
 start check_collision
-    ! is_dead is False
+    
     if snake_head_x equals apple_x and snake_head_y equals apple_y
         return 2.0
-    endif
-    
-    if snake_head_x < 0 or snake_head_x >= board_size_x
+    elseif snake_head_x < 0 or snake_head_x >= board_size_x
+        return 1.0
+    elseif snake_head_y < 0 or snake_head_y >= board_size_y
+        return 1.0
+    elseif snake_head_x equals sb1_x and snake_head_y equals sb1_y and snake_length > 1
+        return 1.0
+    elseif snake_head_x equals sb2_x and snake_head_y equals sb2_y and snake_length > 2
+        return 1.0
+    elseif snake_head_x equals sb3_x and snake_head_y equals sb3_y and snake_length > 3
+        return 1.0
+    elseif snake_head_x equals sb4_x and snake_head_y equals sb4_y and snake_length > 4
+        return 1.0
+    elseif snake_head_x equals sb5_x and snake_head_y equals sb5_y and snake_length > 5
+        return 1.0
+    elseif snake_head_x equals sb6_x and snake_head_y equals sb6_y and snake_length > 6
+        return 1.0
+    elseif snake_head_x equals sb7_x and snake_head_y equals sb7_y and snake_length > 7
+        return 1.0
+    elseif snake_head_x equals sb8_x and snake_head_y equals sb8_y and snake_length > 8
+        return 1.0
+    elseif snake_head_x equals sb9_x and snake_head_y equals sb9_y and snake_length > 9
+        return 1.0
+    elseif snake_head_x equals sb10_x and snake_head_y equals sb10_y and snake_length > 10
+        return 1.0
+    elseif snake_head_x equals sb11_x and snake_head_y equals sb11_y and snake_length > 11
         return 1.0
     endif
     
-    if snake_head_y < 0 or snake_head_y >= board_size_y
-        return 1.0
-    endif
-    
-    if snake_head_x equals sb1_x and snake_head_y equals sb1_y and snake_length > 1
-        return 1.0
-    endif
-    if snake_head_x equals sb2_x and snake_head_y equals sb2_y and snake_length > 2
-        return 1.0
-    endif
-    if snake_head_x equals sb3_x and snake_head_y equals sb3_y and snake_length > 3
-        return 1.0
-    endif
-    if snake_head_x equals sb4_x and snake_head_y equals sb4_y and snake_length > 4
-        return 1.0
-    endif
-    if snake_head_x equals sb5_x and snake_head_y equals sb5_y and snake_length > 5
-        return 1.0
-    endif
-    if snake_head_x equals sb6_x and snake_head_y equals sb6_y and snake_length > 6
-        return 1.0
-    endif
-    if snake_head_x equals sb7_x and snake_head_y equals sb7_y and snake_length > 7
-        return 1.0
-    endif
-    if snake_head_x equals sb8_x and snake_head_y equals sb8_y and snake_length > 8
-        return 1.0
-    endif
-    if snake_head_x equals sb9_x and snake_head_y equals sb9_y and snake_length > 9
-        return 1.0
-    endif
-    if snake_head_x equals sb10_x and snake_head_y equals sb10_y and snake_length > 10
-        return 1.0
-    endif
-    if snake_head_x equals sb11_x and snake_head_y equals sb11_y and snake_length > 11
-        return 1.0
-    endif
-    
-    ! return is_dead
     return 0.0
 end check_collision
 
@@ -382,15 +352,16 @@ end reset_game
 quit is False
 
 top is call calc_border
-start every 25
-    if quit
-        breakout
-    endif
-    
-    call print_board
-end every
+! start every 25
+!     if quit
+!         breakout
+!     endif
+
+!     call print_board
+! end every
 
 start every 250
+    
     coll_type is call check_collision
     
     if coll_type equals 1.0
@@ -453,7 +424,7 @@ start every 250
     endif
     
     ! collision type 2 is apple
-    if coll_type equals 2.0
+    if coll_type equals 2
         n_points is 50 * snake_length / 2
         snake_score is snake_score + n_points
         snake_length is snake_length + 1
@@ -470,4 +441,6 @@ start every 250
     if snake_score < 0
         snake_score is 0
     endif
+    
+    call print_board
 end every
