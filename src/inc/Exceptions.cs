@@ -162,7 +162,10 @@ namespace Kepler.Exceptions
                 case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
                     error_string = "Type Error: Assignment to constant variable.";
                     break;
-                case KeplerErrorCode.INVALID_CAST:
+                case KeplerErrorCode.EXPLICIT_CAST:
+                    error_string = string.Format("Type Error: Unable to explicitly cast type {0} to {1}!", this.args[0], this.args[1]);
+                    break;
+                case KeplerErrorCode.IMPLICIT_CAST:
                     error_string = string.Format("Type Error: Unable to implicitly cast type {0} to {1}!", this.args[0], this.args[1]);
                     break;
                 case KeplerErrorCode.UNASSIGNED_TYPE:
@@ -255,7 +258,8 @@ namespace Kepler.Exceptions
         INVALID_TYPE_ASSIGN,
         ASSIGN_CONSTANT_VAR,
         STRICT_TYPE_EQUALITY,
-        INVALID_CAST,
+        EXPLICIT_CAST,
+        IMPLICIT_CAST,
         UNDECLARED,
         UNASSIGNED_TYPE,
         DUP_NONPOS_ARG,

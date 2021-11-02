@@ -251,7 +251,7 @@ namespace KeplerVariables
             return output;
         }
 
-        public string GetValueAsString()
+        public string GetValueAsString(bool is_explicit = false)
         {
             switch (type)
             {
@@ -271,10 +271,10 @@ namespace KeplerVariables
                     return "NaN";
             }
 
-            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "String" });
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "String" });
         }
 
-        public int GetValueAsInt()
+        public int GetValueAsInt(bool is_explicit = false)
         {
             switch (type)
             {
@@ -289,13 +289,13 @@ namespace KeplerVariables
                 case KeplerType.String:
                     decimal new_float = 0;
                     if (decimal.TryParse(this.StringValue, out new_float)) return (int)new_float;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+                    break;
             }
 
-            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "Int" });
         }
 
-        public uint GetValueAsUnsignedInt()
+        public uint GetValueAsUnsignedInt(bool is_explicit = false)
         {
             switch (type)
             {
@@ -310,13 +310,13 @@ namespace KeplerVariables
                 case KeplerType.String:
                     decimal new_float = 0;
                     if (decimal.TryParse(this.StringValue, out new_float)) return (uint)new_float;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
+                    break;
             }
 
-            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "uInt" });
         }
 
-        public decimal GetValueAsFloat()
+        public decimal GetValueAsFloat(bool is_explicit = false)
         {
             switch (type)
             {
@@ -331,14 +331,14 @@ namespace KeplerVariables
                 case KeplerType.String:
                     decimal new_float = 0;
                     if (decimal.TryParse(this.StringValue, out new_float)) return new_float;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+                    break;
 
             }
 
-            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Float" });
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "Float" });
         }
 
-        public bool GetValueAsBool()
+        public bool GetValueAsBool(bool is_explicit = false)
         {
             switch (type)
             {
@@ -353,10 +353,10 @@ namespace KeplerVariables
                 case KeplerType.String:
                     if (this.StringValue.ToLower() == "true") return true;
                     if (this.StringValue.ToLower() == "false") return false;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
+                    break;
             }
 
-            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "Boolean" });
         }
     }
 
