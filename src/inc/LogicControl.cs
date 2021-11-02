@@ -8,11 +8,13 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 // using Kepler.Lexer.Tokens;
 using System.IO;
+using Kepler.Modules;
 
 namespace Kepler.LogicControl
 {
     public class StateMachine
     {
+        // static InternalLibraries internalLibraries;
         public bool verbose_debug = false;
         public bool end_on_eop = true;
         public bool linked_file = false;
@@ -596,30 +598,48 @@ namespace Kepler.LogicControl
             {
                 if (verbose_debug) Console.WriteLine(string.Format("LINKING \"{0}\"", string_value));
 
-                // load file and interpret
-                Tokenizer m_tokenizer = new Tokenizer();
-                m_tokenizer.Load(string_value);
+                // check if the internal modules have something by this name
 
-                Interpreter m_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
-                m_interpreter.verbose_debug = this.interpreter.verbose_debug;
-                m_interpreter.debug = this.interpreter.debug;
-                m_interpreter.statemachine.linked_file = true;
-                m_interpreter.tracer = this.interpreter.tracer;
-                m_interpreter.filename = Path.GetFileName(string_value);
-
-                // do interpretation
-                while (m_tokenizer.HasNext())
+                if (InternalLibraries.HasModule(string_value))
                 {
-                    m_interpreter.Interpret(m_tokenizer.CurrentLine());
-
-                    m_tokenizer++;
+                    try
+                    {
+                        this.LoadModule(string_value);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"An error occurred while loading module \"{string_value}\".\r\n");
+                        throw e;
+                    }
                 }
+                else
+                {
+                    // load file and interpret
+                    Tokenizer m_tokenizer = new Tokenizer();
+                    m_tokenizer.Load(string_value);
 
-                // transfer all global variables and functions
-                linked_variables = m_interpreter.statemachine.variables;
-                linked_functions = m_interpreter.statemachine.functions;
+                    Interpreter m_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
+                    m_interpreter.verbose_debug = this.interpreter.verbose_debug;
+                    m_interpreter.debug = this.interpreter.debug;
+                    m_interpreter.statemachine.linked_file = true;
+                    m_interpreter.tracer = this.interpreter.tracer;
+                    m_interpreter.filename = Path.GetFileName(string_value);
 
-                has_linked_file = true;
+                    // do interpretation
+                    while (m_tokenizer.HasNext())
+                    {
+                        m_interpreter.Interpret(m_tokenizer.CurrentLine());
+
+                        m_tokenizer++;
+                    }
+
+                    // transfer all global variables and functions
+                    linked_variables = m_interpreter.statemachine.variables;
+                    linked_functions = m_interpreter.statemachine.functions;
+
+                    has_linked_file = true;
+                }
             }
             else if (state.booleans["throw_error"])
             {
@@ -635,6 +655,42 @@ namespace Kepler.LogicControl
 
                 this.SetReturnValue(new_variable);
             }
+        }
+
+        List<string> loaded_modules = new List<string>();
+
+        public void LoadModule(string name)
+        {
+            if (loaded_modules.Contains(name)) return; // if this module is already loaded, just return.
+            if (!InternalLibraries.HasModule(name)) throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"No module named '{name}' was found." });
+
+            Module loaded_module = InternalLibraries.GetModule(name);
+
+            if (loaded_module.required_modules != null && loaded_module.required_modules.Length > 0)
+            {
+                for (int i = 0; i < loaded_module.required_modules.Length; ++i)
+                {
+                    this.LoadModule(loaded_module.required_modules[i].name);
+                }
+            }
+
+            if (loaded_module.variables != null && loaded_module.variables.Count > 0)
+            {
+                foreach (KeyValuePair<string, KeplerVariable> var_pair in loaded_module.variables)
+                {
+                    this.variables.Load(var_pair);
+                }
+            }
+
+            if (loaded_module.functions != null && loaded_module.functions.Length > 0)
+            {
+                for (int i = 0; i < loaded_module.functions.Length; i++)
+                {
+                    this.functions.Load(loaded_module.functions[i]);
+                }
+            }
+
+            loaded_modules.Add(name);
         }
         void HandleStaticModifier(Token token, TokenState state)
         {
@@ -917,7 +973,7 @@ namespace Kepler.LogicControl
 
         void SetReturnValue(KeplerVariable return_value)
         {
-            if (this.function_type != return_value.type) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { return_value.type.ToString(), this.function_type.ToString() });
+            if (this.function_type != return_value.type && this.function_type != KeplerType.Any) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { return_value.type.ToString(), this.function_type.ToString() });
 
             this.function_return_value = return_value;
 

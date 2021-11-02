@@ -20,6 +20,14 @@ namespace KeplerVariables
             this.global = this;
         }
 
+        public void Load(KeyValuePair<string, KeplerVariable> var_pair)
+        {
+            if (this.GetVariable(var_pair.Key, true) != null)
+                throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { var_pair.Key });
+
+            this.local.Add(var_pair.Key, var_pair.Value);
+        }
+
         public KeplerVariable DeclareVariable(string name, bool global_override)
         {
             if (global.local.ContainsKey(name)) return global.local[name];
@@ -32,7 +40,7 @@ namespace KeplerVariables
             return n_var;
         }
 
-        public KeplerVariable GetVariable(string name)
+        public KeplerVariable GetVariable(string name, bool no_error = false)
         {
             if (global.local.ContainsKey(name))
             {
@@ -53,7 +61,10 @@ namespace KeplerVariables
                 return local[name];
             }
 
-            throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            if (!no_error)
+                throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            else
+                return null;
         }
 
         public KeplerVariable GetVariableByID(string id)
@@ -367,12 +378,23 @@ namespace KeplerVariables
             return n_funct;
         }
 
-        public KeplerFunction GetFunction(string name)
+        public void Load(KeplerFunction function)
+        {
+            if (this.GetFunction(function.name, true) != null)
+                throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { function.name });
+
+            this.local.Add(function.name, function);
+        }
+
+        public KeplerFunction GetFunction(string name, bool no_error = false)
         {
             if (global.ContainsKey(name)) return global[name];
             if (local.ContainsKey(name)) return local[name];
 
-            throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            if (!no_error)
+                throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            else
+                return null;
         }
 
         public KeplerFunctionManager Copy()
@@ -748,6 +770,7 @@ namespace KeplerVariables
 
     public enum KeplerType
     {
+        Any,
         Float,
         Int,
         uFloat,
