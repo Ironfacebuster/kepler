@@ -54,6 +54,30 @@ namespace Kepler.Modules
             list.Add(module);
             this.required_modules = list.ToArray();
         }
+
+        public KeplerFunction GetFunction(string name)
+        {
+            foreach (KeplerFunction function in this.functions)
+            {
+                if (function.name == name)
+                {
+                    return function;
+                }
+            }
+            return null;
+        }
+
+        public KeplerVariable CallFunction(string name, Kepler.Interpreting.Interpreter interpreter, KeplerArguments args)
+        {
+            foreach (KeplerFunction function in this.functions)
+            {
+                if (function.name == name)
+                {
+                    return function.internal_call(interpreter, args);
+                }
+            }
+            return null;
+        }
     }
 
     public static class InternalLibraries
