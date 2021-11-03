@@ -163,7 +163,8 @@ namespace KeplerVariables
             ValidateType(KeplerType.String);
 
             // convert escape characters
-            StringValue = /* ToLiteral(value); */ value;
+            StringValue = ToLiteral(value);
+            // StringValue = value;
         }
 
         public void AssignValue(KeplerVariable variable)
