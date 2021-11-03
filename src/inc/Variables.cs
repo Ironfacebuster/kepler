@@ -389,13 +389,17 @@ namespace KeplerVariables
 
         public KeplerFunction GetFunction(string name, bool no_error = false)
         {
-            if (global.ContainsKey(name)) return global[name];
-            if (local.ContainsKey(name)) return local[name];
+            KeplerFunction res = null;
+            if (global.ContainsKey(name)) res = global[name];
+            if (local.ContainsKey(name)) res = local[name];
 
-            if (!no_error)
+            if (no_error && res != null)
+                res.Reset();
+
+            if (!no_error && res == null)
                 throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
-            else
-                return null;
+
+            return res;
         }
 
         public KeplerFunctionManager Copy()
@@ -537,9 +541,9 @@ namespace KeplerVariables
 
     public class KeplerArguments
     {
-        private IDictionary<string, KeplerType> required_non_positionals;
-        private IDictionary<string, KeplerVariable> non_positional_arguments;
-        private List<KeplerVariable> positional_arguments;
+        public IDictionary<string, KeplerType> required_non_positionals;
+        public IDictionary<string, KeplerVariable> non_positional_arguments;
+        public List<KeplerVariable> positional_arguments;
         private KeplerFunction function;
 
         public KeplerArguments(KeplerFunction function)
@@ -592,7 +596,14 @@ namespace KeplerVariables
         {
             if (this.required_non_positionals.ContainsKey(name))
             {
-                this.non_positional_arguments.Add(name, value);
+                if (this.non_positional_arguments.ContainsKey(name))
+                {
+                    this.non_positional_arguments[name] = value;
+                }
+                else
+                {
+                    this.non_positional_arguments.Add(name, value);
+                }
             }
             else throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.function.name, name });
         }

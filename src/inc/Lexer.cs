@@ -306,12 +306,14 @@ namespace Kepler.Lexer
                                 operation_token.operation = OperationType.Or;
                                 clean_up = true;
                                 break;
-                            case TokenType.SetNonPositionalArgument:
-                                operation_token.type = TokenType.SetNonPositionalArgument;
-                                operation_token.operation = OperationType.Token;
-                                clean_up = true;
-                                break;
                         }
+                    }
+
+                    if (peek.type == TokenType.SetNonPositionalArgument)
+                    {
+                        operation_token.type = TokenType.SetNonPositionalArgument;
+                        operation_token.operation = OperationType.Token;
+                        clean_up = true;
                     }
 
                     if (clean_up)
@@ -479,6 +481,7 @@ namespace Kepler.Lexer
                 new TokenMatch(TokenType.StartAssertion, "assert", TokenMatch.any_string, null, 0), // Assertion token
 
                 // function argument things
+                new TokenMatch(TokenType.StartDefineArguments, "uses", TokenMatch.any_string, TokenMatch.any_string, 0), // Define Arguments token
                 new TokenMatch(TokenType.StartArguments, "with", TokenMatch.any_string, TokenMatch.any_string, 0), // Start of arguments
                 new TokenMatch(TokenType.SetNonPositionalArgument, "as", TokenMatch.any_string, TokenMatch.any_string, 0), // Start of arguments
 
@@ -637,6 +640,7 @@ namespace Kepler.Lexer.Tokens
         EndFunction,
         AssignFunctionType,
         FunctionReturn,
+        StartDefineArguments,
         StartArguments,
         StartPositionalArguments,
         StartNonPositionalArguments,

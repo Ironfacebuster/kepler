@@ -69,6 +69,7 @@ namespace Kepler.LogicControl
             TokenState StaticVariableType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StaticFunctionType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StartArguments = new TokenState(TokenType.StartArguments, HandleStartArguments);
+            TokenState StartDefineArguments = new TokenState(TokenType.StartDefineArguments, HandleStartDefineArguments);
             TokenState SetNonPositionalArgument = new TokenState(TokenType.SetNonPositionalArgument, new TokenState[] { BooleanOperator, EOL }, HandleSetNonPositionalArgument);
 
             // static values
@@ -115,12 +116,13 @@ namespace Kepler.LogicControl
 
             // function things
             DeclareFunction.child_states = new TokenState[] { StartArguments, EOL };
-            StartArguments.child_states = new TokenState[] { SetNonPositionalArgument, GenericOperation };
+            StartDefineArguments.child_states = new TokenState[] { SetNonPositionalArgument, EOL };
+            StartArguments.child_states = new TokenState[] { SetNonPositionalArgument, GenericOperation, EOL };
 
             // ASSIGN RECURSIVE CHILD STATES
             GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, GenericOperation };
-            AssignFunction.child_states = new TokenState[] { AssignFunctionType };
-            AssignFunctionType.child_states = new TokenState[] { StaticVariableType };
+            AssignFunction.child_states = new TokenState[] { AssignFunctionType, StartDefineArguments };
+            AssignFunctionType.child_states = new TokenState[] { StaticVariableType, BooleanOperator };
             ConsolePrint.child_states = new TokenState[] { GenericOperation, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType };
 
             DeclareVariable.child_states = new TokenState[] { EOL };
@@ -130,7 +132,7 @@ namespace Kepler.LogicControl
             StaticModifier.child_states = new TokenState[] { BooleanOperator, /*StaticVariableType,*/ EOL };
 
             // handle "and is" & assigning arguments
-            BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable, GenericOperation, SetNonPositionalArgument };
+            BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable, GenericOperation, SetNonPositionalArgument, StartDefineArguments };
 
             EOL.child_states = new TokenState[] { EOL };
             EOP.child_states = new TokenState[] { EOP, EOL };
@@ -509,7 +511,17 @@ namespace Kepler.LogicControl
         void HandleSetNonPositionalArgument(Token token, TokenState state)
         {
             // this is a hack.
-            scheduled_function.SetNonPositional(token.a.token_string, CreateTemporaryVariable(token.b));
+            if (state.booleans["inside_define_arguments"])
+            {
+                if (token.a.type != TokenType.StaticVariableType) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { token.a.token_string });
+                Enum.TryParse(token.a.token_string, out KeplerType m_type);
+
+                state.c_function.AssignNonPositional(token.b.token_string, m_type);
+            }
+            else
+            {
+                scheduled_function.SetNonPositional(token.b.token_string, CreateTemporaryVariable(token.a));
+            }
         }
 
         void HandleGenericAssign(Token token, TokenState state)
@@ -756,10 +768,10 @@ namespace Kepler.LogicControl
             {
                 state.left_side_operator.AssignValue(variables.GetVariable(token.token_string));
             }
-            if (state.booleans["inside_arguments"])
-            {
-                state.strings["nonpositional_argument_name"] = token.token_string;
-            }
+            // if (state.booleans["inside_arguments"])
+            // {
+            //     state.strings["nonpositional_argument_name"] = token.token_string;
+            // }
             else if (state.booleans["console_print"])
             {
                 state.strings["print_string"] = state.strings["print_string"] + variables.GetVariable(token.token_string).GetValueAsString();
@@ -824,6 +836,13 @@ namespace Kepler.LogicControl
             if (!state.booleans["calling_function"]) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN);
 
             state.booleans["inside_arguments"] = true;
+        }
+
+        void HandleStartDefineArguments(Token token, TokenState state)
+        {
+            // if (state.booleans["calling_function"]) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN);
+
+            state.booleans["inside_define_arguments"] = true;
         }
 
         void HandleStartInterval(Token token, TokenState state)
@@ -936,6 +955,20 @@ namespace Kepler.LogicControl
             else
             {
                 if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
+
+                // load arguments
+                if (function.HasArguments())
+                {
+                    if (verbose_debug) Console.WriteLine("LOADING ARGUMENTS");
+                    foreach (KeyValuePair<string, KeplerType> pair in function.arguments.required_non_positionals)
+                    {
+
+                        // if (verbose_debug) Console.WriteLine("LOADING ARGUMENT " + argument.name);
+                        KeplerVariable var = function.arguments.GetArgument(pair.Key);
+                        KeplerVariable n_var = f_interpreter.statemachine.variables.DeclareVariable(pair.Key, false);
+                        n_var.AssignValue(var);
+                    }
+                }
 
                 // do interpretation
                 for (int i = 0; i < function.lines.Count; ++i)
@@ -1086,6 +1119,7 @@ namespace Kepler.LogicControl
             booleans["function_assign"] = false;
             booleans["calling_function"] = false;
             booleans["inside_arguments"] = false;
+            booleans["inside_define_arguments"] = false;
 
             booleans["inside_if_statement"] = false;
 
