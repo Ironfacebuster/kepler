@@ -22,7 +22,7 @@ namespace Kepler.Modules
             KeplerVariable pi = new KeplerVariable();
             pi.SetFloatValue(3.141592653589793m);
             pi.SetModifier(KeplerModifier.Constant);
-            math_vars.Add("PI", e);
+            math_vars.Add("PI", pi);
 
             KeplerVariable tau = new KeplerVariable();
             tau.SetFloatValue(6.2831853071795862m);
