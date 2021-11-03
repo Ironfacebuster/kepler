@@ -1,0 +1,18 @@
+start Header
+    link "main"
+    link "filesystem"
+    ! link "objects" automatically imported by "filesystem"
+    link "math"
+end Header
+
+int is call round with 1.5 as value
+assert int equals 2
+
+! create an object
+object_id is call object_create
+call object_set with object_id as id, "name" as key, "an object" as value
+
+val is call object_get with object_id as id, "name" as key
+assert val equals "an object"
+
+print "SUCCESS"
