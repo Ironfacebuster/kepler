@@ -9,9 +9,9 @@ namespace Kepler.Modules
         {
 
             // FILESYSTEM MODULE
-            KeplerFunction load = new KeplerFunction("load", true);
-            load.SetType(KeplerType.String);
-            load.internal_call = (interpreter, args) =>
+            KeplerFunction fs_load = new KeplerFunction("fs_load", true);
+            fs_load.SetType(KeplerType.String);
+            fs_load.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
                 res.SetStringValue("null");
@@ -22,9 +22,9 @@ namespace Kepler.Modules
                 return res;
             };
 
-            KeplerFunction exists = new KeplerFunction("exists", true);
-            exists.SetType(KeplerType.Boolean);
-            exists.internal_call = (interpreter, args) =>
+            KeplerFunction fs_exists = new KeplerFunction("fs_exists", true);
+            fs_exists.SetType(KeplerType.Boolean);
+            fs_exists.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
                 res.SetBoolValue(false);
@@ -35,9 +35,9 @@ namespace Kepler.Modules
                 return res;
             };
 
-            KeplerFunction write = new KeplerFunction("write", true);
-            write.SetType(KeplerType.Int);
-            write.internal_call = (interpreter, args) =>
+            KeplerFunction fs_write = new KeplerFunction("fs_write", true);
+            fs_write.SetType(KeplerType.Int);
+            fs_write.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
                 // codes 0 = success, 1 = general error
@@ -49,7 +49,7 @@ namespace Kepler.Modules
                 return res;
             };
 
-            module = new Module("filesystem", new KeplerFunction[] { load, write, exists });
+            module = new Module("filesystem", new KeplerFunction[] { fs_load, fs_write, fs_exists });
             module.AddRequiredModule(KObjects.module);
         }
     }
