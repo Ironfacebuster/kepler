@@ -7,6 +7,8 @@ namespace Kepler.Modules
         public static Module module;
         static KFilesystem()
         {
+
+            // FILESYSTEM MODULE
             KeplerFunction load = new KeplerFunction("load", true);
             load.SetType(KeplerType.String);
             load.internal_call = (interpreter, args) =>
@@ -15,10 +17,24 @@ namespace Kepler.Modules
                 res.SetStringValue("null");
                 res.SetModifier(KeplerModifier.Constant);
 
+                // TODO: actually implement this
+
                 return res;
             };
 
-            // FILESYSTEM MODULE
+            KeplerFunction exists = new KeplerFunction("exists", true);
+            exists.SetType(KeplerType.Boolean);
+            exists.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetBoolValue(false);
+                res.SetModifier(KeplerModifier.Constant);
+
+                // TODO: actually implement this
+
+                return res;
+            };
+
             KeplerFunction write = new KeplerFunction("write", true);
             write.SetType(KeplerType.Int);
             write.internal_call = (interpreter, args) =>
@@ -33,7 +49,7 @@ namespace Kepler.Modules
                 return res;
             };
 
-            module = new Module("filesystem", new KeplerFunction[] { load, write });
+            module = new Module("filesystem", new KeplerFunction[] { load, write, exists });
             module.AddRequiredModule(KObjects.module);
         }
     }
