@@ -3,6 +3,9 @@ start Header
         throw "Alpha 1.4.1 minimum required!"
     endif
     
+    link "input"
+    link "random"
+    
     get_input returns Boolean
     print_board returns Int
     calc_line returns String
@@ -127,7 +130,7 @@ end print_board
 
 start calc_line
     snake_head_char is "#"
-    snake_body_char is "*"
+    snake_body_char is "%"
     line is "|"
     cur_x is 0
     
@@ -344,7 +347,7 @@ start reset_game
     snake_length is 3
     
     ! reset pressed key
-    call resetkey
+    call reset_key
     
     call print_board
 end reset_game
@@ -361,7 +364,6 @@ top is call calc_border
 ! end every
 
 start every 250
-    
     coll_type is call check_collision
     
     if coll_type equals 1.0
@@ -398,8 +400,8 @@ start every 250
     print ""
     
     ! reset pressed key
-    call resetkey
-    str is call getkey
+    call reset_key
+    str is call get_key
     
     valid_move is True
     if str equals ""
