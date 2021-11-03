@@ -6,7 +6,6 @@ using KeplerVariables;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-// using Kepler.Lexer.Tokens;
 using System.IO;
 using Kepler.Modules;
 
@@ -70,6 +69,7 @@ namespace Kepler.LogicControl
             TokenState StaticVariableType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StaticFunctionType = new TokenState(TokenType.StaticVariableType, HandleStaticVariableType);    // variable static type assignment
             TokenState StartArguments = new TokenState(TokenType.StartArguments, HandleStartArguments);
+            TokenState SetNonPositionalArgument = new TokenState(TokenType.SetNonPositionalArgument, new TokenState[] { BooleanOperator, EOL }, HandleSetNonPositionalArgument);
 
             // static values
             TokenState StaticFloat = new TokenState(TokenType.StaticFloat, new TokenState[] { BooleanOperator, EOL }, HandleStaticFloat);
@@ -115,7 +115,7 @@ namespace Kepler.LogicControl
 
             // function things
             DeclareFunction.child_states = new TokenState[] { StartArguments, EOL };
-            StartArguments.child_states = new TokenState[] { DeclareVariable };
+            StartArguments.child_states = new TokenState[] { SetNonPositionalArgument, GenericOperation };
 
             // ASSIGN RECURSIVE CHILD STATES
             GenericAssign.child_states = new TokenState[] { StartCallFunction, DeclareVariable, StaticFloat, StaticString, StaticInt, StaticUnsignedInt, StaticBool, StaticModifier, StaticVariableType, StaticFunctionType, GenericOperation };
@@ -130,7 +130,9 @@ namespace Kepler.LogicControl
             StaticModifier.child_states = new TokenState[] { BooleanOperator, /*StaticVariableType,*/ EOL };
 
             // handle "and is" & assigning arguments
-            BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable, GenericOperation };
+            BooleanOperator.child_states = new TokenState[] { GenericAssign, DeclareVariable, GenericOperation, SetNonPositionalArgument };
+
+            EOL.child_states = new TokenState[] { EOL };
             EOP.child_states = new TokenState[] { EOP, EOL };
 
             // set up level 1 token states
@@ -504,6 +506,12 @@ namespace Kepler.LogicControl
             state.booleans["calling_function"] = true;
         }
 
+        void HandleSetNonPositionalArgument(Token token, TokenState state)
+        {
+            // this is a hack.
+            scheduled_function.SetNonPositional(token.a.token_string, CreateTemporaryVariable(token.b));
+        }
+
         void HandleGenericAssign(Token token, TokenState state)
         {
             if (state.booleans["declared_variable"])
@@ -521,12 +529,16 @@ namespace Kepler.LogicControl
         void HandleStaticFloat(Token token, TokenState state)
         {
             if (state.booleans["variable_assign"])
-                // state.left_side_operator.SetFloatValue(double.Parse(token.token_string));
                 state.left_side_operator.SetFloatValue(decimal.Parse(token.token_string));
             if (state.booleans["console_print"])
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval((int)decimal.Parse(token.token_string));
+            if (state.booleans["assigning_function_variables"])
+            {
+                // TODO: assign this value to an argument
+                state.c_function.SetNonPositional(state.strings["nonpositional_variable_name"], CreateTemporaryVariable(token));
+            }
             if (state.booleans["return_value"])
             {
                 KeplerVariable new_variable = new KeplerVariable();
@@ -715,9 +727,9 @@ namespace Kepler.LogicControl
         {
             if (schedule_execute_function)
             {
-                // this.interpreter.tracer.TraceFunction(scheduled_function);
-                ExecuteFunction(scheduled_function, state);
                 schedule_execute_function = false;
+                ExecuteFunction(scheduled_function, state);
+                scheduled_function = null;
             }
         }
         void HandleEOP(Token token, TokenState state)
@@ -744,14 +756,13 @@ namespace Kepler.LogicControl
             {
                 state.left_side_operator.AssignValue(variables.GetVariable(token.token_string));
             }
+            if (state.booleans["inside_arguments"])
+            {
+                state.strings["nonpositional_argument_name"] = token.token_string;
+            }
             else if (state.booleans["console_print"])
             {
                 state.strings["print_string"] = state.strings["print_string"] + variables.GetVariable(token.token_string).GetValueAsString();
-            }
-            else if (state.booleans["assigning_function_variables"])
-            {
-                state.c_function.AddNonPositional(token.token_string);
-                state.strings["nonpositional_variable_name"] = token.token_string;
             }
             else if (state.booleans["throw_error"])
             {
@@ -761,10 +772,6 @@ namespace Kepler.LogicControl
             {
                 this.SetReturnValue(variables.GetVariable(token.token_string));
             }
-            // else if (state.booleans["inside_interval"])
-            // {
-            //     state.c_interrupt.SetInterval(variables.GetVariable(token.token_string).GetValueAsInt());
-            // }
             else
             {
                 state.c_variable = variables.DeclareVariable(token.token_string, this.interpreter.is_global ? true : false);
@@ -791,23 +798,19 @@ namespace Kepler.LogicControl
             {
                 if (c_function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.CALL_UNDEF_FUNCT_TYPE, new string[] { c_function.name });
 
+                // reset arguments
+                c_function.Reset();
+
                 if (state.booleans["declared_variable"])
                 {
                     state.c_variable.type = c_function.type;
                     c_function.target = state.c_variable; // assign target (for return values)
                 }
 
-                if (c_function.HasArguments())
-                {
-                    schedule_execute_function = true;
-                    scheduled_function = c_function;
 
-                    if (verbose_debug) Console.WriteLine(string.Format("Scheduling call of {0} to EOL", c_function.name));
-                }
-                else ExecuteFunction(c_function, state);
-
-                // interpret lines within function
-                // interpret until "ReturnFunction" is encountered
+                // always schedule function so that arguments that get unececcary assigned can be caught
+                schedule_execute_function = true;
+                scheduled_function = c_function;
             }
             else
             {
@@ -917,10 +920,8 @@ namespace Kepler.LogicControl
             f_interpreter.is_function = true;
 
             // validate arguments
-            if (function.HasArguments())
-            {
-
-            }
+            // if (!function.HasArguments())
+            //     function.Reset();
 
             if (function.is_internal)
             {
@@ -935,9 +936,6 @@ namespace Kepler.LogicControl
             else
             {
                 if (function.HasTarget() && function.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE, new string[] { function.name, function.GetTarget().ToString() });
-
-                function.ResetLines(); // reset line token indexes to zero
-                function.Reset();
 
                 // do interpretation
                 for (int i = 0; i < function.lines.Count; ++i)

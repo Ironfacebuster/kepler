@@ -118,7 +118,6 @@ namespace Kepler.Interpreting
             }
             catch (KeplerError e)
             {
-
                 int start_offset = e.GetTokenOffset();
 
                 this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
@@ -439,6 +438,8 @@ namespace Kepler.Interpreting
 
                 if (c_state.type == TokenType.EOL)
                 {
+                    c_state.DoAction(c_token, c_line.Peek());
+
                     if (c_state.booleans["throw_error"]) throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { c_state.strings["error_string"] });
                     if (c_state.booleans["console_print"]) Console.WriteLine(c_state.strings["print_string"]);
                     if (c_state.booleans["inside_conditional"])

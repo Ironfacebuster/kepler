@@ -306,6 +306,11 @@ namespace Kepler.Lexer
                                 operation_token.operation = OperationType.Or;
                                 clean_up = true;
                                 break;
+                            case TokenType.SetNonPositionalArgument:
+                                operation_token.type = TokenType.SetNonPositionalArgument;
+                                operation_token.operation = OperationType.Token;
+                                clean_up = true;
+                                break;
                         }
                     }
 
@@ -473,6 +478,10 @@ namespace Kepler.Lexer
 
                 new TokenMatch(TokenType.StartAssertion, "assert", TokenMatch.any_string, null, 0), // Assertion token
 
+                // function argument things
+                new TokenMatch(TokenType.StartArguments, "with", TokenMatch.any_string, TokenMatch.any_string, 0), // Start of arguments
+                new TokenMatch(TokenType.SetNonPositionalArgument, "as", TokenMatch.any_string, TokenMatch.any_string, 0), // Start of arguments
+
                 // looping things
                 new TokenMatch(TokenType.StartInterval, "start", "every", null, 0),
                 new TokenMatch(TokenType.EndInterval, "end", "every", null, 0),
@@ -631,6 +640,7 @@ namespace Kepler.Lexer.Tokens
         StartArguments,
         StartPositionalArguments,
         StartNonPositionalArguments,
+        SetNonPositionalArgument,
         CallFunction,
 
         // conditional things
@@ -707,6 +717,7 @@ namespace Kepler.Lexer.Tokens
     }
     public enum OperationType
     {
+        Token,
         Add,
         Subtract,
         Divide,

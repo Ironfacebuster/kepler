@@ -153,6 +153,9 @@ namespace Kepler.Exceptions
                 case KeplerErrorCode.UNDECLARED_NONPOS_ARG:
                     error_string = string.Format("Syntax Error: {0} does not have a non-positional argument named \"{1}\"", this.args[0], this.args[1]);
                     break;
+                case KeplerErrorCode.UNASSIGNED_NONPOS_ARG:
+                    error_string = string.Format("Syntax Error: {0} has not had argument \"{1}\" assigned!", this.args[0], this.args[1]);
+                    break;
                 case KeplerErrorCode.INVALID_TYPE_ASSIGN:
                     error_string = string.Format("Type Error: Attempted to assign type {0} to {1}.", this.args[0], this.args[1]);
                     break;
@@ -264,6 +267,7 @@ namespace Kepler.Exceptions
         UNASSIGNED_TYPE,
         DUP_NONPOS_ARG,
         UNDECLARED_NONPOS_ARG,
+        UNASSIGNED_NONPOS_ARG,
         DECLARE_DUP,
         FALSE_ASSERTION,
         GENERIC_ERROR,
