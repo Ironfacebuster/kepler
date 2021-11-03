@@ -600,16 +600,7 @@ namespace Kepler.LogicControl
 
                 if (InternalLibraries.HasModule(string_value))
                 {
-                    try
-                    {
-                        this.LoadModule(string_value);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"An error occurred while loading module \"{string_value}\".\r\n");
-                        throw e;
-                    }
+                    this.LoadModule(string_value);
                 }
                 else
                 {
@@ -662,33 +653,42 @@ namespace Kepler.LogicControl
             if (loaded_modules.Contains(name)) return; // if this module is already loaded, just return.
             if (!InternalLibraries.HasModule(name)) throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"No module named '{name}' was found." });
 
-            Module loaded_module = InternalLibraries.GetModule(name);
-
-            if (loaded_module.required_modules != null && loaded_module.required_modules.Length > 0)
+            try
             {
-                for (int i = 0; i < loaded_module.required_modules.Length; ++i)
-                {
-                    this.LoadModule(loaded_module.required_modules[i].name);
-                }
-            }
+                Module loaded_module = InternalLibraries.GetModule(name);
 
-            if (loaded_module.variables != null && loaded_module.variables.Count > 0)
+                if (loaded_module.required_modules != null && loaded_module.required_modules.Length > 0)
+                {
+                    for (int i = 0; i < loaded_module.required_modules.Length; ++i)
+                    {
+                        this.LoadModule(loaded_module.required_modules[i].name);
+                    }
+                }
+
+                if (loaded_module.variables != null && loaded_module.variables.Count > 0)
+                {
+                    foreach (KeyValuePair<string, KeplerVariable> var_pair in loaded_module.variables)
+                    {
+                        this.variables.Load(var_pair);
+                    }
+                }
+
+                if (loaded_module.functions != null && loaded_module.functions.Length > 0)
+                {
+                    for (int i = 0; i < loaded_module.functions.Length; i++)
+                    {
+                        this.functions.Load(loaded_module.functions[i]);
+                    }
+                }
+
+                loaded_modules.Add(name);
+            }
+            catch (Exception e)
             {
-                foreach (KeyValuePair<string, KeplerVariable> var_pair in loaded_module.variables)
-                {
-                    this.variables.Load(var_pair);
-                }
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"An error occurred while loading module \"{name}\".\r\n");
+                throw e;
             }
-
-            if (loaded_module.functions != null && loaded_module.functions.Length > 0)
-            {
-                for (int i = 0; i < loaded_module.functions.Length; i++)
-                {
-                    this.functions.Load(loaded_module.functions[i]);
-                }
-            }
-
-            loaded_modules.Add(name);
         }
         void HandleStaticModifier(Token token, TokenState state)
         {
