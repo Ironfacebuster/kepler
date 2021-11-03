@@ -10,7 +10,7 @@ namespace Kepler.Modules
         {
             KeplerFunction get_type = new KeplerFunction("get_type", true);
             get_type.SetType(KeplerType.String);
-            get_type.AssignNonPositional("var", KeplerType.Any);
+            get_type.AssignNonPositional("variable", KeplerType.Any);
             get_type.internal_call = (interpreter, args) =>
             {
                 // get variable type
