@@ -87,7 +87,7 @@ namespace Kepler.Modules
             Module main = new Module("main", new KeplerFunction[] { clearscreen }, main_vars);
 
             // assign all modules
-            modules = new Module[] { main, KMath.module, KInput.module, KTime.module, KRandom.module, KFilesystem.module, KObjects.module };
+            modules = new Module[] { main, KMath.module, KInput.module, KTime.module, KRandom.module, KFilesystem.module, KObjects.module, KUtilities.module };
         }
 
         public static bool HasModule(string name)
