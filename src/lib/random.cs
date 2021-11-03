@@ -39,11 +39,12 @@ namespace Kepler.Modules
 
             KeplerFunction seed_random = new KeplerFunction("seed_random", true);
             seed_random.SetType(KeplerType.Int);
+            seed_random.AssignNonPositional("seed", KeplerType.Int);
             seed_random.internal_call = (interpreter, args) =>
             {
                 // TODO: seed the random number generator with arguments
-                // r = new Random(args[0].GetIntValue());
-                r = new Random(r.Next());
+                r = new Random(args.GetArgument("seed").GetValueAsInt());
+                // r = new Random(r.Next());
                 return null;
             };
 

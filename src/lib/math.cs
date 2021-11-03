@@ -31,11 +31,11 @@ namespace Kepler.Modules
 
             KeplerFunction sin = new KeplerFunction("sin", true);
             sin.SetType(KeplerType.Float);
+            sin.AssignNonPositional("value", KeplerType.Float);
             sin.internal_call = (interpreter, args) =>
             {
-                // TODO: actually implement this
                 KeplerVariable res = new KeplerVariable();
-                res.SetFloatValue(0);
+                res.SetFloatValue((decimal)Math.Sin((double)args.GetArgument("value").GetValueAsFloat()));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -43,12 +43,11 @@ namespace Kepler.Modules
 
             KeplerFunction cos = new KeplerFunction("cos", true);
             cos.SetType(KeplerType.Float);
-            // sin.AssignNonPositional("value", KeplerType.Float);
+            cos.AssignNonPositional("value", KeplerType.Any);
             cos.internal_call = (interpreter, args) =>
             {
-                // TODO: actually implement this
                 KeplerVariable res = new KeplerVariable();
-                res.SetFloatValue(0);
+                res.SetFloatValue((decimal)Math.Cos((double)args.GetArgument("value").GetValueAsFloat()));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -56,10 +55,11 @@ namespace Kepler.Modules
 
             KeplerFunction round = new KeplerFunction("round", true);
             round.SetType(KeplerType.Int);
+            round.AssignNonPositional("value", KeplerType.Float);
             round.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                res.SetIntValue(0);
+                res.SetIntValue((int)Math.Round((double)args.GetArgument("value").GetValueAsFloat()));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -67,10 +67,11 @@ namespace Kepler.Modules
 
             KeplerFunction ceil = new KeplerFunction("ceil", true);
             ceil.SetType(KeplerType.Int);
+            ceil.AssignNonPositional("value", KeplerType.Float);
             ceil.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                res.SetIntValue(0);
+                res.SetIntValue((int)Math.Ceiling((double)args.GetArgument("value").GetValueAsFloat()));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -78,10 +79,11 @@ namespace Kepler.Modules
 
             KeplerFunction abs = new KeplerFunction("abs", true);
             abs.SetType(KeplerType.Int);
+            abs.AssignNonPositional("value", KeplerType.Any);
             abs.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                res.SetIntValue(0);
+                // res.SetIntValue((int)Math.Abs((double)args.GetArgument("value").GetValueAsFloat()));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -92,7 +94,7 @@ namespace Kepler.Modules
             floor.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                res.SetIntValue(0);
+                res.SetIntValue((int)Math.Floor((double)args.GetArgument("value").GetValueAsFloat()));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -100,10 +102,11 @@ namespace Kepler.Modules
 
             KeplerFunction to_binary = new KeplerFunction("to_binary", true);
             to_binary.SetType(KeplerType.String);
+            to_binary.AssignNonPositional("value", KeplerType.Int);
             to_binary.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                res.SetStringValue("0");
+                res.SetStringValue(Convert.ToString(args.GetArgument("value").GetValueAsInt(), 2));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
@@ -111,10 +114,11 @@ namespace Kepler.Modules
 
             KeplerFunction from_binary = new KeplerFunction("from_binary", true);
             from_binary.SetType(KeplerType.Int);
+            from_binary.AssignNonPositional("value", KeplerType.String);
             from_binary.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                res.SetIntValue(0);
+                res.SetIntValue(Convert.ToInt32(args.GetArgument("value").GetValueAsString(), 2));
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;

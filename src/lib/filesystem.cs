@@ -24,6 +24,7 @@ namespace Kepler.Modules
 
             KeplerFunction fs_exists = new KeplerFunction("fs_exists", true);
             fs_exists.SetType(KeplerType.Boolean);
+            fs_exists.AssignNonPositional("file", KeplerType.String);
             fs_exists.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();

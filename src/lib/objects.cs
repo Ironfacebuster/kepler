@@ -28,11 +28,12 @@ namespace Kepler.Modules
             };
 
             KeplerFunction object_delete = new KeplerFunction("object_delete", true);
+            object_delete.AssignNonPositional("id", KeplerType.String);
             object_delete.SetType(KeplerType.Int);
             object_delete.internal_call = (interpreter, args) =>
             {
                 KeplerVariable res = new KeplerVariable();
-                string object_id = "null";
+                string object_id = args.GetArgument("id").GetValueAsString();
 
 
                 if (!objects.ContainsKey(object_id))
@@ -60,30 +61,57 @@ namespace Kepler.Modules
             };
 
             KeplerFunction object_get = new KeplerFunction("object_get", true);
+            object_get.AssignNonPositional("id", KeplerType.String);
+            object_get.AssignNonPositional("key", KeplerType.String);
             object_get.SetType(KeplerType.Any);
             object_get.internal_call = (interpreter, args) =>
             {
+                // Console.WriteLine("ARGS: " + args.ToString());
                 // TODO: check for object with given ID
                 KeplerVariable res = new KeplerVariable();
-                string object_id = "null";
-                string key_value = "null";
-
+                string object_id = args.GetArgument("id").GetValueAsString();
+                string key = args.GetArgument("key").GetValueAsString();
 
                 if (!objects.ContainsKey(object_id))
-                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object with ID {object_id} does not exist." });
-
+                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object with ID \"{object_id}\" does not exist." });
 
                 Dictionary<string, KeplerVariable> obj = objects[object_id].properties;
 
-                if (!obj.ContainsKey(key_value))
-                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object ${object_id} does not contain ${key_value}." });
+                if (!obj.ContainsKey(key))
+                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object does not contain ${key}." });
 
-                res = obj[key_value].Clone();
+                res = obj[key].Clone();
                 res.SetModifier(KeplerModifier.Constant);
                 return res;
             };
 
-            module = new Module("objects", new KeplerFunction[] { object_create, object_delete, object_exists, object_get });
+            KeplerFunction object_set = new KeplerFunction("object_set", true);
+            object_set.AssignNonPositional("id", KeplerType.String);
+            object_set.AssignNonPositional("key", KeplerType.String);
+            object_set.AssignNonPositional("value", KeplerType.Any);
+            object_set.SetType(KeplerType.Any);
+            object_set.internal_call = (interpreter, args) =>
+            {
+                // TODO: check for object with given ID
+                KeplerVariable res = new KeplerVariable();
+                string object_id = args.GetArgument("id").GetValueAsString();
+                string key = args.GetArgument("key").GetValueAsString();
+                KeplerVariable value = args.GetArgument("value");
+
+                if (!objects.ContainsKey(object_id))
+                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object with ID \"{object_id}\" does not exist." });
+
+                Dictionary<string, KeplerVariable> obj = objects[object_id].properties;
+
+                if (!obj.ContainsKey(key))
+                    obj.Add(key, value.Clone());
+                else
+                    obj[key].AssignValue(value);
+
+                return null;
+            };
+
+            module = new Module("objects", new KeplerFunction[] { object_create, object_delete, object_exists, object_get, object_set });
         }
 
         class KeplerObject
