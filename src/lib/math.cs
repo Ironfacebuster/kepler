@@ -76,6 +76,17 @@ namespace Kepler.Modules
                 return res;
             };
 
+            KeplerFunction abs = new KeplerFunction("abs", true);
+            abs.SetType(KeplerType.Int);
+            abs.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetIntValue(0);
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
             KeplerFunction floor = new KeplerFunction("floor", true);
             floor.SetType(KeplerType.Int);
             floor.internal_call = (interpreter, args) =>
@@ -87,7 +98,29 @@ namespace Kepler.Modules
                 return res;
             };
 
-            module = new Module("math", new KeplerFunction[] { sin, cos, round, floor, ceil }, math_vars);
+            KeplerFunction to_binary = new KeplerFunction("to_binary", true);
+            to_binary.SetType(KeplerType.String);
+            to_binary.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetStringValue("0");
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+            KeplerFunction from_binary = new KeplerFunction("from_binary", true);
+            from_binary.SetType(KeplerType.Int);
+            from_binary.internal_call = (interpreter, args) =>
+            {
+                KeplerVariable res = new KeplerVariable();
+                res.SetIntValue(0);
+                res.SetModifier(KeplerModifier.Constant);
+
+                return res;
+            };
+
+            module = new Module("math", new KeplerFunction[] { sin, cos, round, floor, ceil, abs, to_binary, from_binary }, math_vars);
         }
     }
 }
