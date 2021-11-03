@@ -12,6 +12,23 @@ namespace Kepler.Modules
         static KMath()
         {
             // MATH MODULE
+            Dictionary<string, KeplerVariable> math_vars = new Dictionary<string, KeplerVariable>();
+
+            KeplerVariable e = new KeplerVariable();
+            e.SetFloatValue(2.7182818284590451m);
+            e.SetModifier(KeplerModifier.Constant);
+            math_vars.Add("E", e);
+
+            KeplerVariable pi = new KeplerVariable();
+            pi.SetFloatValue(3.141592653589793m);
+            pi.SetModifier(KeplerModifier.Constant);
+            math_vars.Add("PI", e);
+
+            KeplerVariable tau = new KeplerVariable();
+            tau.SetFloatValue(6.2831853071795862m);
+            tau.SetModifier(KeplerModifier.Constant);
+            math_vars.Add("TAU", tau);
+
             KeplerFunction sin = new KeplerFunction("sin", true);
             sin.SetType(KeplerType.Float);
             sin.internal_call = (interpreter, args) =>
@@ -70,7 +87,7 @@ namespace Kepler.Modules
                 return res;
             };
 
-            module = new Module("math", new KeplerFunction[] { sin, cos, round, floor, ceil });
+            module = new Module("math", new KeplerFunction[] { sin, cos, round, floor, ceil }, math_vars);
         }
     }
 }

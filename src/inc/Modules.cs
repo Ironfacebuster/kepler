@@ -71,21 +71,6 @@ namespace Kepler.Modules
             version_var.SetModifier(KeplerModifier.Constant);
             main_vars.Add("$_VERSION", version_var);
 
-            KeplerVariable e = new KeplerVariable();
-            e.SetFloatValue(2.7182818284590451m);
-            e.SetModifier(KeplerModifier.Constant);
-            main_vars.Add("E", e);
-
-            KeplerVariable pi = new KeplerVariable();
-            pi.SetFloatValue(3.141592653589793m);
-            pi.SetModifier(KeplerModifier.Constant);
-            main_vars.Add("PI", e);
-
-            KeplerVariable tau = new KeplerVariable();
-            tau.SetFloatValue(6.2831853071795862m);
-            tau.SetModifier(KeplerModifier.Constant);
-            main_vars.Add("TAU", tau);
-
             KeplerVariable nan = new KeplerVariable();
             nan.SetType(KeplerType.NaN);
             nan.SetModifier(KeplerModifier.Constant);
