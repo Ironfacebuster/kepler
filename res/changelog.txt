@@ -1,8 +1,9 @@
 a1.4.1
++ Implemented internal modules system.
++ Added internal modules: "random", "input", "math", "objects", "filesystem", and "main" (loaded by default).
 + Added "else" and "elseif" statement to conditionals.
 + Made implicit casting error more detailed.
 + Added explicit type casting.
-+ Added random, getkey, and resetkey internal functions.
 ! Improved variable declaration detection.
 ! Fixed error tracing.
 
