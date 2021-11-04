@@ -622,7 +622,7 @@ namespace KeplerVariables
                 format_string = format_string + " [";
                 foreach (KeyValuePair<string, KeplerVariable> pair in this.non_positional_arguments)
                 {
-                    format_string = format_string + pair.Key + ":" + pair.Value.ToString() + ", ";
+                    format_string = format_string + pair.Key + ":" + pair.Value.type.ToString() + ", ";
                 }
                 format_string = format_string.Substring(0, format_string.Length - 2);
                 format_string = format_string + "]";
@@ -633,7 +633,7 @@ namespace KeplerVariables
                 format_string = format_string + " {";
                 for (int i = 0; i < this.positional_arguments.Count; ++i)
                 {
-                    format_string = format_string + "[" + i + "]:" + this.positional_arguments[i].ToString() + ", ";
+                    format_string = format_string + "[" + i + "]:" + this.positional_arguments[i].type.ToString() + ", ";
                 }
                 format_string = format_string.Substring(0, format_string.Length - 2);
                 format_string = format_string + "}";
