@@ -98,15 +98,17 @@ namespace Kepler.Interpreting
                     foreach (KeyValuePair<string, KeplerVariable> pair in statemachine.linked_variables.local)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (statemachine.variables.global.local.ContainsKey(pair.Key)) throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
-                        statemachine.variables.global.local.Add(pair.Key, pair.Value);
+                        // throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
+                        if (!statemachine.variables.global.local.ContainsKey(pair.Key))
+                            statemachine.variables.global.local.Add(pair.Key, pair.Value);
                     }
 
-                    foreach (KeyValuePair<string, KeplerFunction> pair in statemachine.linked_functions.global)
+                    foreach (KeyValuePair<string, KeplerFunction> pair in statemachine.linked_functions.local)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (statemachine.functions.global.ContainsKey(pair.Key)) throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
-                        statemachine.functions.global.Add(pair.Key, pair.Value);
+                        // throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
+                        if (!statemachine.functions.global.ContainsKey(pair.Key))
+                            statemachine.functions.global.Add(pair.Key, pair.Value);
                     }
 
                     statemachine.has_linked_file = false; // reset to false
