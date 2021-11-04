@@ -546,11 +546,6 @@ namespace Kepler.LogicControl
                 state.strings["print_string"] = state.strings["print_string"] + token.token_string;
             if (state.booleans["inside_interval"])
                 state.c_interrupt.SetInterval((int)decimal.Parse(token.token_string));
-            if (state.booleans["assigning_function_variables"])
-            {
-                // TODO: assign this value to an argument
-                state.c_function.SetNonPositional(state.strings["nonpositional_variable_name"], CreateTemporaryVariable(token));
-            }
             if (state.booleans["return_value"])
             {
                 KeplerVariable new_variable = new KeplerVariable();
@@ -722,11 +717,7 @@ namespace Kepler.LogicControl
         void HandleStaticVariableType(Token token, TokenState state)
         {
             Enum.TryParse(token.token_string, out KeplerType m_type);
-            if (state.booleans["assigning_function_variables_type"])
-            {
-                state.c_function.AssignNonPositional(state.strings["nonpositional_variable_name"], m_type);
-            }
-            else if (state.booleans["declared_variable"] && state.booleans["variable_assign"])
+            if (state.booleans["declared_variable"] && state.booleans["variable_assign"])
             {
                 state.c_variable.SetType(m_type);
             }
@@ -1073,7 +1064,6 @@ namespace Kepler.LogicControl
         public TokenState[] child_states = new TokenState[0];
 
         public KeplerVariable c_variable;
-        public KeplerVariable a_operand; // "a_operand" + "b_operand"
         public KeplerVariable left_side_operator; // "left_side_operator" is
         public List<KeplerVariable> add_operands = new List<KeplerVariable>();
         public KeplerFunction c_function;
@@ -1100,18 +1090,15 @@ namespace Kepler.LogicControl
 
         void AssignDefaultBools()
         {
-            booleans["assigned_a_operand"] = false;
             booleans["declared_variable"] = false;
             booleans["declared_function"] = false;
-            booleans["casting_variable"] = false;
+
             booleans["variable_assign"] = false;
             booleans["validate_conditional"] = false;
             booleans["validated_conditional"] = false;
             booleans["validate_assertion"] = false;
             booleans["inside_conditional"] = false;
-            booleans["assigning_function_variables"] = false;
-            booleans["assigning_function_variables_type"] = false;
-            booleans["closing_function"] = false;
+
             booleans["inside_function"] = false;
             booleans["inside_interval"] = false;
             booleans["inside_loop"] = false;
@@ -1133,16 +1120,9 @@ namespace Kepler.LogicControl
 
         void AssignDefaultStrings()
         {
-            // strings["build_string"] = "";
             strings["nonpositional_variable_name"] = "";
             strings["print_string"] = "";
             strings["error_string"] = "";
-        }
-
-        public void ResetOperands()
-        {
-            booleans["assigned_a_operand"] = false;
-            a_operand = new KeplerVariable();
         }
 
         public TokenState Shift(TokenState previous_token)
@@ -1152,7 +1132,6 @@ namespace Kepler.LogicControl
             this.strings = previous_token.strings;
 
             this.add_operands = previous_token.add_operands;
-            // this.a_operand = previous_token.a_operand;
             this.left_side_operator = previous_token.left_side_operator;
 
             this.c_variable = previous_token.c_variable;
