@@ -148,8 +148,6 @@ namespace Kepler.Interpreting
             Console.WriteLine(this.statemachine.functions);
             Console.WriteLine(this.statemachine.variables);
 
-            Console.WriteLine(this.c_state.a_operand);
-
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("\r\nCurrent State");
             Console.ForegroundColor = ConsoleColor.White;
