@@ -1,13 +1,17 @@
-﻿using Arguments;
+﻿/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
+using Arguments;
 using Help;
 using Kepler.Exceptions;
 using Kepler.Interpreting;
-// using System.Collections.Generic;
 using Kepler.Lexer;
 using Kepler.LogicControl;
 using Kepler.Tracing;
 using Kepler.Versioning;
-using KeplerVariables;
 using System;
 using System.IO;
 

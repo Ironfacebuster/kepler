@@ -1,65 +1,15 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using Kepler.Lexer;
 using Kepler.Tracing;
 using System;
 
 namespace Kepler.Exceptions
 {
-    // public class TokenException : Exception
-    // {
-    //     public TokenException() { }
-
-    //     public TokenException(string message)
-    //         : base(message) { }
-
-    //     public TokenException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class LevelOneException : Exception
-    // {
-    //     public LevelOneException() { }
-
-    //     public LevelOneException(string message)
-    //         : base(message) { }
-
-    //     public LevelOneException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class InterpreterException : Exception
-    // {
-
-    //     public InterpreterException() { }
-
-    //     public InterpreterException(string message)
-    //         : base(message) { }
-
-    //     public InterpreterException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class EOPException : Exception
-    // {
-    //     public EOPException(string message)
-    //         : base(message) { }
-    // }
-    // public class LinkedFileException : Exception
-    // {
-    //     public LinkedFileException() { }
-    //     public LinkedFileException(string message)
-    //         : base(message) { }
-    //     public LinkedFileException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class GenericException : Exception
-    // {
-    //     // public string Message;
-    //     public int token_offset;
-    //     public GenericException(string message, int token_offset) : base(message)
-    //     {
-    //         // this.Message = message;
-    //         this.token_offset = token_offset;
-    //     }
-
-    // }
-
     public class KeplerException : Exception
     {
         public LineIterator line;
@@ -211,27 +161,6 @@ namespace Kepler.Exceptions
                     return 1;
                 case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
                     return -1;
-                    // case KeplerErrorCode.INVAL_FILE:
-                    // case KeplerErrorCode.UNEXP_START_LOOP:
-                    // case KeplerErrorCode.UNEXP_END_LOOP:
-                    // case KeplerErrorCode.UNEXP_START_INT:
-                    // case KeplerErrorCode.UNEXP_END_INT:
-                    // case KeplerErrorCode.UNEXP_START_COND:
-                    // case KeplerErrorCode.UNEXP_END_COND:
-                    // case KeplerErrorCode.LINK_OUT_HEADER:
-                    // case KeplerErrorCode.UNEXP_BREAKOUT:
-                    // case KeplerErrorCode.CALL_UNDEF_FUNCT_TYPE:
-                    // case KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE:
-                    // case KeplerErrorCode.NULL_TEMP_VAR:
-                    // case KeplerErrorCode.UNEXP_START_TOKEN: // fallthrough
-                    // case KeplerErrorCode.UNEXP_TOKEN:
-                    // case KeplerErrorCode.INVALID_TYPE_ASSIGN:
-                    // case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
-                    // case KeplerErrorCode.INVALID_CAST:
-                    // case KeplerErrorCode.UNDECLARED:
-                    // case KeplerErrorCode.UNASSIGNED_TYPE:
-                    // case KeplerErrorCode.DUP_NONPOS_ARG:
-                    // case KeplerErrorCode.UNDECLARED_NONPOS_ARG:
             }
 
             return 0;

@@ -1,3 +1,9 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using System;
 using KeplerVariables;
 using System.Collections.Generic;

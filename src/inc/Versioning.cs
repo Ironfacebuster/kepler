@@ -1,3 +1,9 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using kepler.Properties;
 using Kepler.Lexer;
 using Kepler.Lexer.Tokens;

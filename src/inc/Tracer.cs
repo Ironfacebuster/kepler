@@ -1,3 +1,9 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -5,49 +11,6 @@ using Kepler.Exceptions;
 
 namespace Kepler.Tracing
 {
-    // public class KeplerTracer
-    // {
-    //     List<KeplerTrace> traces = new List<KeplerTrace>();
-    //     // Interpreter base_interpreter = 
-
-    //     void Trace()
-    //     {
-
-    //     }
-
-    //     void RemoveTrace()
-    //     {
-
-    //     }
-
-    //     // public void TraceFunction(KeplerFunction function)
-    //     // {
-    //     //     this.traces.Add(new KeplerTrace(function.name, function));
-    //     // }
-
-    //     void GetTraceRoute()
-    //     {
-
-    //     }
-
-    // }
-
-    // class KeplerTrace
-    // {
-    //     string name = "$NULL";
-    //     string filename = "$NULL";
-    //     int line = -1;
-
-    //     public KeplerTrace(string name, int line)
-    //     {
-
-    //     }
-
-    //     public override string ToString()
-    //     {
-    //         return String.Format("at {0} <{1}:{2}>", this.name, this.filename, this.line);
-    //     }
-    // }
 
     public class KeplerErrorStack
     {

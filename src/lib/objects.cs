@@ -1,5 +1,11 @@
-using KeplerVariables;
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using Kepler.Exceptions;
+using KeplerVariables;
 using System;
 using System.Collections.Generic;
 

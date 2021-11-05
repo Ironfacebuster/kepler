@@ -1,7 +1,11 @@
-using System;
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using KeplerVariables;
-using System.Collections.Generic;
-using Kepler.Versioning;
+using System;
 
 namespace Kepler.Modules
 {

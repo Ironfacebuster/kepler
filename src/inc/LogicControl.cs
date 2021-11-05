@@ -1,13 +1,19 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using Kepler.Exceptions;
 using Kepler.Interpreting;
 using Kepler.Lexer;
 using Kepler.Lexer.Tokens;
+using Kepler.Modules;
 using KeplerVariables;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.IO;
-using Kepler.Modules;
+using System.Text.RegularExpressions;
 
 namespace Kepler.LogicControl
 {
@@ -824,6 +830,7 @@ namespace Kepler.LogicControl
 
         void HandleStartArguments(Token token, TokenState state)
         {
+
             if (!state.booleans["calling_function"]) throw new KeplerError(KeplerErrorCode.UNEXP_TOKEN);
 
             state.booleans["inside_arguments"] = true;
