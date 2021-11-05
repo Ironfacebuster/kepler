@@ -92,17 +92,13 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = "VariableManager\r\n";
+            string output = "Variables\r\nScope: " + (this.global == this.local ? "global" : "local") + "\r\n";
             foreach (KeyValuePair<string, KeplerVariable> pair in global.local)
             {
-                output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
+                output = output + pair.Key + " => " + pair.Value + "\r\n";
             }
-            foreach (KeyValuePair<string, KeplerVariable> pair in local)
-            {
-                output = output + "LOCAL " + pair.Key + " => " + pair.Value + "\r\n";
-            }
+
             return output;
-            // return base.ToString();
         }
     }
 
@@ -216,8 +212,8 @@ namespace KeplerVariables
 
         public void ValidateType(KeplerType type)
         {
-            ValidateConstant();
             if (this.type == KeplerType.Unassigned) this.type = type;
+            // ValidateConstant();
             if (this.type != type && (this.type != KeplerType.Any && type != KeplerType.Any)) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { this.type.ToString(), type.ToString() });
         }
         public void ValidateConstant()
@@ -412,14 +408,14 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = "FunctionManager\r\n";
-            foreach (KeyValuePair<string, KeplerFunction> pair in global)
-            {
-                output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
-            }
+            string output = "Functions\r\nScope: " + (this.global == this.local ? "global" : "local") + "\r\n";
+            // foreach (KeyValuePair<string, KeplerFunction> pair in global)
+            // {
+            //     output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
+            // }
             foreach (KeyValuePair<string, KeplerFunction> pair in local)
             {
-                output = output + "LOCAL " + pair.Key + " => " + pair.Value + "\r\n";
+                output = output + pair.Key + " => " + pair.Value + "\r\n";
             }
             return output;
             // return base.ToString();
@@ -617,26 +613,14 @@ namespace KeplerVariables
         {
             string format_string = "";
 
-            if (this.non_positional_arguments.Count > 0)
+            if (this.required_non_positionals.Count > 0)
             {
-                format_string = format_string + " [";
-                foreach (KeyValuePair<string, KeplerVariable> pair in this.non_positional_arguments)
+                format_string += "[";
+                foreach (KeyValuePair<string, KeplerType> kvp in this.required_non_positionals)
                 {
-                    format_string = format_string + pair.Key + ":" + pair.Value.type.ToString() + ", ";
+                    format_string += kvp.Key + ":" + kvp.Value.ToString() + ", ";
                 }
-                format_string = format_string.Substring(0, format_string.Length - 2);
-                format_string = format_string + "]";
-            }
-
-            if (this.positional_arguments.Count > 0)
-            {
-                format_string = format_string + " {";
-                for (int i = 0; i < this.positional_arguments.Count; ++i)
-                {
-                    format_string = format_string + "[" + i + "]:" + this.positional_arguments[i].type.ToString() + ", ";
-                }
-                format_string = format_string.Substring(0, format_string.Length - 2);
-                format_string = format_string + "}";
+                format_string = format_string.Substring(0, format_string.Length - 2) + "]";
             }
 
             return format_string;
