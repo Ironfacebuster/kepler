@@ -55,9 +55,10 @@ nightly:
 	dotnet clean $(project_location); \
 	dotnet publish -c Debug -o $(nightly_location) -r win-x64 -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true $(project_location); \
 	cp "$(nightly_location)/kepler.exe" "$(nightly_location)/kepler-nightly.exe"; \
-	tar.exe -cf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/kepler-nightly.exe"; \
 	cp "res/nightly.txt" "$(nightly_location)/readme.txt"; \
-	tar.exe -rf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/readme.txt"
+	makensis "./scripts/nightly_installer.nsi"
+# tar.exe -cf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/kepler-nightly.exe";
+# tar.exe -rf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/readme.txt"
 
 # Pack the published executable into a windows installer.
 pack:
