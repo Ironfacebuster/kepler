@@ -82,7 +82,7 @@ namespace KeplerCompiler
 #if DEBUG
                 Console.Write(e);
 #else
-                                        Console.Write(e.Message);
+                Console.Write(e.Message);
 #endif
 
                 Console.ResetColor(); // reset the color back to default
@@ -211,25 +211,25 @@ namespace KeplerCompiler
             interpreter.statemachine.LoadModule("main");
         }
 
-        static void LoadStaticFile(Interpreter interpreter)
-        {
-            Tokenizer t = new Tokenizer();
+        // static void LoadStaticFile(Interpreter interpreter)
+        // {
+        //     Tokenizer t = new Tokenizer();
 
-            string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            t.Load(directory + "\\kepler_static\\static_values.kep");
+        //     string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        //     t.Load(directory + "\\kepler_static\\static_values.kep");
 
-            interpreter.statemachine.end_on_eop = false;
+        //     interpreter.statemachine.end_on_eop = false;
 
-            while (t.HasNext())
-            {
-                LineIterator line = StaticValues.ReplaceMacros(t.CurrentLine());
-                interpreter.Interpret(line);
+        //     while (t.HasNext())
+        //     {
+        //         LineIterator line = StaticValues.ReplaceMacros(t.CurrentLine());
+        //         interpreter.Interpret(line);
 
-                t++;
-            }
+        //         t++;
+        //     }
 
-            interpreter.statemachine.end_on_eop = true;
-        }
+        //     interpreter.statemachine.end_on_eop = true;
+        // }
 
         static void LogKeplerException(KeplerException e, bool show_trace)
         {
