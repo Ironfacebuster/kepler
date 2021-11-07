@@ -79,7 +79,7 @@ namespace Kepler.Exceptions
                     error_string = "Syntax Error: Unexpected end of conditional.";
                     break;
                 case KeplerErrorCode.LINK_OUT_HEADER:
-                    error_string = "Syntax Error: Cannot link/module file outside of Header.";
+                    error_string = "Syntax Error: Cannot link module/file outside of Header.";
                     break;
                 case KeplerErrorCode.UNEXP_RETURN:
                     error_string = "Syntax Error: Unexpected return, nothing to return from.";
