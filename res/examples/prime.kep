@@ -1,4 +1,6 @@
 start Header
+    link "input"
+    
     test_number is 550051
     
     int_c is 2
