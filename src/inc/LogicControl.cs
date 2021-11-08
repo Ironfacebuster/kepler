@@ -951,16 +951,16 @@ namespace Kepler.LogicControl
             {
                 this.interpreter_cache[funct_id] = new Interpreter(this.interpreter.global, this.interpreter);
                 f_interpreter = this.interpreter_cache[funct_id];
-
-                f_interpreter.verbose_debug = this.interpreter.verbose_debug;
-                f_interpreter.debug = this.interpreter.debug;
-                f_interpreter.tracer = this.interpreter.tracer;
-                f_interpreter.filename = this.interpreter.filename;
-                f_interpreter.is_function = true;
-
-                f_interpreter.statemachine.function_type = function.type;
-                f_interpreter.statemachine.function_id = function.id;
             }
+
+            f_interpreter.verbose_debug = this.interpreter.verbose_debug;
+            f_interpreter.debug = this.interpreter.debug;
+            f_interpreter.filename = this.interpreter.filename;
+            f_interpreter.is_function = true;
+
+            f_interpreter.tracer = this.interpreter.tracer;
+            f_interpreter.statemachine.function_type = function.type;
+            f_interpreter.statemachine.function_id = function.id;
 
             f_interpreter.statemachine.function_return_value = null;
             f_interpreter.statemachine.variables = this.variables.Copy();
