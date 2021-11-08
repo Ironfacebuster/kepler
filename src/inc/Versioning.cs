@@ -13,7 +13,7 @@ namespace Kepler.Versioning
 {
     public class StaticValues
     {
-        public static string _VERSION = "v1a1.4.1";
+        public static string _VERSION = "v1a1.5";
         public static string _TYPE = Resources.type;
         // public static string _RELEASE = "October 13th, 2021";
         public static string _RELEASE = Resources.buildtime;
