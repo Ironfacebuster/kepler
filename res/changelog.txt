@@ -1,4 +1,5 @@
-a1.4.1
+a1.5
+# Large performance gains over a1.4, regarding conditionals and functions.
 + Implemented internal modules system.
 + Added internal modules: "random", "input", "math", "objects", "filesystem", and "main" (loaded by default).
 + Added "else" and "elseif" statement to conditionals.
