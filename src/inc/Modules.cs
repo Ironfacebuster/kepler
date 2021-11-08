@@ -106,18 +106,10 @@ namespace Kepler.Modules
             nan.SetModifier(KeplerModifier.Constant);
             main_vars.Add("NaN", nan);
 
-            KeplerFunction clearscreen = new KeplerFunction("clear", true);
-            clearscreen.SetType(KeplerType.String);
-            clearscreen.internal_call = (interpreter, args) =>
-            {
-                Console.Clear();
-                return null;
-            };
-
-            Module main = new Module("main", new KeplerFunction[] { clearscreen }, main_vars);
+            Module main = new Module("main", null, main_vars);
 
             // assign all modules
-            modules = new Module[] { main, KMath.module, KInput.module, KTime.module, KRandom.module, KFilesystem.module, KObjects.module, KUtilities.module };
+            modules = new Module[] { main, KMath.module, KInput.module, KTime.module, KRandom.module, KFilesystem.module, KObjects.module, KUtilities.module, KConsole.module };
         }
 
         public static bool HasModule(string name)
