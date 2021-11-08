@@ -20,7 +20,7 @@ namespace Kepler.Interpreting
         public int ID = 0;
         public string filename = "[LIVE]";
         public KeplerErrorStack tracer;
-        public StateMachine statemachine = new StateMachine();
+        public StateMachine statemachine;
         public bool verbose_debug = false;
         public bool debug = false;
         public bool has_parent = false;
@@ -48,17 +48,17 @@ namespace Kepler.Interpreting
         // 
         public LineIterator c_line = new LineIterator("", 0, 0);
 
-        static string PrintLine(LineIterator line)
-        {
-            string[] split_line = line.GetString().Split(" ");
-            // string[] split_line = Regex.Split(line.GetString(), "('.*?'|\".*?\"|\\S+)");
-            string line_header = string.Format("Line <{0}>: ", line.line);
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.Write(line_header);
-            Console.ForegroundColor = ConsoleColor.White;
+        // static string PrintLine(LineIterator line)
+        // {
+        //     string[] split_line = line.GetString().Split(" ");
+        //     // string[] split_line = Regex.Split(line.GetString(), "('.*?'|\".*?\"|\\S+)");
+        //     string line_header = string.Format("Line <{0}>: ", line.line);
+        //     Console.ForegroundColor = ConsoleColor.Blue;
+        //     Console.Write(line_header);
+        //     Console.ForegroundColor = ConsoleColor.White;
 
-            return line_header;
-        }
+        //     return line_header;
+        // }
 
         public Interpreter(Interpreter global_scope, Interpreter parent)
         {
@@ -84,9 +84,11 @@ namespace Kepler.Interpreting
                 this.parent = parent;
             }
 
-            this.statemachine.interpreter = this;
             if (c_interrupt != null)
                 c_interrupt.parent = this;
+
+            this.statemachine = new StateMachine(this);
+            // this.statemachine.interpreter = this;
         }
 
         public TokenState Interpret(LineIterator line)
@@ -289,12 +291,20 @@ namespace Kepler.Interpreting
 
                 if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == desired_intendation)
                 {
-                    // int stack_id = this.tracer.PushStack(String.Format("at conditional ({0}:{1}:{2})", this.filename, c_line.line - c_conditional.lines.Count, c_line.CurrentToken().start + 1));
+                    string line_id = this.filename + "_" + c_line.line + ":" + c_line.indentation;
 
-                    Interpreter conditional_int = new Interpreter(this.global, this);
+                    Interpreter conditional_int;
+                    if (this.statemachine.interpreter_cache.ContainsKey(line_id))
+                    {
+                        conditional_int = this.statemachine.interpreter_cache[line_id];
+                        conditional_int.killed = false;
+                    }
+                    else
+                    {
+                        this.statemachine.interpreter_cache[line_id] = new Interpreter(this.global, this);
+                        conditional_int = this.statemachine.interpreter_cache[line_id];
 
-                    conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
-                    conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
+                    }
 
                     if (this.is_function)
                     {
@@ -303,10 +313,14 @@ namespace Kepler.Interpreting
                         conditional_int.is_function = true;
                     }
 
+                    conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
+                    conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
+
                     conditional_int.verbose_debug = verbose_debug;
                     conditional_int.tracer = this.tracer;
                     conditional_int.filename = this.filename;
 
+                    conditional_int.statemachine.function_return_value = null;
                     conditional_int.statemachine.variables = statemachine.variables.Copy();
                     conditional_int.statemachine.functions = statemachine.functions.Copy();
 
@@ -507,36 +521,33 @@ namespace Kepler.Interpreting
 
                     KeplerFunction int_function = interrupt.function;
 
-                    // int_function.ResetLines();
                     int_function.Reset();
 
-                    // maybe move this to when the interrupt is created?
-                    // seems like creating a new interpreter could cause a bit of delay
-                    Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
+                    KeplerVariableManager original_vars = this.statemachine.variables.Copy();
+                    KeplerFunctionManager original_functions = this.statemachine.functions.Copy();
+                    bool was_interrupt = false;
 
-                    f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
-                    f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
+                    if (!this.statemachine.is_interrupt) was_interrupt = true;
 
-                    f_interpreter.statemachine.is_interrupt = true;
-                    f_interpreter.statemachine.interrupt_id = interrupts[i].id;
+                    this.statemachine.is_interrupt = true;
+                    this.statemachine.interrupt_id = interrupts[i].id;
 
-                    f_interpreter.verbose_debug = this.verbose_debug;
-                    f_interpreter.debug = this.debug;
-                    f_interpreter.tracer = this.tracer;
-                    f_interpreter.filename = this.filename;
-
-                    // Console.WriteLine("START INTERP. INTERRUPT");
                     // do interpretation
                     for (int l = 0; l < int_function.lines.Count; ++l)
                     {
                         LineIterator line = int_function.lines[l];
 
                         if (this.interrupts.HasInterrupt(interrupts[i].id))
-                            f_interpreter.Interpret(line);
+                            this.Interpret(line);
                         else break;
                     }
 
                     interrupts[i].Reset();
+
+                    if (!was_interrupt) this.statemachine.is_interrupt = false;
+
+                    interrupt.parent.statemachine.variables = original_vars;
+                    interrupt.parent.statemachine.functions = original_functions;
 
                     this.tracer.PopStack(stack_id);
                 }

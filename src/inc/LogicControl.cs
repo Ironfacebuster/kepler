@@ -40,6 +40,8 @@ namespace Kepler.LogicControl
         public KeplerVariable function_return_value;
         public KeplerType function_type;
         public string function_id;
+        public Dictionary<string, Interpreter> interpreter_cache;
+
 
         bool inside_header = false;
         KeplerFunction scheduled_function = new KeplerFunction("NUL");
@@ -51,8 +53,9 @@ namespace Kepler.LogicControl
         // else - ConditionalElse
         // variable - DeclareVariable
 
-        public StateMachine()
+        List<TokenState> GetTokenLevels()
         {
+            List<TokenState> levels = new List<TokenState>();
             // final states
             TokenState EOL = new TokenState(TokenType.EOL, HandleEOL);
             TokenState EOP = new TokenState(TokenType.EOP, HandleEOP);
@@ -144,29 +147,41 @@ namespace Kepler.LogicControl
             EOP.child_states = new TokenState[] { EOP, EOL };
 
             // set up level 1 token states
-            level1.Add(new TokenState(TokenType.ConditionalIf, HandleConditionalIf));
-            level1.Add(new TokenState(TokenType.ConditionalElseIf, HandleConditionalElseIf));
-            level1.Add(new TokenState(TokenType.ConditionalElse, new TokenState[] { EOL }, HandleConditionalElse));
-            level1.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn));
-            level1.Add(StartInterval);
-            level1.Add(EndInterval);
-            level1.Add(StartLoop);
-            level1.Add(EndLoop);
-            level1.Add(BreakOut);
-            level1.Add(LinkFile); // link file
-            level1.Add(ThrowError); // throw error
-            level1.Add(new TokenState(TokenType.StartHeader, new TokenState[] { DeclareHeader }, HandleStartHeader));    // start header token
-            level1.Add(new TokenState(TokenType.EndHeader, new TokenState[] { DeclareHeader }, HandleEndHeader));        // end header token
-            level1.Add(new TokenState(TokenType.StartFunction, new TokenState[] { DeclareFunction }, HandleStartFunction));     // start function token
-            level1.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));         // end function token
-            level1.Add(new TokenState(TokenType.StartConditional, new TokenState[] { StaticBool, GenericOperation }, HandleStartConditional));  // if
-            level1.Add(new TokenState(TokenType.EndConditional, new TokenState[] { EOL }, HandleEndConditional));
-            level1.Add(AssignVariable);
-            level1.Add(AssignFunction);
-            level1.Add(StartCallFunction);
-            level1.Add(StartAssertion);
-            level1.Add(ConsolePrint);
-            level1.Add(EOP); // END OF PROGRAM token
+            levels.Add(new TokenState(TokenType.ConditionalIf, HandleConditionalIf));
+            levels.Add(new TokenState(TokenType.ConditionalElseIf, HandleConditionalElseIf));
+            levels.Add(new TokenState(TokenType.ConditionalElse, new TokenState[] { EOL }, HandleConditionalElse));
+            levels.Add(new TokenState(TokenType.FunctionReturn, new TokenState[] { StartCallFunction, GenericOperation, DeclareVariable, StaticBool, StaticFloat, StaticInt, StaticString, StaticUnsignedInt }, HandleFunctionReturn));
+            levels.Add(StartInterval);
+            levels.Add(EndInterval);
+            levels.Add(StartLoop);
+            levels.Add(EndLoop);
+            levels.Add(BreakOut);
+            levels.Add(LinkFile); // link file
+            levels.Add(ThrowError); // throw error
+            levels.Add(new TokenState(TokenType.StartHeader, new TokenState[] { DeclareHeader }, HandleStartHeader));    // start header token
+            levels.Add(new TokenState(TokenType.EndHeader, new TokenState[] { DeclareHeader }, HandleEndHeader));        // end header token
+            levels.Add(new TokenState(TokenType.StartFunction, new TokenState[] { DeclareFunction }, HandleStartFunction));     // start function token
+            levels.Add(new TokenState(TokenType.EndFunction, new TokenState[] { DeclareFunction }, HandleEndFunction));         // end function token
+            levels.Add(new TokenState(TokenType.StartConditional, new TokenState[] { StaticBool, GenericOperation }, HandleStartConditional));  // if
+            levels.Add(new TokenState(TokenType.EndConditional, new TokenState[] { EOL }, HandleEndConditional));
+            levels.Add(AssignVariable);
+            levels.Add(AssignFunction);
+            levels.Add(StartCallFunction);
+            levels.Add(StartAssertion);
+            levels.Add(ConsolePrint);
+            levels.Add(EOP); // END OF PROGRAM token
+
+            return levels;
+        }
+
+        public StateMachine(Interpreter interpreter)
+        {
+            this.interpreter = interpreter;
+
+            if (this.interpreter.is_global) interpreter_cache = new Dictionary<string, Interpreter>();
+            else interpreter_cache = this.interpreter.global.statemachine.interpreter_cache;
+
+            this.level1 = GetTokenLevels();
         }
 
         public TokenState GetLevelOneToken(Token token)
@@ -923,22 +938,33 @@ namespace Kepler.LogicControl
         {
             string stack_id = this.interpreter.tracer.PushStack(String.Format("at {0} ({1}:{2}:{3})", function.name, this.interpreter.filename, this.interpreter.c_line.line, this.interpreter.c_line.CurrentToken().start));
 
-            Interpreter f_interpreter = new Interpreter(this.interpreter.global, this.interpreter);
+            // get interpreter from cache
+            Interpreter f_interpreter;
+            string funct_id = function.id.ToString();
 
+            if (this.interpreter_cache.ContainsKey(funct_id))
+            {
+                f_interpreter = this.interpreter_cache[funct_id];
+                f_interpreter.killed = false;
+            }
+            else
+            {
+                this.interpreter_cache[funct_id] = new Interpreter(this.interpreter.global, this.interpreter);
+                f_interpreter = this.interpreter_cache[funct_id];
+
+                f_interpreter.verbose_debug = this.interpreter.verbose_debug;
+                f_interpreter.debug = this.interpreter.debug;
+                f_interpreter.tracer = this.interpreter.tracer;
+                f_interpreter.filename = this.interpreter.filename;
+                f_interpreter.is_function = true;
+
+                f_interpreter.statemachine.function_type = function.type;
+                f_interpreter.statemachine.function_id = function.id;
+            }
+
+            f_interpreter.statemachine.function_return_value = null;
             f_interpreter.statemachine.variables = this.variables.Copy();
             f_interpreter.statemachine.functions = this.functions.Copy();
-            f_interpreter.statemachine.function_type = function.type;
-            f_interpreter.statemachine.function_id = function.id;
-
-            f_interpreter.verbose_debug = this.interpreter.verbose_debug;
-            f_interpreter.debug = this.interpreter.debug;
-            f_interpreter.tracer = this.interpreter.tracer;
-            f_interpreter.filename = this.interpreter.filename;
-            f_interpreter.is_function = true;
-
-            // validate arguments
-            // if (!function.HasArguments())
-            //     function.Reset();
 
             if (function.is_internal)
             {

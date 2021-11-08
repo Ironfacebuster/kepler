@@ -260,27 +260,35 @@ namespace Kepler.Lexer
                             operation_token.operation = OperationType.CastType;
                             break;
                         default:
-                            i++;
                             clean_up = false;
                             break;
                     }
 
+                    if (peek.type == TokenType.SetNonPositionalArgument)
+                    {
+                        operation_token.type = TokenType.SetNonPositionalArgument;
+                        operation_token.operation = OperationType.Token;
+                        clean_up = true;
+                    }
+
+                    operation_token.a = m_tokens[i];
+                    operation_token.b = m_tokens[i + 2];
+
                     if (clean_up)
                     {
-                        // assign tokens
-                        operation_token.a = m_tokens[i];
-                        operation_token.b = m_tokens[i + 2];
-
+                        // Console.WriteLine
                         // remove combined tokens
+                        // m_tokens.RemoveAt(i + 1);
                         m_tokens.RemoveAt(i + 1);
                         m_tokens.RemoveAt(i + 1);
                         // assign combined token
                         m_tokens[i] = operation_token;
                     }
+                    else
+                        ++i;
                 }
 
-                // Combine
-                for (int i = 1; i < m_tokens.Count;)
+                for (int i = 0; i < m_tokens.Count;)
                 {
                     if (i >= m_tokens.Count - 2 || i >= m_tokens.Count - 1)
                     {
@@ -293,49 +301,36 @@ namespace Kepler.Lexer
                     Token operation_token = new Token(TokenType.GenericOperation, -1, "NUL");
                     operation_token.start = i;
                     operation_token.token_string = m_tokens[i].token_string + " " + peek.token_string + " " + far_peek.token_string;
-                    bool clean_up = false;
+                    bool clean_up = true;
 
-                    bool current_valid = (m_tokens[i].type == TokenType.GenericOperation || IsStaticValue(m_tokens[i]) || m_tokens[i].type == TokenType.DeclareVariable);
-                    bool next_valid = (far_peek.type == TokenType.GenericOperation || IsStaticValue(far_peek) || far_peek.type == TokenType.DeclareVariable);
-
-                    if (current_valid && next_valid)
+                    switch (peek.type)
                     {
-                        switch (peek.type)
-                        {
-                            // AND
-                            case TokenType.BooleanOperator:
-                                operation_token.operation = OperationType.And;
-                                clean_up = true;
-                                break;
-                            // OR
-                            case TokenType.OrOperator:
-                                operation_token.operation = OperationType.Or;
-                                clean_up = true;
-                                break;
-                        }
+                        case TokenType.BooleanOperator:
+                            operation_token.operation = OperationType.And;
+                            break;
+                        case TokenType.OrOperator:
+                            operation_token.operation = OperationType.Or;
+                            break;
+                        default:
+                            clean_up = false;
+                            break;
                     }
 
-                    if (peek.type == TokenType.SetNonPositionalArgument)
-                    {
-                        operation_token.type = TokenType.SetNonPositionalArgument;
-                        operation_token.operation = OperationType.Token;
-                        clean_up = true;
-                    }
+                    operation_token.a = m_tokens[i];
+                    operation_token.b = m_tokens[i + 2];
 
-                    if (clean_up)
+                    // if doing a comparison, we need to make sure the two tokens being compared are valid
+                    // otherwise we're chaining together operations on the same variable
+                    if (clean_up && (IsValidToCompare(operation_token.a) && IsValidToCompare(operation_token.b)))
                     {
-                        // assign tokens
-                        operation_token.a = m_tokens[i];
-                        operation_token.b = m_tokens[i + 2];
-
                         // remove combined tokens
                         m_tokens.RemoveAt(i + 1);
                         m_tokens.RemoveAt(i + 1);
-
                         // assign combined token
                         m_tokens[i] = operation_token;
                     }
-                    else i++;
+                    else
+                        ++i;
                 }
 
                 // conditional virtual equality
@@ -384,6 +379,24 @@ namespace Kepler.Lexer
                 }
 
                 throw new KeplerException(this, e.GetErrorString(), null);
+            }
+        }
+
+        private bool IsValidToCompare(Token token)
+        {
+            switch (token.type)
+            {
+                case TokenType.StaticBoolean:
+                case TokenType.StaticFloat:
+                case TokenType.StaticInt:
+                case TokenType.StaticString:
+                case TokenType.StaticUnsignedInt:
+                case TokenType.DeclareVariable:
+                case TokenType.GenericOperation:
+                    return true;
+
+                default:
+                    return false;
             }
         }
 
