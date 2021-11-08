@@ -1,4 +1,6 @@
 start Header
+    link "input"
+    
     factorial returns Float
     
     print "Enter a non-negative number between 1 and 27"
