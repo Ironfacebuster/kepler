@@ -108,17 +108,25 @@ Section "Install .NET 5.0" InstallDotNet
 
   CreateDirectory $INSTDIR\tools 
   SetOutPath "$INSTDIR\tools" 
-  File "..\res\dotnet-runtime-5.0.11-win-x64.exe" 
+  DetailPrint "Downloading Microsoft .NET Core Runtime 5.0" 
+  NSISdl::download_quiet "https://download.visualstudio.microsoft.com/download/pr/28b0479a-2ca7-4441-97f2-64a3d64b2ea4/9995401dac4787a2d1104c73c4356f4d/dotnet-runtime-5.0.12-win-x64.exe" "$INSTDIR\tools\dotnet.exe"
+
   DetailPrint "Installing Microsoft .NET Core Runtime 5.0" 
   SetDetailsPrint listonly 
-  ExecWait '"$INSTDIR\tools\dotnet-runtime-5.0.11-win-x64.exe" /passive /norestart' $0 
+  ExecWait '"$INSTDIR\tools\dotnet.exe" /passive /norestart' $0 
+
   ${If} $0 == 3010 
   ${OrIf} $0 == 1641 
   DetailPrint "Microsoft .NET Core Runtime 5.0 installer requested reboot" 
   SetRebootFlag true 
   ${EndIf} 
+
+  ${If} $0 == 0
+  DetailPrint "Microsoft .NET Core Runtime 5.0 installed successfully"
+  ${Else}
   SetDetailsPrint lastused 
   DetailPrint "Microsoft .NET Core Runtime 5.0 installer returned $0" 
+  ${EndIf}
 
 SectionEnd
 
