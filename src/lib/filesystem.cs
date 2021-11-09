@@ -5,6 +5,7 @@
  */
 
 using KeplerVariables;
+using System;
 
 namespace Kepler.Modules
 {
@@ -60,25 +61,68 @@ namespace Kepler.Modules
             KeplerFunction fs_write = new KeplerFunction("fs_write", true);
             fs_write.SetType(KeplerType.Int);
             fs_write.AssignNonPositional("file", KeplerType.String);
-            fs_write.AssignNonPositional("data", KeplerType.Any);
+            fs_write.AssignNonPositional("content", KeplerType.Any);
             fs_write.internal_call = (interpreter, args) =>
             {
                 string filename = args.GetArgument("file").GetValueAsString();
 
                 // convert all data to a string
-                string data = args.GetArgument("data").GetValueAsString();
+                string data = args.GetArgument("content").GetValueAsString();
 
                 KeplerVariable res = new KeplerVariable();
                 // codes 0 = success, 1 = general error
                 res.SetIntValue(0);
-                res.SetModifier(KeplerModifier.Constant);
 
                 // TODO: actually implement this
+                try
+                {
+                    System.IO.File.WriteAllText(filename, data);
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    Console.WriteLine(e);
+#endif
+                    res.SetIntValue(1);
+                }
 
+                res.SetModifier(KeplerModifier.Constant);
                 return res;
             };
 
-            module = new Module("filesystem", new KeplerFunction[] { fs_read, fs_write, fs_exists });
+            KeplerFunction fs_append = new KeplerFunction("fs_append", true);
+            fs_append.SetType(KeplerType.Int);
+            fs_append.AssignNonPositional("file", KeplerType.String);
+            fs_append.AssignNonPositional("content", KeplerType.Any);
+            fs_append.internal_call = (interpreter, args) =>
+            {
+                string filename = args.GetArgument("file").GetValueAsString();
+
+                // convert all data to a string
+                string data = args.GetArgument("content").GetValueAsString();
+
+                KeplerVariable res = new KeplerVariable();
+                // codes 0 = success, 1 = general error
+                res.SetIntValue(0);
+
+                // TODO: actually implement this
+                try
+                {
+                    System.IO.File.AppendAllText(filename, data);
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    Console.WriteLine(e);
+#endif
+                    res.SetIntValue(1);
+                }
+
+                res.SetModifier(KeplerModifier.Constant);
+                return res;
+            };
+
+            module = new Module("filesystem", new KeplerFunction[] { fs_read, fs_write, fs_append, fs_exists });
             module.AddRequiredModule(KObjects.module);
         }
     }
