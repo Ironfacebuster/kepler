@@ -54,9 +54,9 @@ namespace Kepler.Input
                 if (key.Key == ConsoleKey.Enter)
                     break;
 
-                if (key.Key == ConsoleKey.Backspace)
-                    continue;
                 if (key.KeyChar == '\u0000') continue;
+                if (Char.IsControl(key.KeyChar) && key.Key != ConsoleKey.Spacebar)
+                    continue;
 
                 keys += key.KeyChar;
             }
