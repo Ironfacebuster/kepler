@@ -57,6 +57,15 @@ nightly:
 	cp "$(nightly_location)/kepler.exe" "$(nightly_location)/kepler-nightly.exe"; \
 	cp "res/nightly.txt" "$(nightly_location)/readme.txt"; \
 	makensis "./scripts/nightly_installer.nsi"
+
+nightly_no_nsis:
+	@echo "Creating nightly release..."; \
+	$(generate_resources_script) nightly; \
+	dotnet clean $(project_location); \
+	dotnet publish -c Debug -o $(nightly_location) -r win-x64 -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true $(project_location); \
+	cp "$(nightly_location)/kepler.exe" "$(nightly_location)/kepler-nightly.exe"; \
+	cp "res/nightly.txt" "$(nightly_location)/readme.txt"; \
+	Compress-Archive -Path $env:PUBLISH_LOCATION -DestinationPath $env:ZIP_LOCATION
 # tar.exe -cf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/kepler-nightly.exe";
 # tar.exe -rf "$(builds_location)/kepler-nightly.zip" "$(nightly_location)/readme.txt"
 
@@ -82,7 +91,8 @@ test_local:
 debug:
 	@ \
 	$(generate_resources_script) debug; \
-	dotnet run --project $(project_location) --debug;
+	dotnet run --project $(project_location) --file "./res/examples/sonny.kep";
+# dotnet run --project $(project_location) --debug;
 
 cleanup:
 	@echo Cleaning up after build...; \
