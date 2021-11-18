@@ -5,6 +5,7 @@ a1.5
 + Added "else" and "elseif" statement to conditionals.
 + Made implicit casting error more detailed.
 + Added explicit type casting.
+! Fixed improper type error types being in the wrong order.
 ! Improved variable declaration detection.
 ! Fixed error tracing.
 

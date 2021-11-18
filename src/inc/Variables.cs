@@ -220,7 +220,7 @@ namespace KeplerVariables
         {
             if (this.type == KeplerType.Unassigned) this.type = type;
             // ValidateConstant();
-            if (this.type != type && (this.type != KeplerType.Any && type != KeplerType.Any)) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { this.type.ToString(), type.ToString() });
+            if (this.type != type && (this.type != KeplerType.Any && type != KeplerType.Any)) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { type.ToString(), this.type.ToString() });
         }
         public void ValidateConstant()
         {
