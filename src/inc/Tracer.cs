@@ -16,7 +16,7 @@ namespace Kepler.Tracing
     {
         List<KeplerTrace> stack = new List<KeplerTrace>();
         // Dictionary<string, KeplerTrace> stack = new Dictionary<string, KeplerTrace>();
-        static Random gen = new Random();
+        // static Random gen = new Random();
 
         public string PushStack(string n)
         {
