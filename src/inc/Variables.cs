@@ -213,7 +213,7 @@ namespace KeplerVariables
 
         private static string ToLiteral(string input)
         {
-            return input.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t").Replace("\\'", "\'").Replace("\\\"", "\"").Replace("\\", "\\");
+            return input.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t").Replace("\\'", "\'").Replace("\\\"", "\"").Replace("\\\\", "\\");
         }
 
         public void ValidateType(KeplerType type)
@@ -222,6 +222,7 @@ namespace KeplerVariables
             // ValidateConstant();
             if (this.type != type && (this.type != KeplerType.Any && type != KeplerType.Any)) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { type.ToString(), this.type.ToString() });
         }
+
         public void ValidateConstant()
         {
             if (this.modifier == KeplerModifier.Constant) throw new KeplerError(KeplerErrorCode.ASSIGN_CONSTANT_VAR);
