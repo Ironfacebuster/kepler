@@ -1,10 +1,11 @@
 start Header
-    if $_VERSION < "v1a1.4.1"
-        throw "Alpha 1.4.1 minimum required!"
+    if $_VERSION < "v1a1.5"
+        throw "Alpha 1.5 minimum required!"
     endif
     
     link "input"
     link "random"
+    link "console"
     
     get_input returns Boolean
     print_board returns Int
@@ -63,6 +64,8 @@ start Header
     apple_y is 1.0 * board_size_y / 2.0
     
     last_move is "RightArrow"
+    
+    call cursor_visible with False as state
 end Header
 
 start get_input
@@ -73,19 +76,9 @@ start get_input
     
     print str
     
-    if str equals "UpArrow"
+    if str equals "UpArrow" or str equals "DownArrow" or str equals "LeftArrow" or str equals "RightArrow"
         valid is True
-    endif
-    if str equals "DownArrow"
-        valid is True
-    endif
-    if str equals "LeftArrow"
-        valid is True
-    endif
-    if str equals "RightArrow"
-        valid is True
-    endif
-    if str equals ""
+    elseif str equals ""
         valid is True
         str is last_move
     endif
@@ -99,7 +92,7 @@ end get_input
 
 start print_board
     ! clear the screen
-    clr is call clear
+    clr is call console_clear
     
     drawn_parts is 0
     
@@ -367,7 +360,7 @@ start every 250
     coll_type is call check_collision
     
     if coll_type equals 1.0
-        clr is call clear
+        clr is call console_clear
         
         print ""
         print ""
