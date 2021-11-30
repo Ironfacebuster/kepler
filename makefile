@@ -91,7 +91,7 @@ test_local:
 debug:
 	@ \
 	$(generate_resources_script) debug; \
-	dotnet run --project $(project_location) --file "./res/examples/sonny.kep";
+	dotnet run --project $(project_location);
 # dotnet run --project $(project_location) --debug;
 
 cleanup:
