@@ -63,6 +63,13 @@ namespace KeplerCompiler
                 Environment.Exit(0);
             }
 
+            if (arguments.HasArgument("langserver"))
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Warning: language server features are not fully implemented yet, this argument does nothing.");
+                Console.ResetColor();
+            }
+
             debug = arguments.HasArgument("debug");
             verbose_debug = arguments.GetArgument("debug") == "verbose";
 
