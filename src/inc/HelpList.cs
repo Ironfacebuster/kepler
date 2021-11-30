@@ -1,6 +1,12 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
+using Kepler.Versioning;
 using System;
 using System.Collections.Generic;
-using Kepler.Versioning;
 
 namespace Help
 {
@@ -44,8 +50,6 @@ namespace Help
 
                 Console.WriteLine(opt.argument + normalized + opt.description);
             }
-
-            Console.WriteLine("");
         }
 
         public void AddOption(string argument, string description)

@@ -1,0 +1,11 @@
+number is 5.0
+!-- string casting to Boolean is case-insensitive --!
+string is "true"
+
+int_number is number cast Int
+bool_string is string cast Boolean
+
+assert int_number == 5
+assert bool_string == True
+
+print "SUCCESS"

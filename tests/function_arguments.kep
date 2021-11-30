@@ -1,15 +1,35 @@
 start Header
     function returns Int
+    function1 returns Int
+    function2 returns Int
     
-    function1 uses var1 as Int
-    function1 uses var2 as Int
+    function1 uses Int as var1
+    function1 uses Int as var2
+    
+    function2 uses String as var1
 end Header
 
 start function
-    assert var1 equals 1
-    assert var2 equals 2
+    int is 0
+    ! parameterless function
+    return int
 end function
 
-call function with var1 as 1, var2 as 2
+start function2
+    assert var1 equals "hello!"
+end function2
+
+call function2 with "hello!" as var1
+
+start function1
+    assert var1 equals 1
+    assert var2 equals 2
+end function1
+
+call function1 with 1 as var1, 2 as var2
+call function1 with 1 as var1 and 2 as var2
+
+res is call function
+assert res equals 0
 
 print "SUCCESS"

@@ -1,3 +1,14 @@
+a1.5
+# Large performance gains over a1.4, regarding conditionals and functions.
++ Implemented internal modules system.
++ Added internal modules: "random", "input", "math", "objects", "filesystem", and "main" (loaded by default).
++ Added "else" and "elseif" statement to conditionals.
++ Made implicit casting error more detailed.
++ Added explicit type casting.
+! Fixed improper type error types being in the wrong order.
+! Improved variable declaration detection.
+! Fixed error tracing.
+
 a1.4
 + Added functions returning values.
 + Added string to Boolean casting.

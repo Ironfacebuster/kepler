@@ -1,65 +1,15 @@
-using System;
-using Kepler.Tracing;
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using Kepler.Lexer;
+using Kepler.Tracing;
+using System;
 
 namespace Kepler.Exceptions
 {
-    // public class TokenException : Exception
-    // {
-    //     public TokenException() { }
-
-    //     public TokenException(string message)
-    //         : base(message) { }
-
-    //     public TokenException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class LevelOneException : Exception
-    // {
-    //     public LevelOneException() { }
-
-    //     public LevelOneException(string message)
-    //         : base(message) { }
-
-    //     public LevelOneException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class InterpreterException : Exception
-    // {
-
-    //     public InterpreterException() { }
-
-    //     public InterpreterException(string message)
-    //         : base(message) { }
-
-    //     public InterpreterException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class EOPException : Exception
-    // {
-    //     public EOPException(string message)
-    //         : base(message) { }
-    // }
-    // public class LinkedFileException : Exception
-    // {
-    //     public LinkedFileException() { }
-    //     public LinkedFileException(string message)
-    //         : base(message) { }
-    //     public LinkedFileException(string message, Exception inner)
-    //         : base(message, inner) { }
-    // }
-    // public class GenericException : Exception
-    // {
-    //     // public string Message;
-    //     public int token_offset;
-    //     public GenericException(string message, int token_offset) : base(message)
-    //     {
-    //         // this.Message = message;
-    //         this.token_offset = token_offset;
-    //     }
-
-    // }
-
     public class KeplerException : Exception
     {
         public LineIterator line;
@@ -98,7 +48,7 @@ namespace Kepler.Exceptions
         public string GetErrorString()
         {
             string error_string = "Unknown Error";
-            // Console.WriteLine(string.Format("Error Code: {0}", this.code));
+
             switch (this.code)
             {
                 case KeplerErrorCode.INVAL_FILE:
@@ -129,7 +79,7 @@ namespace Kepler.Exceptions
                     error_string = "Syntax Error: Unexpected end of conditional.";
                     break;
                 case KeplerErrorCode.LINK_OUT_HEADER:
-                    error_string = "Syntax Error: Cannot link file outside of Header.";
+                    error_string = "Syntax Error: Cannot link module/file outside of Header.";
                     break;
                 case KeplerErrorCode.UNEXP_RETURN:
                     error_string = "Syntax Error: Unexpected return, nothing to return from.";
@@ -153,14 +103,23 @@ namespace Kepler.Exceptions
                 case KeplerErrorCode.UNDECLARED_NONPOS_ARG:
                     error_string = string.Format("Syntax Error: {0} does not have a non-positional argument named \"{1}\"", this.args[0], this.args[1]);
                     break;
+                case KeplerErrorCode.UNASSIGNED_NONPOS_ARG:
+                    error_string = string.Format("Syntax Error: {0} has not had argument \"{1}\" assigned!", this.args[0], this.args[1]);
+                    break;
                 case KeplerErrorCode.INVALID_TYPE_ASSIGN:
                     error_string = string.Format("Type Error: Attempted to assign type {0} to {1}.", this.args[0], this.args[1]);
+                    break;
+                case KeplerErrorCode.STRICT_TYPE_EQUALITY:
+                    error_string = string.Format("Type Error: Cannot strictly compare type {0} to {1}.", this.args[0], this.args[1]);
                     break;
                 case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
                     error_string = "Type Error: Assignment to constant variable.";
                     break;
-                case KeplerErrorCode.INVALID_CAST:
-                    error_string = string.Format("Type Error: Unable to cast type {0} to {1}!", this.args[0], this.args[1]);
+                case KeplerErrorCode.EXPLICIT_CAST:
+                    error_string = string.Format("Type Error: Unable to explicitly cast type {0} to {1}!", this.args[0], this.args[1]);
+                    break;
+                case KeplerErrorCode.IMPLICIT_CAST:
+                    error_string = string.Format("Type Error: Unable to implicitly cast type {0} to {1}!", this.args[0], this.args[1]);
                     break;
                 case KeplerErrorCode.UNASSIGNED_TYPE:
                     error_string = string.Format("Type Error: \"{0}\" does not have a defined type.", this.args[0]);
@@ -202,27 +161,6 @@ namespace Kepler.Exceptions
                     return 1;
                 case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
                     return -1;
-                    // case KeplerErrorCode.INVAL_FILE:
-                    // case KeplerErrorCode.UNEXP_START_LOOP:
-                    // case KeplerErrorCode.UNEXP_END_LOOP:
-                    // case KeplerErrorCode.UNEXP_START_INT:
-                    // case KeplerErrorCode.UNEXP_END_INT:
-                    // case KeplerErrorCode.UNEXP_START_COND:
-                    // case KeplerErrorCode.UNEXP_END_COND:
-                    // case KeplerErrorCode.LINK_OUT_HEADER:
-                    // case KeplerErrorCode.UNEXP_BREAKOUT:
-                    // case KeplerErrorCode.CALL_UNDEF_FUNCT_TYPE:
-                    // case KeplerErrorCode.ASSIGN_UNDEF_FUNCT_TYPE:
-                    // case KeplerErrorCode.NULL_TEMP_VAR:
-                    // case KeplerErrorCode.UNEXP_START_TOKEN: // fallthrough
-                    // case KeplerErrorCode.UNEXP_TOKEN:
-                    // case KeplerErrorCode.INVALID_TYPE_ASSIGN:
-                    // case KeplerErrorCode.ASSIGN_CONSTANT_VAR:
-                    // case KeplerErrorCode.INVALID_CAST:
-                    // case KeplerErrorCode.UNDECLARED:
-                    // case KeplerErrorCode.UNASSIGNED_TYPE:
-                    // case KeplerErrorCode.DUP_NONPOS_ARG:
-                    // case KeplerErrorCode.UNDECLARED_NONPOS_ARG:
             }
 
             return 0;
@@ -251,11 +189,14 @@ namespace Kepler.Exceptions
         NULL_TEMP_VAR,
         INVALID_TYPE_ASSIGN,
         ASSIGN_CONSTANT_VAR,
-        INVALID_CAST,
+        STRICT_TYPE_EQUALITY,
+        EXPLICIT_CAST,
+        IMPLICIT_CAST,
         UNDECLARED,
         UNASSIGNED_TYPE,
         DUP_NONPOS_ARG,
         UNDECLARED_NONPOS_ARG,
+        UNASSIGNED_NONPOS_ARG,
         DECLARE_DUP,
         FALSE_ASSERTION,
         GENERIC_ERROR,

@@ -1,11 +1,17 @@
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
+using Kepler.Exceptions;
+using Kepler.Lexer;
+using Kepler.Lexer.Tokens;
+using Kepler.LogicControl;
+using Kepler.Tracing;
+using KeplerVariables;
 using System;
 using System.Collections.Generic;
-using Kepler.Lexer;
-using Kepler.LogicControl;
-using Kepler.Lexer.Tokens;
-using KeplerVariables;
-using Kepler.Tracing;
-using Kepler.Exceptions;
 
 namespace Kepler.Interpreting
 {
@@ -14,7 +20,7 @@ namespace Kepler.Interpreting
         public int ID = 0;
         public string filename = "[LIVE]";
         public KeplerErrorStack tracer;
-        public StateMachine statemachine = new StateMachine();
+        public StateMachine statemachine;
         public bool verbose_debug = false;
         public bool debug = false;
         public bool has_parent = false;
@@ -25,7 +31,7 @@ namespace Kepler.Interpreting
         public TokenState c_state = null;
         public Token c_token = null;
         bool inside_function = false;
-        bool inside_conditional = false;
+        bool inside_conditional = false, inside_conditional_else = false, inside_conditional_elseif = false;
         bool inside_interrupt = false;
         bool inside_loop = false;
         // bool has_return_value = false;
@@ -37,21 +43,22 @@ namespace Kepler.Interpreting
         // new KeplerFunction("NUL")
         public KeplerInterrupt c_interrupt = null;
         // new KeplerInterrupt(-1, new KeplerFunction("NUL"), null)
-        public KeplerFunction c_conditional = new KeplerFunction("CONDITIONAL");
+        // public KeplerFunction c_conditional = new KeplerFunction("CONDITIONAL");
+        public KeplerConditional c_conditional = new KeplerConditional();
         // 
         public LineIterator c_line = new LineIterator("", 0, 0);
 
-        static string PrintLine(LineIterator line)
-        {
-            string[] split_line = line.GetString().Split(" ");
-            // string[] split_line = Regex.Split(line.GetString(), "('.*?'|\".*?\"|\\S+)");
-            string line_header = string.Format("Line <{0}>: ", line.line);
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.Write(line_header);
-            Console.ForegroundColor = ConsoleColor.White;
+        // static string PrintLine(LineIterator line)
+        // {
+        //     string[] split_line = line.GetString().Split(" ");
+        //     // string[] split_line = Regex.Split(line.GetString(), "('.*?'|\".*?\"|\\S+)");
+        //     string line_header = string.Format("Line <{0}>: ", line.line);
+        //     Console.ForegroundColor = ConsoleColor.Blue;
+        //     Console.Write(line_header);
+        //     Console.ForegroundColor = ConsoleColor.White;
 
-            return line_header;
-        }
+        //     return line_header;
+        // }
 
         public Interpreter(Interpreter global_scope, Interpreter parent)
         {
@@ -63,7 +70,10 @@ namespace Kepler.Interpreting
             else
             {
                 this.global = global_scope;
-                this.interrupts = this.global.interrupts;
+                this.interrupts.parent = parent.interrupts;
+                this.interrupts.global = this.global.interrupts;
+                // this.parent
+                // this.interrupts = this.global.interrupts;
             }
 
             if (parent == null) this.has_parent = false;
@@ -74,12 +84,14 @@ namespace Kepler.Interpreting
                 this.parent = parent;
             }
 
-            this.statemachine.interpreter = this;
             if (c_interrupt != null)
                 c_interrupt.parent = this;
+
+            this.statemachine = new StateMachine(this);
+            // this.statemachine.interpreter = this;
         }
 
-        public void Interpret(LineIterator line)
+        public TokenState Interpret(LineIterator line)
         {
             statemachine.verbose_debug = verbose_debug;
             // statemachine.debug = debug;
@@ -94,27 +106,28 @@ namespace Kepler.Interpreting
                     foreach (KeyValuePair<string, KeplerVariable> pair in statemachine.linked_variables.local)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (statemachine.variables.global.local.ContainsKey(pair.Key)) throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
-                        statemachine.variables.global.local.Add(pair.Key, pair.Value);
+                        // throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
+                        if (!statemachine.variables.global.local.ContainsKey(pair.Key))
+                            statemachine.variables.global.local.Add(pair.Key, pair.Value);
                     }
 
-                    foreach (KeyValuePair<string, KeplerFunction> pair in statemachine.linked_functions.global)
+                    foreach (KeyValuePair<string, KeplerFunction> pair in statemachine.linked_functions.local)
                     {
                         if (verbose_debug) Console.WriteLine(string.Format("Transferring {0}", pair.Key));
-                        if (statemachine.functions.global.ContainsKey(pair.Key)) throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
-                        statemachine.functions.global.Add(pair.Key, pair.Value);
+                        // throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { pair.Key });
+                        if (!statemachine.functions.global.ContainsKey(pair.Key))
+                            statemachine.functions.global.Add(pair.Key, pair.Value);
                     }
 
                     statemachine.has_linked_file = false; // reset to false
                 }
 
-                if (debug) PrintFormattedLine(line);
+                if (debug || verbose_debug) PrintFormattedLine(line);
 
-                internal_int(line);
+                return internal_int(line);
             }
             catch (KeplerError e)
             {
-
                 int start_offset = e.GetTokenOffset();
 
                 this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
@@ -129,7 +142,7 @@ namespace Kepler.Interpreting
                 if (verbose_debug) this.DUMP();
                 else Console.WriteLine("");
 
-                // Console.WriteLine(e);
+                Console.WriteLine(e);
 
                 // this.tracer.PopStack();
                 this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
@@ -142,8 +155,6 @@ namespace Kepler.Interpreting
             Console.WriteLine("");
             Console.WriteLine(this.statemachine.functions);
             Console.WriteLine(this.statemachine.variables);
-
-            Console.WriteLine(this.c_state.a_operand);
 
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("\r\nCurrent State");
@@ -161,11 +172,17 @@ namespace Kepler.Interpreting
             Console.WriteLine("");
         }
 
-        void internal_int(LineIterator line)
+        TokenState internal_int(LineIterator line)
         {
-            if (this.killed) return;
+            if (this.killed) return c_state;
 
-            if (verbose_debug && this.is_global) Console.WriteLine("Registered Interrupts: " + this.interrupts.Count);
+            if (verbose_debug)
+            {
+                Console.WriteLine(string.Format("\r\nINTERPRETER ID: {0}", this.ID));
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine("Registered Interrupts: " + this.interrupts.Count);
+                Console.ResetColor();
+            }
             statemachine.end_on_eop = statemachine.end_on_eop && this.interrupts.Count == 0;
 
             c_line.m_num = 0;
@@ -174,7 +191,7 @@ namespace Kepler.Interpreting
 
             if (c_state != null)
             {
-                c_state.booleans["inside_conditional"] = inside_conditional;
+                c_state.booleans["inside_conditional"] = inside_conditional || inside_conditional_else;
                 c_state.booleans["inside_function"] = inside_function;
                 c_state.booleans["inside_interval"] = inside_interrupt;
                 c_state.booleans["inside_loop"] = inside_loop;
@@ -189,18 +206,18 @@ namespace Kepler.Interpreting
 
                 if (line.tokens[0].type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
 
-                if (verbose_debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
+                if (debug) Console.WriteLine("ADDING TO INTERRUPT -> " + c_line.GetString());
                 c_interrupt.function.lines.Add(c_line);
 
                 if (inside_loop && line.CurrentToken().type == TokenType.EndLoop && line.Peek().token_string == "forever" && line.indentation == desired_intendation)
                 {
                     c_interrupt.function.lines.RemoveAt(c_interrupt.function.lines.Count - 1);
-                    c_interrupt.Enable();
                     c_interrupt.SetForever();
+                    c_interrupt.Enable();
                     inside_loop = false;
                     c_state.booleans["inside_loop"] = false;
 
-                    if (verbose_debug) Console.WriteLine(string.Format("EXIT LOOP <{0}>", c_interrupt.id));
+                    if (debug) Console.WriteLine(string.Format("EXIT LOOP <{0}>", c_interrupt.id));
 
                     this.HandleInterrupts();
                 }
@@ -210,13 +227,13 @@ namespace Kepler.Interpreting
                     inside_interrupt = false;
                     c_state.booleans["inside_interval"] = false;
 
-                    if (verbose_debug) Console.WriteLine(string.Format("EXIT <{0}>", c_interrupt.id));
+                    if (debug) Console.WriteLine(string.Format("EXIT <{0}>", c_interrupt.id));
 
                     c_interrupt.Enable();
                     this.HandleInterrupts();
                 }
 
-                return;
+                return c_state;
             }
 
             if (inside_function)
@@ -236,7 +253,7 @@ namespace Kepler.Interpreting
                     if (verbose_debug) Console.WriteLine(string.Format("EXIT <{0}>", c_function.name));
                 }
 
-                return;
+                return c_state;
             }
 
             if (skip_conditional)
@@ -244,26 +261,50 @@ namespace Kepler.Interpreting
                 // check for "endif"
                 if (c_line.CurrentToken().type == TokenType.EndConditional && c_line.indentation == desired_intendation) skip_conditional = false;
 
-                return;
+                return c_state;
             }
 
-            if (inside_conditional)
+            if (inside_conditional || inside_conditional_else)
             {
                 c_line.m_num = 0;
 
                 if (line.CurrentToken().type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
+                if (line.CurrentToken().type == TokenType.ConditionalElse && c_line.indentation == desired_intendation)
+                {
+                    if (line.tokens.Count > 1 && line.tokens[1].type != TokenType.EOL) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { line.tokens[1].type.ToString() }).GetErrorString(), this.tracer, 1);
+                    inside_conditional_else = true;
+                }
+                if (line.CurrentToken().type == TokenType.ConditionalElseIf && c_line.indentation == desired_intendation)
+                {
+                    if (line.tokens.Count < 2) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), this.tracer, 2);
+                    if (line.tokens[1].type != TokenType.GenericOperation) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { line.tokens[1].type.ToString() }).GetErrorString(), this.tracer, 1);
+                    c_conditional.elseifs.Add(new KeplerFunction(c_line.line.ToString()));
+                    inside_conditional_elseif = true;
+                }
 
-                c_conditional.lines.Add(c_line);
+                if (inside_conditional_else)
+                    c_conditional.else_function.lines.Add(c_line);
+                else if (inside_conditional_elseif)
+                    c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.Add(c_line);
+                else
+                    c_conditional.main_function.lines.Add(c_line);
 
                 if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == desired_intendation)
                 {
-                    // int stack_id = this.tracer.PushStack(String.Format("at conditional ({0}:{1}:{2})", this.filename, c_line.line - c_conditional.lines.Count, c_line.CurrentToken().start + 1));
+                    string line_id = this.filename + "_" + c_line.line + ":" + c_line.indentation;
 
+                    Interpreter conditional_int;
+                    if (this.statemachine.interpreter_cache.ContainsKey(line_id))
+                    {
+                        conditional_int = this.statemachine.interpreter_cache[line_id];
+                        conditional_int.killed = false;
+                    }
+                    else
+                    {
+                        this.statemachine.interpreter_cache[line_id] = new Interpreter(this.global, this);
+                        conditional_int = this.statemachine.interpreter_cache[line_id];
 
-                    Interpreter conditional_int = new Interpreter(this.global, this);
-
-                    conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
-                    conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
+                    }
 
                     if (this.is_function)
                     {
@@ -272,23 +313,73 @@ namespace Kepler.Interpreting
                         conditional_int.is_function = true;
                     }
 
+                    conditional_int.statemachine.is_interrupt = this.statemachine.is_interrupt;
+                    conditional_int.statemachine.interrupt_id = this.statemachine.interrupt_id;
+
                     conditional_int.verbose_debug = verbose_debug;
                     conditional_int.tracer = this.tracer;
                     conditional_int.filename = this.filename;
 
+                    conditional_int.statemachine.function_return_value = null;
                     conditional_int.statemachine.variables = statemachine.variables.Copy();
                     conditional_int.statemachine.functions = statemachine.functions.Copy();
 
-                    c_conditional.lines.RemoveAt(c_conditional.lines.Count - 1);
+                    if (inside_conditional_else)
+                        // if we're still in an "else" statement, remove the "endif" in the else statement
+                        c_conditional.else_function.lines.RemoveAt(c_conditional.else_function.lines.Count - 1);
+                    else if (inside_conditional_elseif)
+                        // if we're in an elseif remove the "endif" in the last elseif
+                        c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.RemoveAt(c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.Count - 1);
+                    else
+                        // otherwise remove the "endif" in the main conditional
+                        c_conditional.main_function.lines.RemoveAt(c_conditional.main_function.lines.Count - 1);
 
-                    for (int i = 0; i < c_conditional.lines.Count; i++)
-                        conditional_int.Interpret(c_conditional.lines[i]);
+                    bool do_main = this.statemachine.DoGenericOperation(c_conditional.main_function.lines[0].tokens[1]).BoolValue;
+                    bool check_elseifs = c_conditional.elseifs.Count > 0;
+                    bool do_else = (!do_main && c_conditional.else_function.lines.Count > 1);
+
+                    if (do_main)
+                    {
+                        c_conditional.main_function.Reset();
+                        for (int i = 1; i < c_conditional.main_function.lines.Count; i++)
+                        {
+                            conditional_int.Interpret(c_conditional.main_function.lines[i]);
+                        }
+                    }
+                    else
+                    {
+                        if (check_elseifs)
+                        {
+                            for (int i = 0; i < c_conditional.elseifs.Count; i++)
+                            {
+                                bool do_elseif = this.statemachine.DoGenericOperation(c_conditional.elseifs[i].lines[0].tokens[1]).BoolValue;
+                                if (do_elseif)
+                                {
+                                    c_conditional.elseifs[i].Reset();
+                                    for (int j = 1; j < c_conditional.elseifs[i].lines.Count; j++)
+                                    {
+                                        conditional_int.Interpret(c_conditional.elseifs[i].lines[j]);
+                                    }
+
+                                    do_else = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (do_else)
+                        {
+                            c_conditional.else_function.Reset();
+                            for (int i = 1; i < c_conditional.else_function.lines.Count; i++)
+                                conditional_int.Interpret(c_conditional.else_function.lines[i]);
+                        }
+                    }
 
                     inside_conditional = false;
-                    // this.tracer.PopStack(stack_id);
+                    inside_conditional_else = false;
+                    inside_conditional_elseif = false;
                 }
 
-                return;
+                return c_state;
             }
 
             if (verbose_debug)
@@ -367,12 +458,22 @@ namespace Kepler.Interpreting
 
                 if (c_state.type == TokenType.EOL)
                 {
+                    c_state.DoAction(c_token, c_line.Peek());
+
                     if (c_state.booleans["throw_error"]) throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { c_state.strings["error_string"] });
                     if (c_state.booleans["console_print"]) Console.WriteLine(c_state.strings["print_string"]);
                     if (c_state.booleans["inside_conditional"])
                     {
-                        c_conditional.lines = new List<LineIterator>();
+
+                        this.c_conditional.main_function = new KeplerFunction("conditional_main");
+                        this.c_conditional.else_function = new KeplerFunction("conditional_else");
+                        this.c_conditional.elseifs.Clear();
+
                         inside_conditional = true;
+                        inside_conditional_else = false;
+
+                        this.c_conditional.main_function.lines.Add(c_line);
+
                         desired_intendation = c_line.indentation;
                     }
                     if (c_state.booleans["validate_conditional"] && !c_state.booleans["inside_conditional"])
@@ -386,6 +487,8 @@ namespace Kepler.Interpreting
 
                 line++;
             }
+
+            return c_state;
         }
 
         public void Kill()
@@ -407,7 +510,6 @@ namespace Kepler.Interpreting
             while (this.interrupts.HasInterrupts())
             {
                 List<KeplerInterrupt> interrupts = this.interrupts.GetInterrupts();
-
                 for (int i = 0; i < interrupts.Count; ++i)
                 {
                     KeplerInterrupt interrupt = interrupts[i];
@@ -415,36 +517,37 @@ namespace Kepler.Interpreting
 
                     if (verbose_debug) Console.WriteLine("DOING INTERRUPT " + interrupt.id);
 
-                    int stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
+                    string stack_id = this.tracer.PushStack(String.Format("at {0} (#{1}) ({2}:{3}:{4})", interrupt.isInfinite() ? "forever" : "interval", interrupt.id, this.filename, this.c_line.line, this.c_line.CurrentToken().start));
 
                     KeplerFunction int_function = interrupt.function;
 
-                    int_function.ResetLines();
+                    int_function.Reset();
 
-                    // maybe move this to when the interrupt is created?
-                    // seems like creating a new interpreter could cause a bit of delay
-                    Interpreter f_interpreter = new Interpreter(this.global, interrupt.parent);
+                    KeplerVariableManager original_vars = this.statemachine.variables.Copy();
+                    KeplerFunctionManager original_functions = this.statemachine.functions.Copy();
+                    bool was_interrupt = false;
 
-                    f_interpreter.statemachine.variables = interrupt.parent.statemachine.variables.Copy();
-                    f_interpreter.statemachine.functions = interrupt.parent.statemachine.functions.Copy();
+                    if (!this.statemachine.is_interrupt) was_interrupt = true;
 
-                    f_interpreter.statemachine.is_interrupt = true;
-                    f_interpreter.statemachine.interrupt_id = interrupts[i].id;
-
-                    f_interpreter.verbose_debug = this.verbose_debug;
-                    f_interpreter.debug = this.debug;
-                    f_interpreter.tracer = this.tracer;
-                    f_interpreter.filename = this.filename;
+                    this.statemachine.is_interrupt = true;
+                    this.statemachine.interrupt_id = interrupts[i].id;
 
                     // do interpretation
-                    foreach (LineIterator line in int_function.lines)
+                    for (int l = 0; l < int_function.lines.Count; ++l)
                     {
+                        LineIterator line = int_function.lines[l];
+
                         if (this.interrupts.HasInterrupt(interrupts[i].id))
-                            f_interpreter.Interpret(line);
+                            this.Interpret(line);
                         else break;
                     }
 
                     interrupts[i].Reset();
+
+                    if (!was_interrupt) this.statemachine.is_interrupt = false;
+
+                    interrupt.parent.statemachine.variables = original_vars;
+                    interrupt.parent.statemachine.functions = original_functions;
 
                     this.tracer.PopStack(stack_id);
                 }
@@ -480,7 +583,7 @@ namespace Kepler.Interpreting
             if (token.a != null)
             {
                 PrintToken(token.a, indentation + 1, " A: ");
-                PrintToken(token.b, indentation + 1, " B: ");
+                if (token.b != null) PrintToken(token.b, indentation + 1, " B: ");
             }
         }
     }

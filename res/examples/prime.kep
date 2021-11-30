@@ -1,4 +1,6 @@
 start Header
+    link "input"
+    
     test_number is 550051
     
     int_c is 2
@@ -7,6 +9,11 @@ start Header
     
     START is 0 and is Int
 end Header
+
+print ""
+print "Please enter a number to check if it is prime: "
+inp is call input
+test_number is inp cast Int
 
 print ""
 print "Checking if " + test_number + " is prime..."

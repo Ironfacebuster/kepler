@@ -28,18 +28,21 @@ jobs:
     - name: Install .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.x
+        dotnet-version: 5.0.x
 
     - name: Generate buildtime
       run: scripts/generate_resources.bat nightly
 
-    - name: Build Kepler executable
-      run: dotnet build --output $env:PUBLISH_LOCATION $env:PROJECT_LOCATION
+    - name: build Kepler Nightly 
+      run: make nightly_no_nsis
 
-    - name: Copy Nightly readme
-      run: cp "res/nightly.txt" "$env:PUBLISH_LOCATION/readme.txt"
+    # - name: Build Kepler executable
+    #   run: dotnet build --output $env:PUBLISH_LOCATION $env:PROJECT_LOCATION
+
+    # - name: Copy Nightly readme
+    #   run: cp "res/nightly.txt" "$env:PUBLISH_LOCATION/readme.txt"
       
-    - name: Zip executable
-      run: Compress-Archive -Path $env:PUBLISH_LOCATION -DestinationPath $env:ZIP_LOCATION
+    # - name: Zip executable
+    #   run: Compress-Archive -Path $env:PUBLISH_LOCATION -DestinationPath $env:ZIP_LOCATION
 
     # TODO: add releasing

@@ -1,13 +1,63 @@
-num is 0
+if_1 is False
+if_2 is True
+elseif_1 is False
+elseif_2 is False
+elseif_3 is False
+else_1 is False
 
 if True
-    num is 1
+    if_1 is True
 endif
 
 if False
-    num is 10
+    if_2 is False
 endif
 
-assert num equals 1
+if False
+    elseif_1 is False
+elseif True
+    elseif_1 is True
+endif
+
+if True
+    elseif_2 is True
+elseif True
+    elseif_2 is False
+endif
+
+if False
+    elseif_3 is False
+elseif False
+    elseif_3 is False
+else
+    elseif_3 is True
+endif
+
+if False
+    else_1 is False
+else
+    else_1 is True
+endif
+
+funct returns Boolean
+return_1 is False
+
+start funct
+    if False
+        return False
+    elseif True
+        return True
+    endif
+end funct
+
+assert if_1 equals True
+assert if_2 equals True
+assert elseif_1 equals True
+assert elseif_2 equals True
+assert elseif_3 equals True
+assert else_1 equals True
+
+return_1 is call funct
+assert return_1 equals True
 
 print "SUCCESS"

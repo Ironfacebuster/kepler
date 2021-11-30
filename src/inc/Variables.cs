@@ -1,10 +1,16 @@
-using System.Collections.Generic;
-using Kepler.Lexer;
-using Kepler.Interpreting;
-using System.Diagnostics;
-using System;
-using System.Linq;
+/*
+ *   Copyright (c) 2021 William Huddleston
+ *   All rights reserved.
+ *   License: Apache 2.0
+ */
+
 using Kepler.Exceptions;
+using Kepler.Interpreting;
+using Kepler.Lexer;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace KeplerVariables
 {
@@ -20,6 +26,14 @@ namespace KeplerVariables
             this.global = this;
         }
 
+        public void Load(KeyValuePair<string, KeplerVariable> var_pair)
+        {
+            if (this.GetVariable(var_pair.Key, true) != null)
+                throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { var_pair.Key });
+
+            this.local.Add(var_pair.Key, var_pair.Value);
+        }
+
         public KeplerVariable DeclareVariable(string name, bool global_override)
         {
             if (global.local.ContainsKey(name)) return global.local[name];
@@ -32,7 +46,7 @@ namespace KeplerVariables
             return n_var;
         }
 
-        public KeplerVariable GetVariable(string name)
+        public KeplerVariable GetVariable(string name, bool no_error = false)
         {
             if (global.local.ContainsKey(name))
             {
@@ -53,21 +67,24 @@ namespace KeplerVariables
                 return local[name];
             }
 
-            throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            if (!no_error)
+                throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            else
+                return null;
         }
 
-        public KeplerVariable GetVariableByID(string id)
+        public KeplerVariable GetVariableByID(Guid id)
         {
             // search local first
             foreach (KeyValuePair<string, KeplerVariable> var in this.local)
             {
-                Console.WriteLine(var.Value);
+                // Console.WriteLine(var.Value);
                 if (var.Value.id == id) return var.Value;
             }
 
             if (this.global != this) return this.global.GetVariableByID(id);
 
-            throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { string.Format("#{0} is not a valid variable ID!", id) });
+            throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { string.Format("#{0} is not a valid variable ID!", id.ToString()) });
         }
 
         // allow copying of global for "scoping"
@@ -81,23 +98,19 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = "VariableManager\r\n";
+            string output = "Variables\r\nScope: " + (this.global == this.local ? "global" : "local") + "\r\n";
             foreach (KeyValuePair<string, KeplerVariable> pair in global.local)
             {
-                output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
+                output = output + pair.Key + " => " + pair.Value + "\r\n";
             }
-            foreach (KeyValuePair<string, KeplerVariable> pair in local)
-            {
-                output = output + "LOCAL " + pair.Key + " => " + pair.Value + "\r\n";
-            }
+
             return output;
-            // return base.ToString();
         }
     }
 
     public class KeplerVariable
     {
-        public string id = "";
+        public Guid id;
         public KeplerType type = KeplerType.Unassigned;
         public KeplerModifier modifier = KeplerModifier.Variable;
         public decimal FloatValue = 0;
@@ -108,7 +121,7 @@ namespace KeplerVariables
 
         public KeplerVariable()
         {
-            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+            this.id = Guid.NewGuid();
         }
 
         public void SetModifier(KeplerModifier modifier)
@@ -152,7 +165,8 @@ namespace KeplerVariables
             ValidateType(KeplerType.String);
 
             // convert escape characters
-            StringValue = /* ToLiteral(value); */ value;
+            StringValue = ToLiteral(value);
+            // StringValue = value;
         }
 
         public void AssignValue(KeplerVariable variable)
@@ -199,15 +213,16 @@ namespace KeplerVariables
 
         private static string ToLiteral(string input)
         {
-            return input.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t").Replace("\\'", "\'").Replace("\\\"", "\"").Replace("\\", "\\");
+            return input.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t").Replace("\\'", "\'").Replace("\\\"", "\"").Replace("\\\\", "\\");
         }
 
         public void ValidateType(KeplerType type)
         {
-            ValidateConstant();
             if (this.type == KeplerType.Unassigned) this.type = type;
-            if (this.type != type) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { type.ToString(), this.type.ToString() });
+            // ValidateConstant();
+            if (this.type != type && (this.type != KeplerType.Any && type != KeplerType.Any)) throw new KeplerError(KeplerErrorCode.INVALID_TYPE_ASSIGN, new string[] { type.ToString(), this.type.ToString() });
         }
+
         public void ValidateConstant()
         {
             if (this.modifier == KeplerModifier.Constant) throw new KeplerError(KeplerErrorCode.ASSIGN_CONSTANT_VAR);
@@ -215,7 +230,7 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = string.Format("(#{0}) {1} {2}", this.id, this.modifier, this.type);
+            string output = string.Format("({0}) {1} {2}", this.id, this.modifier, this.type);
 
             switch (type)
             {
@@ -240,7 +255,7 @@ namespace KeplerVariables
             return output;
         }
 
-        public string GetValueAsString()
+        public string GetValueAsString(bool is_explicit = false)
         {
             switch (type)
             {
@@ -260,10 +275,10 @@ namespace KeplerVariables
                     return "NaN";
             }
 
-            throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "String" });
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "String" });
         }
 
-        public int GetValueAsInt()
+        public int GetValueAsInt(bool is_explicit = false)
         {
             switch (type)
             {
@@ -278,13 +293,13 @@ namespace KeplerVariables
                 case KeplerType.String:
                     decimal new_float = 0;
                     if (decimal.TryParse(this.StringValue, out new_float)) return (int)new_float;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+                    break;
             }
 
-            return 0;
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "Int" });
         }
 
-        public uint GetValueAsUnsignedInt()
+        public uint GetValueAsUnsignedInt(bool is_explicit = false)
         {
             switch (type)
             {
@@ -299,13 +314,13 @@ namespace KeplerVariables
                 case KeplerType.String:
                     decimal new_float = 0;
                     if (decimal.TryParse(this.StringValue, out new_float)) return (uint)new_float;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "uInt" });
+                    break;
             }
 
-            return 0;
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "uInt" });
         }
 
-        public decimal GetValueAsFloat()
+        public decimal GetValueAsFloat(bool is_explicit = false)
         {
             switch (type)
             {
@@ -320,14 +335,14 @@ namespace KeplerVariables
                 case KeplerType.String:
                     decimal new_float = 0;
                     if (decimal.TryParse(this.StringValue, out new_float)) return new_float;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Int" });
+                    break;
 
             }
 
-            return 0;
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "Float" });
         }
 
-        public bool GetValueAsBool()
+        public bool GetValueAsBool(bool is_explicit = false)
         {
             switch (type)
             {
@@ -342,10 +357,10 @@ namespace KeplerVariables
                 case KeplerType.String:
                     if (this.StringValue.ToLower() == "true") return true;
                     if (this.StringValue.ToLower() == "false") return false;
-                    throw new KeplerError(KeplerErrorCode.INVALID_CAST, new string[] { this.type.ToString(), "Boolean" });
+                    break;
             }
 
-            return false;
+            throw new KeplerError(is_explicit ? KeplerErrorCode.EXPLICIT_CAST : KeplerErrorCode.IMPLICIT_CAST, new string[] { this.type.ToString(), "Boolean" });
         }
     }
 
@@ -367,12 +382,27 @@ namespace KeplerVariables
             return n_funct;
         }
 
-        public KeplerFunction GetFunction(string name)
+        public void Load(KeplerFunction function)
         {
-            if (global.ContainsKey(name)) return global[name];
-            if (local.ContainsKey(name)) return local[name];
+            if (this.GetFunction(function.name, true) != null)
+                throw new KeplerError(KeplerErrorCode.DECLARE_DUP, new string[] { function.name });
 
-            throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+            this.local.Add(function.name, function);
+        }
+
+        public KeplerFunction GetFunction(string name, bool no_error = false)
+        {
+            KeplerFunction res = null;
+            if (global.ContainsKey(name)) res = global[name];
+            if (local.ContainsKey(name)) res = local[name];
+
+            if (no_error && res != null)
+                res.Reset();
+
+            if (!no_error && res == null)
+                throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
+
+            return res;
         }
 
         public KeplerFunctionManager Copy()
@@ -385,14 +415,14 @@ namespace KeplerVariables
 
         public override string ToString()
         {
-            string output = "FunctionManager\r\n";
-            foreach (KeyValuePair<string, KeplerFunction> pair in global)
-            {
-                output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
-            }
+            string output = "Functions\r\nScope: " + (this.global == this.local ? "global" : "local") + "\r\n";
+            // foreach (KeyValuePair<string, KeplerFunction> pair in global)
+            // {
+            //     output = output + "GLOBAL " + pair.Key + " => " + pair.Value + "\r\n";
+            // }
             foreach (KeyValuePair<string, KeplerFunction> pair in local)
             {
-                output = output + "LOCAL " + pair.Key + " => " + pair.Value + "\r\n";
+                output = output + pair.Key + " => " + pair.Value + "\r\n";
             }
             return output;
             // return base.ToString();
@@ -402,21 +432,23 @@ namespace KeplerVariables
     public class KeplerFunction
     {
         public List<LineIterator> lines = new List<LineIterator>();
-        public IDictionary<string, KeplerType> positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by position
-        public IDictionary<string, KeplerType> non_positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by name ref
-        public IDictionary<string, KeplerVariable> arguments = new Dictionary<string, KeplerVariable>();
+        // public IDictionary<string, KeplerType> positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by position
+        // public IDictionary<string, KeplerType> non_positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by name ref
+        // public IDictionary<string, KeplerVariable> arguments = new Dictionary<string, KeplerVariable>();
+        public KeplerArguments arguments;
         public KeplerVariable target = new KeplerVariable();
         bool has_target = false;
         public KeplerType type;
         public string name;
         public string id;
         public bool is_internal = false;
-        public Func<Kepler.Interpreting.Interpreter, List<KeplerVariable>, KeplerVariable> internal_call;
+        public Func<Kepler.Interpreting.Interpreter, KeplerArguments, KeplerVariable> internal_call;
 
         public KeplerFunction(string name, bool is_internal = false)
         {
+            this.arguments = new KeplerArguments(this);
             this.name = name;
-            this.id = String.Format("{0:X}", DateTime.Now.Ticks);
+            this.id = Guid.NewGuid().ToString("N");
             this.is_internal = is_internal;
         }
 
@@ -427,24 +459,30 @@ namespace KeplerVariables
 
         public bool HasArguments()
         {
-            if (positional_arguments.Count > 0) return true;
-            if (non_positional_arguments.Count > 0) return true;
-
-            return false;
+            return this.arguments.HasArguments();
         }
 
-        public void AddNonPositional(string name)
+        /// <summary>
+        /// Assigns a positional argument to the function.
+        /// This sets a function's required arguments.
+        /// </summary>
+        public void AssignNonPositional(string name, KeplerType type)
         {
             AssertNPArgumentNotExists(name);
-
-            non_positional_arguments[name] = KeplerType.Unassigned;
+            arguments.RequireNonPositionalArgument(name, type);
         }
 
-        public void AssignNonPositional(string name, KeplerType type)
+        /// <summary>
+        /// Sets the value of a non-positional argument.
+        /// This sets the temporary value of a non-positional argument, which is used during execution.
+        /// </summary>
+        public void SetNonPositional(string name, KeplerVariable value)
         {
             AssertNPArgument(name);
 
-            non_positional_arguments[name] = type;
+            value.ValidateType(arguments.GetNonPositionalArgumentType(name));
+
+            this.arguments.SetNonPositionalArgument(name, value);
         }
 
         public void ResetLines()
@@ -459,7 +497,8 @@ namespace KeplerVariables
         {
             ResetLines();
             // foreach(LineIterator line in lines) line.m_num = 0;
-            arguments = new Dictionary<string, KeplerVariable>(); // reset assigned arguments
+
+            this.arguments.Reset();
             target = new KeplerVariable(); // reset target to empty variable
             has_target = true;
         }
@@ -482,21 +521,131 @@ namespace KeplerVariables
 
         void AssertNPArgumentNotExists(string name)
         {
-            if (non_positional_arguments.ContainsKey(name)) throw new KeplerError(KeplerErrorCode.DUP_NONPOS_ARG, new string[] { this.name, name });
+            if (arguments.HasNonPositionalArgument(name)) throw new KeplerError(KeplerErrorCode.DUP_NONPOS_ARG, new string[] { this.name, name });
         }
 
         void AssertNPArgument(string name)
         {
-            if (!non_positional_arguments.ContainsKey(name)) throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.name, name });
+            if (!arguments.HasNonPositionalArgument(name)) throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.name, name });
         }
 
         public override string ToString()
         {
-            if (this.is_internal) return string.Format("(#{0}) INTERNAL KeplerFunction {1}", id, type);
-            return string.Format("(#{0}) KeplerFunction {1}", id, type);
+            string format_string = "";
+
+            if (this.is_internal) format_string = string.Format("({0}) INTERNAL KeplerFunction {1}", id, type);
+            else format_string = string.Format("({0}) KeplerFunction {1}", id, type);
+
+            if (this.arguments.HasArguments()) format_string += " " + this.arguments.ToString();
+
+            return format_string;
         }
     }
 
+    public class KeplerArguments
+    {
+        public IDictionary<string, KeplerType> required_non_positionals;
+        public IDictionary<string, KeplerVariable> non_positional_arguments;
+        public List<KeplerVariable> positional_arguments;
+        private KeplerFunction function;
+
+        public KeplerArguments(KeplerFunction function)
+        {
+            this.function = function;
+            this.required_non_positionals = new Dictionary<string, KeplerType>();
+            this.non_positional_arguments = new Dictionary<string, KeplerVariable>();
+            this.positional_arguments = new List<KeplerVariable>();
+        }
+
+        public KeplerVariable GetArgument(string name)
+        {
+            if (non_positional_arguments.ContainsKey(name)) return non_positional_arguments[name];
+            throw new KeplerError(KeplerErrorCode.UNASSIGNED_NONPOS_ARG, new string[] { this.function.name, name });
+            // throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.function.name, name });
+        }
+
+        public KeplerVariable GetArgument(int index)
+        {
+            if (index < positional_arguments.Count) return positional_arguments[index];
+            else return null;
+        }
+
+        public Boolean HasArguments(bool only_assigned = false)
+        {
+            if (only_assigned)
+                return non_positional_arguments.Count > 0 || positional_arguments.Count > 0;
+
+            return this.required_non_positionals.Count > 0;
+        }
+
+        public Boolean HasNonPositionalArgument(string name)
+        {
+            return required_non_positionals.ContainsKey(name);
+        }
+
+        public void RequireNonPositionalArgument(string name, KeplerType type)
+        {
+            this.required_non_positionals.Add(name, type);
+        }
+
+        public KeplerType GetNonPositionalArgumentType(string name)
+        {
+            if (required_non_positionals.ContainsKey(name)) return required_non_positionals[name];
+            // else return null;
+            throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.function.name, name });
+        }
+
+        public void SetNonPositionalArgument(string name, KeplerVariable value)
+        {
+            if (this.required_non_positionals.ContainsKey(name))
+            {
+                if (this.non_positional_arguments.ContainsKey(name))
+                {
+                    this.non_positional_arguments[name] = value;
+                }
+                else
+                {
+                    this.non_positional_arguments.Add(name, value);
+                }
+            }
+            else throw new KeplerError(KeplerErrorCode.UNDECLARED_NONPOS_ARG, new string[] { this.function.name, name });
+        }
+
+        public void Reset()
+        {
+            this.non_positional_arguments.Clear();
+        }
+
+        public override string ToString()
+        {
+            string format_string = "";
+
+            if (this.required_non_positionals.Count > 0)
+            {
+                format_string += "[";
+                foreach (KeyValuePair<string, KeplerType> kvp in this.required_non_positionals)
+                {
+                    format_string += kvp.Key + ":" + kvp.Value.ToString() + ", ";
+                }
+                format_string = format_string.Substring(0, format_string.Length - 2) + "]";
+            }
+
+            return format_string;
+        }
+    }
+    public class KeplerConditional
+    {
+        public KeplerFunction main_function;
+        public List<KeplerFunction> elseifs;
+        public KeplerFunction else_function;
+
+        public KeplerConditional()
+        {
+            main_function = new KeplerFunction("conditional_main");
+            else_function = new KeplerFunction("conditional_else");
+            elseifs = new List<KeplerFunction>();
+        }
+    }
     public class KeplerInterrupt
     {
         Stopwatch stopWatch = new Stopwatch();
@@ -562,11 +711,14 @@ namespace KeplerVariables
         public void Disable()
         {
             this.disabled = true;
+            this.stopWatch.Stop();
         }
 
         public void Enable()
         {
             this.disabled = false;
+
+            this.stopWatch.Start();
         }
 
         public bool IsDisabled()
@@ -583,6 +735,8 @@ namespace KeplerVariables
     public class KeplerInterruptManager
     {
         public List<KeplerInterrupt> interrupts = new List<KeplerInterrupt>();
+        public KeplerInterruptManager global;
+        public KeplerInterruptManager parent;
         // public Interpreter global;
 
         public void Add(KeplerInterrupt interrupt)
@@ -618,8 +772,18 @@ namespace KeplerVariables
         public KeplerInterrupt GetInterrupt(int id)
         {
             for (int i = 0; i < this.interrupts.Count; ++i)
+            {
                 if (this.interrupts[i].id == id) return this.interrupts[i];
+            }
 
+            if (this.parent != null)
+            {
+                return this.parent.GetInterrupt(id);
+            }
+            else if (this.global != null)
+            {
+                return this.global.GetInterrupt(id);
+            }
             // if (this.has_parent)
             //     return this.parent.GetInterrupt(id);
 
@@ -684,6 +848,7 @@ namespace KeplerVariables
 
     public enum KeplerType
     {
+        Any,
         Float,
         Int,
         uFloat,
