@@ -35,6 +35,7 @@ namespace KeplerCompiler
             arguments.AddArgument(new ArgType("headless"));
             arguments.AddArgument(new ArgType("version"));
             arguments.AddArgument(new ArgType("debug", new string[] { "verbose", ArgType.BoolTrue }));
+            arguments.AddArgument(new ArgType("langserver"));
 
             arguments.Parse(args);
 
@@ -49,6 +50,7 @@ namespace KeplerCompiler
                 list.AddOption("--help", "Show the list of arguments.");
                 list.AddOption("--version", "Display the currently installed Kepler version.");
                 list.AddOption("--debug", "Enable debug logging.");
+                list.AddOption("--langserver", "Disable normal functionality and provide language server features.");
 
                 list.Print();
 
@@ -133,10 +135,9 @@ namespace KeplerCompiler
             List<string> history = new List<string>();
             int history_index = 0;
 
-            Console.CursorVisible = false;
-
             if (!headless_mode)
             {
+                Console.CursorVisible = false;
                 Console.WriteLine(String.Format("\r\nKepler {0} ({1})", StaticValues._VERSION, StaticValues._TYPE));
                 Console.WriteLine(String.Format("Build date: {0}\r\n", StaticValues._RELEASE));
                 Console.ForegroundColor = ConsoleColor.Blue;
@@ -149,7 +150,7 @@ namespace KeplerCompiler
             }
 
             bool printed_line = false;
-            int line_number = Console.GetCursorPosition().Top - 1;
+            int line_number = headless_mode ? 0 : Console.GetCursorPosition().Top - 1;
 
             Interpreter interpreter = new Interpreter(null, null);
             interpreter.tracer = tracer;
@@ -165,135 +166,151 @@ namespace KeplerCompiler
             int cursor_offset = 0;
             string str_input = "";
             string last_input = "";
+
             while (true)
             {
-                line_number = Math.Max(0, Math.Min(line_number, Console.WindowHeight - 1));
+                bool enter_pressed = false;
+                line_number = Math.Max(0, Math.Min(line_number, headless_mode ? 1000 : Console.WindowHeight - 1));
                 try
                 {
                     if (interpreter.interrupts.HasInterrupts())
                         interpreter.HandleInterrupts(false);
 
-                    var input = LiveKeyboard.GetInput();
-
-                    if (input.PressedKey(ConsoleKey.Backspace) && cursor_offset > 0 && str_input.Length > 0)
+                    if (!headless_mode)
                     {
-                        if (cursor_offset < str_input.Length)
+                        var input = LiveKeyboard.GetInput();
+
+                        if (input.PressedKey(ConsoleKey.Backspace) && cursor_offset > 0 && str_input.Length > 0)
                         {
-                            string n_string = str_input.Substring(0, cursor_offset - 1) + str_input.Substring(cursor_offset);
-                            str_input = n_string;
-                            cursor_offset -= 2;
+                            if (cursor_offset < str_input.Length)
+                            {
+                                string n_string = str_input.Substring(0, cursor_offset - 1) + str_input.Substring(cursor_offset);
+                                str_input = n_string;
+                                cursor_offset -= 2;
+                            }
+                            else
+                            {
+                                str_input = str_input.Substring(0, str_input.Length - 1);
+                            }
                         }
-                        else
+                        if (input.PressedKey(ConsoleKey.Delete) && str_input.Length > 0)
                         {
-                            str_input = str_input.Substring(0, str_input.Length - 1);
+                            if (cursor_offset < str_input.Length)
+                            {
+                                string n_string = str_input.Substring(0, cursor_offset) + str_input.Substring(cursor_offset + 1);
+                                str_input = n_string;
+                                cursor_offset--;
+                            }
                         }
-                    }
-                    if (input.PressedKey(ConsoleKey.Delete) && str_input.Length > 0)
-                    {
-                        if (cursor_offset < str_input.Length)
+
+                        if (input.PressedKey(ConsoleKey.RightArrow))
                         {
-                            string n_string = str_input.Substring(0, cursor_offset) + str_input.Substring(cursor_offset + 1);
-                            str_input = n_string;
-                            cursor_offset--;
+                            cursor_offset = Math.Min(cursor_offset + 1, str_input.Length);
+                            printed_line = false;
                         }
-                    }
-
-                    if (input.PressedKey(ConsoleKey.RightArrow))
-                    {
-                        cursor_offset = Math.Min(cursor_offset + 1, str_input.Length);
-                        printed_line = false;
-                    }
-                    if (input.PressedKey(ConsoleKey.LeftArrow))
-                    {
-                        cursor_offset = Math.Max(cursor_offset - 1, 0);
-                        printed_line = false;
-                    }
-
-                    if (input.PressedKey(ConsoleKey.UpArrow) && history.Count > 0)
-                    {
-                        history_index = Math.Max(0, history_index - 1);
-                        string last = history[history_index];
-
-                        str_input = last;
-                        cursor_offset = str_input.Length - 1;
-                    }
-                    if (input.PressedKey(ConsoleKey.DownArrow) && history.Count > 0)
-                    {
-                        if (history_index < history.Count - 1)
+                        if (input.PressedKey(ConsoleKey.LeftArrow))
                         {
-                            history_index = Math.Min(history_index + 1, history.Count - 1);
+                            cursor_offset = Math.Max(cursor_offset - 1, 0);
+                            printed_line = false;
+                        }
+
+                        if (input.PressedKey(ConsoleKey.UpArrow) && history.Count > 0)
+                        {
+                            history_index = Math.Max(0, history_index - 1);
                             string last = history[history_index];
 
                             str_input = last;
                             cursor_offset = str_input.Length - 1;
                         }
-                        else
+                        if (input.PressedKey(ConsoleKey.DownArrow) && history.Count > 0)
                         {
-                            str_input = "";
-                            cursor_offset = 0;
+                            if (history_index < history.Count - 1)
+                            {
+                                history_index = Math.Min(history_index + 1, history.Count - 1);
+                                string last = history[history_index];
+
+                                str_input = last;
+                                cursor_offset = str_input.Length - 1;
+                            }
+                            else
+                            {
+                                str_input = "";
+                                cursor_offset = 0;
+                            }
                         }
+
+                        string pressed_keys = input.GetKeysAsString();
+                        if (pressed_keys.Length > 0)
+                        {
+                            if (cursor_offset < str_input.Length)
+                            {
+                                str_input = str_input.Substring(0, cursor_offset) + pressed_keys + str_input.Substring(cursor_offset);
+                                cursor_offset += pressed_keys.Length - 1;
+                            }
+                            else
+                            {
+                                str_input += input.GetKeysAsString();
+                                cursor_offset = str_input.Length - 1;
+                            }
+                        }
+
+                        if (str_input != last_input)
+                        {
+                            printed_line = false;
+                            last_input = str_input;
+                            cursor_offset++;
+                        }
+
+                        if (!printed_line)
+                        {
+                            Console.SetCursorPosition(0, line_number);
+                            LiveKeyboard.ClearCurrentLine();
+
+                            string print_string = str_input;
+                            bool default_write = true;
+
+                            if (cursor_offset >= str_input.Length || str_input.Length == 0) print_string = print_string + "█";
+                            else
+                            {
+                                // highlight the text
+                                string highlighted_char = print_string[cursor_offset].ToString();
+                                Console.Write("> " + (print_string.Length > 0 ? print_string.Substring(0, cursor_offset) : ""));
+                                Console.BackgroundColor = ConsoleColor.White;
+                                Console.ForegroundColor = ConsoleColor.Black;
+                                Console.Write(highlighted_char);
+                                Console.ResetColor();
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.WriteLine(print_string.Substring(cursor_offset + 1));
+
+                                default_write = false;
+                            }
+
+                            if (default_write)
+                            {
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.WriteLine("> " + print_string);
+                            }
+
+                            printed_line = true;
+                        }
+
+                        if (input.PressedKey(ConsoleKey.Enter))
+                            enter_pressed = true;
+                    }
+                    else
+                    {
+                        str_input = Console.ReadLine();
+                        enter_pressed = true;
                     }
 
-                    string pressed_keys = input.GetKeysAsString();
-                    if (pressed_keys.Length > 0)
+                    if (enter_pressed)
                     {
-                        if (cursor_offset < str_input.Length)
+                        if (!headless_mode)
                         {
-                            str_input = str_input.Substring(0, cursor_offset) + pressed_keys + str_input.Substring(cursor_offset);
-                            cursor_offset += pressed_keys.Length - 1;
+                            Console.SetCursorPosition(0, line_number);
+                            LiveKeyboard.ClearCurrentLine();
+                            Console.WriteLine("> " + str_input);
                         }
-                        else
-                        {
-                            str_input += input.GetKeysAsString();
-                            cursor_offset = str_input.Length - 1;
-                        }
-                    }
-
-                    if (str_input != last_input)
-                    {
-                        printed_line = false;
-                        last_input = str_input;
-                        cursor_offset++;
-                    }
-
-                    if (!printed_line)
-                    {
-                        Console.SetCursorPosition(0, line_number);
-                        LiveKeyboard.ClearCurrentLine();
-
-                        string print_string = str_input;
-                        bool default_write = true;
-
-                        if (cursor_offset >= str_input.Length || str_input.Length == 0) print_string = print_string + "█";
-                        else
-                        {
-                            // highlight the text
-                            string highlighted_char = print_string[cursor_offset].ToString();
-                            Console.Write("> " + (print_string.Length > 0 ? print_string.Substring(0, cursor_offset) : ""));
-                            Console.BackgroundColor = ConsoleColor.White;
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            Console.Write(highlighted_char);
-                            Console.ResetColor();
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine(print_string.Substring(cursor_offset + 1));
-
-                            default_write = false;
-                        }
-
-                        if (default_write)
-                        {
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine("> " + print_string);
-                        }
-
-                        printed_line = true;
-                    }
-
-                    if (input.PressedKey(ConsoleKey.Enter))
-                    {
-                        Console.SetCursorPosition(0, line_number);
-                        LiveKeyboard.ClearCurrentLine();
-                        Console.WriteLine("> " + str_input);
 
                         string final_input = str_input;
                         str_input = "";
@@ -328,8 +345,16 @@ namespace KeplerCompiler
                             line++;
                         }
 
-                        Console.WriteLine("");
-                        line_number = Console.GetCursorPosition().Top - 1;
+                        if (!headless_mode)
+                        {
+                            Console.WriteLine("");
+                            line_number = Console.GetCursorPosition().Top - 1;
+                        }
+                        else
+                        {
+                            line_number++;
+                        }
+
                         printed_line = false;
                         cursor_offset = 0;
                     }
