@@ -1,0 +1,43 @@
+start Header
+    link "input"
+    link "random"
+end Header
+
+print ""
+print "Ah, you can't decide on something."
+print "Don't worry, I'm here for you!"
+print "I'll help you decide on your next move."
+print ""
+
+print "What's the first option?"
+opt1 is call input
+
+start forever
+    if opt1 equals ""
+        print "You can't just put nothing!"
+        opt1 is call input
+    else
+        breakout
+    endif
+end forever
+print ""
+
+print "What's the alternative?"
+opt2 is call input
+start forever
+    if opt2 equals ""
+        print "You can't just put nothing!"
+        opt2 is call input
+    else
+        breakout
+    endif
+end forever
+print ""
+
+rand is call random
+
+if rand > 0.5
+    print "I've picked: " + opt1
+else
+    print "I've picked: " + opt2
+endif
