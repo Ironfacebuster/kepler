@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Optimize>true</Optimize>
     <PlatformTarget>x64</PlatformTarget>
 
     <OutputType>Exe</OutputType>
@@ -8,6 +9,7 @@
     <PublishSelfContained>true</PublishSelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 
     <RootNamespace>kepler</RootNamespace>
     <ApplicationIcon>../res/logo 256x256.ico</ApplicationIcon>
