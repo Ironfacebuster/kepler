@@ -34,6 +34,7 @@ jobs:
       run: scripts/generate_resources.bat nightly
 
     - name: build Kepler Nightly 
+      shell: pwsh
       run: make nightly_no_nsis
 
     # - name: Build Kepler executable
