@@ -4,6 +4,7 @@ start Header
     endif
     
     link "input"
+    link "objects"
     link "random"
     link "console"
     
@@ -56,7 +57,7 @@ start Header
     
     drawn_parts is 0
     
-    snake_max_length is 12
+    ! snake_max_length is 12
     snake_length is 3
     snake_dead is False
     
@@ -65,16 +66,67 @@ start Header
     
     last_move is "RightArrow"
     
+    ! segment management
+    seg_id is call object_create
+    
+    create_segment returns Int
+    create_segment uses Int as index
+    
+    set_segment returns Int
+    set_segment uses Int as index
+    set_segment uses Int as x
+    set_segment uses Int as y
+    
+    get_seg_x returns Int
+    get_seg_x uses Int as index
+    
+    get_seg_y returns Int
+    get_seg_y uses Int as index
+    
     call cursor_visible with False as state
 end Header
+
+! start segment management
+start create_segment
+    str_x is index + "_x"
+    str_y is index + "_y"
+    
+    print str_x + ", " + str_y
+    
+    call object_set with seg_id as id, str_x as key, 0 as value
+    call object_set with seg_id as id, str_y as key, 0 as value
+end create_segment
+
+start set_segment
+    str_x is index + "_x"
+    str_y is index + "_y"
+    
+    call object_set with seg_id as id, str_x as key, x as value
+    call object_set with seg_id as id, str_y as key, y as value
+end set_segment
+
+start get_seg_x
+    str_x is index + "_x"
+    
+    pos_x is call object_get with seg_id as id, str_x as key
+    
+    return pos_x
+end get_seg_x
+
+start get_seg_y
+    str_y is index + "_y"
+    
+    pos_y is call object_get with seg_id as id, str_y as key
+    
+    return pos_y
+end get_seg_y
+! end segment management
 
 start get_input
     ! print "Enter a direction to move (u, d, l, r)"
     ! print "Leave empty for '" + last_move + "'"
     valid is False
     str is call getkey
-    
-    print str
     
     if str equals "UpArrow" or str equals "DownArrow" or str equals "LeftArrow" or str equals "RightArrow"
         valid is True
@@ -138,50 +190,25 @@ start calc_line
                 line is line + snake_head_char
                 draw_empty is False
                 drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb1_x and cur_y equals sb1_y and snake_length > 1
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb2_x and cur_y equals sb2_y and snake_length > 2
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb3_x and cur_y equals sb3_y and snake_length > 3
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb4_x and cur_y equals sb4_y and snake_length > 4
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb5_x and cur_y equals sb5_y and snake_length > 5
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb6_x and cur_y equals sb6_y and snake_length > 6
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb7_x and cur_y equals sb7_y and snake_length > 7
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb8_x and cur_y equals sb8_y and snake_length > 8
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb9_x and cur_y equals sb9_y and snake_length > 9
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb10_x and cur_y equals sb10_y and snake_length > 10
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
-            elseif cur_x equals sb11_x and cur_y equals sb11_y and snake_length > 11
-                line is line + snake_body_char
-                draw_empty is False
-                drawn_parts is drawn_parts + 1
+            else
+                count is 1
+                start forever
+                    if count >= snake_length
+                        breakout
+                    endif
+                    
+                    new_x is call get_seg_x with count as index
+                    new_y is call get_seg_y with count as index
+                    
+                    if cur_x equals new_x and cur_y equals new_y
+                        line is line + snake_body_char
+                        draw_empty is False
+                        drawn_parts is drawn_parts + 1
+                        breakout
+                    endif
+                    
+                    count is count + 1
+                end forever
             endif
         endif
         
@@ -207,56 +234,51 @@ start check_collision
         return 1.0
     elseif snake_head_y < 0 or snake_head_y >= board_size_y
         return 1.0
-    elseif snake_head_x equals sb1_x and snake_head_y equals sb1_y and snake_length > 1
-        return 1.0
-    elseif snake_head_x equals sb2_x and snake_head_y equals sb2_y and snake_length > 2
-        return 1.0
-    elseif snake_head_x equals sb3_x and snake_head_y equals sb3_y and snake_length > 3
-        return 1.0
-    elseif snake_head_x equals sb4_x and snake_head_y equals sb4_y and snake_length > 4
-        return 1.0
-    elseif snake_head_x equals sb5_x and snake_head_y equals sb5_y and snake_length > 5
-        return 1.0
-    elseif snake_head_x equals sb6_x and snake_head_y equals sb6_y and snake_length > 6
-        return 1.0
-    elseif snake_head_x equals sb7_x and snake_head_y equals sb7_y and snake_length > 7
-        return 1.0
-    elseif snake_head_x equals sb8_x and snake_head_y equals sb8_y and snake_length > 8
-        return 1.0
-    elseif snake_head_x equals sb9_x and snake_head_y equals sb9_y and snake_length > 9
-        return 1.0
-    elseif snake_head_x equals sb10_x and snake_head_y equals sb10_y and snake_length > 10
-        return 1.0
-    elseif snake_head_x equals sb11_x and snake_head_y equals sb11_y and snake_length > 11
-        return 1.0
     endif
     
-    return 0.0
+    col_type is 0.0
+    
+    count is 1
+    start forever
+        if count >= snake_length
+            breakout
+        endif
+        
+        new_x is call get_seg_x with count as index
+        new_y is call get_seg_y with count as index
+        
+        if snake_head_x equals new_x and snake_head_y equals new_y
+            col_type is 1.0
+            breakout
+        endif
+        
+        count is count + 1
+    end forever
+    
+    return col_type
 end check_collision
 
 start update_segments
-    sb11_x is sb10_x
-    sb11_y is sb10_y
-    sb10_x is sb9_x
-    sb10_y is sb9_y
-    sb9_x is sb8_x
-    sb9_y is sb8_y
-    sb8_x is sb7_x
-    sb8_y is sb7_y
-    sb7_x is sb6_x
-    sb7_y is sb6_y
-    sb6_x is sb5_x
-    sb6_y is sb5_y
-    sb5_x is sb4_x
-    sb5_y is sb4_y
-    sb4_x is sb3_x
-    sb4_y is sb3_y
-    sb3_x is sb2_x
-    sb3_y is sb2_y
-    sb2_x is sb1_x
-    sb2_y is sb1_y
-    sb1_x is snake_head_x
-    sb1_y is snake_head_y
+    count is snake_length
+    
+    start forever
+        if count < 1
+            breakout
+        endif
+        
+        if count equals 1
+            call set_segment with count as index, snake_head_x as x, snake_head_y as y
+        elseif count > 1
+            ! get the next position
+            offset is count - 1
+            new_x is call get_seg_x with offset as index
+            new_y is call get_seg_y with offset as index
+            
+            call set_segment with count as index, new_x as x, new_y as y
+        endif
+        
+        count is count - 1
+    end forever
 end update_segments
 
 start move_apple
@@ -311,28 +333,11 @@ start reset_game
     snake_head_x is 4
     snake_head_y is board_size_y / 2
     
-    sb1_x is snake_head_x - 1
-    sb1_y is snake_head_y
-    sb2_x is snake_head_x - 2
-    sb2_y is snake_head_y
-    sb3_x is snake_head_x - 3
-    sb3_y is snake_head_y
-    sb4_x is snake_head_x
-    sb4_y is snake_head_y
-    sb5_x is snake_head_x
-    sb5_y is snake_head_y
-    sb6_x is snake_head_x
-    sb6_y is snake_head_y
-    sb7_x is snake_head_x
-    sb7_y is snake_head_y
-    sb8_x is snake_head_x
-    sb8_y is snake_head_y
-    sb9_x is snake_head_x
-    sb9_y is snake_head_y
-    sb10_x is snake_head_x
-    sb10_y is snake_head_y
-    sb11_x is snake_head_x
-    sb11_y is snake_head_y
+    call create_segment with 1 as index
+    call create_segment with 2 as index
+    
+    call set_segment with 1 as index, snake_head_x - 1 as x, snake_head_y as y
+    call set_segment with 2 as index, snake_head_x - 2 as x, snake_head_y as y
     
     last_move is "RightArrow"
     
@@ -348,6 +353,7 @@ end reset_game
 quit is False
 
 top is call calc_border
+call reset_game
 ! start every 25
 !     if quit
 !         breakout
@@ -356,7 +362,7 @@ top is call calc_border
 !     call print_board
 ! end every
 
-start every 250
+start every 500
     coll_type is call check_collision
     
     if coll_type equals 1.0
@@ -424,9 +430,17 @@ start every 250
         snake_score is snake_score + n_points
         snake_length is snake_length + 1
         
-        if snake_length > snake_max_length
-            snake_length is snake_max_length
-        endif
+        ! if snake_length > snake_max_length
+        !     snake_length is snake_max_length
+        ! endif
+        
+        index is snake_length - 1
+        
+        call create_segment with index as index
+        
+        ! n_x is call get_seg_x with index - 1 as index
+        ! n_y is call get_seg_y with index - 1 as index
+        ! n is call set_segment with index as index, 0 as x, 0 as y
         
         call move_apple
     endif
