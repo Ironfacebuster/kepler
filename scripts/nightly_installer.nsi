@@ -58,10 +58,10 @@ Section "Install Kepler" SecDummy
   SetOutPath $INSTDIR 
 
   File "..\build\nightly\kepler-nightly.exe"
-  File "..\build\nightly\clrcompression.dll"
-  File "..\build\nightly\clrjit.dll"
-  File "..\build\nightly\coreclr.dll"
-  File "..\build\nightly\mscordaccore.dll"
+  ; File "..\build\nightly\clrcompression.dll"
+  ; File "..\build\nightly\clrjit.dll"
+  ; File "..\build\nightly\coreclr.dll"
+  ; File "..\build\nightly\mscordaccore.dll"
 
   File "..\res\changelog.txt" 
   File "..\build\nightly\readme.txt" 
@@ -90,6 +90,17 @@ Section "Example Files" ExampleFiles
   File "..\res\examples\digiroot.kep" 
   File "..\res\examples\prime.kep" 
   File "..\res\examples\input.kep"
+
+SectionEnd
+
+Section "Register File Association" FileAssociation
+
+  DetailPrint "Registering file association..."
+
+  WriteRegStr HKCR ".kep" "" "Kepler.Script"
+  WriteRegStr HKCR "Kepler.Script" "" "Kepler Script"
+  WriteRegStr HKCR "Kepler.Script\Shell\open\command" "" 'cmd /c ""$INSTDIR\kepler-nightly.exe" "%1" && PAUSE"'
+  WriteRegStr HKCR "Kepler.Script\DefaultIcon" "" "$INSTDIR\kepler-nightly.exe,0"
 
 SectionEnd
 
@@ -127,27 +138,23 @@ Section "Install .NET 5.0" InstallDotNet
 
 SectionEnd
 
-; Section "Register .kep extension" RegisterFileExtension
-;     ${registerExtension} "$INSTDIR\kepler.exe" ".kep" "Kepler File"
-; SectionEnd
-
 ;--------------------------------
 ;Descriptions
 
   ;Language strings
   LangString DESC_SecDummy ${LANG_ENGLISH} "Install the Kepler Interpreter (you should probably do this)"
   LangString DESC_ExampleFiles ${LANG_ENGLISH} "Install example Kepler files."
-  LangString DESC_RegisterExtension ${LANG_ENGLISH} "Register the .kep file extension"
   LangString DESC_InstallDotNet ${LANG_ENGLISH} "Install .NET 5.0 Desktop Runtime. (recommended)"
   LangString DESC_AppendPath ${LANG_ENGLISH} "Add Kepler to your current user's Path. (recommended)"
+  LangString DESC_FileAssociation ${LANG_ENGLISH} "Register .kep as a Kepler Script file type."
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecDummy} $(DESC_SecDummy)
-    !insertmacro MUI_DESCRIPTION_TEXT ${ExampleFiles} $(DESC_ExampleFiles)
-    !insertmacro MUI_DESCRIPTION_TEXT ${InstallDotNet} $(DESC_InstallDotNet)
-    ; !insertmacro MUI_DESCRIPTION_TEXT ${RegisterFileExtension} $(DESC_RegisterExtension)
-    !insertmacro MUI_DESCRIPTION_TEXT ${AppendPath} $(DESC_AppendPath)
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecDummy} $(DESC_SecDummy)
+  !insertmacro MUI_DESCRIPTION_TEXT ${ExampleFiles} $(DESC_ExampleFiles)
+  !insertmacro MUI_DESCRIPTION_TEXT ${InstallDotNet} $(DESC_InstallDotNet)
+  !insertmacro MUI_DESCRIPTION_TEXT ${AppendPath} $(DESC_AppendPath)
+  !insertmacro MUI_DESCRIPTION_TEXT ${FileAssociation} $(DESC_FileAssociation)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;--------------------------------
@@ -156,10 +163,10 @@ SectionEnd
 Section "Uninstall"
 
   Delete "$INSTDIR\kepler-nightly.exe"
-  Delete "$INSTDIR\clrcompression.dll"
-  Delete "$INSTDIR\clrjit.dll"
-  Delete "$INSTDIR\coreclr.dll"
-  Delete "$INSTDIR\mscordaccore.dll"
+  ; Delete "$INSTDIR\clrcompression.dll"
+  ; Delete "$INSTDIR\clrjit.dll"
+  ; Delete "$INSTDIR\coreclr.dll"
+  ; Delete "$INSTDIR\mscordaccore.dll"
 
   Delete "$INSTDIR\changelog.txt" 
   Delete "$INSTDIR\readme.txt" 
@@ -180,9 +187,6 @@ Section "Uninstall"
   RMDir $INSTDIR 
 
   DeleteRegKey /ifempty HKCU "Software\kepler-nightly"
-
-  ;unregister extension
-  ; ${unregisterExtension} ".kep" "Kepler File"
 
   DetailPrint "Attempting to remove from PATH..."
   EnVar::DeleteValue "PATH" $INSTDIR
