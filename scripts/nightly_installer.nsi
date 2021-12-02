@@ -12,10 +12,10 @@
 ;General
 
   ;Name and file
-  Name "Kepler Alpha 1.5 Nightly"
+  Name "Kepler Alpha 1.5.1 Nightly"
   ; !define MUI_ICON "D:\C# Projects\KeplerCompiler\bin\Resources\logo 256x256.ico" 
   !define MUI_ICON "..\res\logo 256x256.ico"
-  OutFile "..\build\kepler_v1a1.5_nightly.exe" 
+  OutFile "..\build\kepler_v1a1.5.1_nightly.exe" 
   Unicode True
   
   InstallDir "$PROGRAMFILES\kepler-nightly" 

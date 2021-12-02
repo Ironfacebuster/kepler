@@ -1,3 +1,7 @@
+a1.5.1
++ Added file association in the installer
+! Fixed a typo in the objects library
+
 a1.5
 # Large performance gains over a1.4, regarding conditionals and functions.
 + Implemented internal modules system.

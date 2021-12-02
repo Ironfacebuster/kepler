@@ -15,7 +15,7 @@
   Name "Kepler Alpha 1.5"
   ; !define MUI_ICON "D:\C# Projects\KeplerCompiler\bin\Resources\logo 256x256.ico" 
   !define MUI_ICON "..\res\logo 256x256.ico"
-  OutFile "..\build\kepler_v1a1.5.exe" 
+  OutFile "..\build\kepler_v1a1.5.1.exe" 
   Unicode True
   
   InstallDir "$PROGRAMFILES\kepler" 
@@ -96,6 +96,17 @@ Section "Example Files" ExampleFiles
 
 SectionEnd
 
+Section "Register File Association" FileAssociation
+
+  DetailPrint "Registering file association..."
+
+  WriteRegStr HKCR ".kep" "" "Kepler.Script"
+  WriteRegStr HKCR "Kepler.Script" "" "Kepler Script"
+  WriteRegStr HKCR "Kepler.Script\Shell\open\command" "" 'cmd /c ""$INSTDIR\kepler-nightly.exe" "%1" && PAUSE"'
+  WriteRegStr HKCR "Kepler.Script\DefaultIcon" "" "$INSTDIR\kepler-nightly.exe,0"
+
+SectionEnd
+
 Section "Add to Path" AppendPath
 
   DetailPrint "Attempting to add to PATH..."
@@ -143,6 +154,8 @@ SectionEnd
   LangString DESC_RegisterExtension ${LANG_ENGLISH} "Register the .kep file extension"
   LangString DESC_InstallDotNet ${LANG_ENGLISH} "Install .NET 5.0 Desktop Runtime. (recommended)"
   LangString DESC_AppendPath ${LANG_ENGLISH} "Add Kepler to your current user's Path. (recommended)"
+  LangString DESC_FileAssociation ${LANG_ENGLISH} "Register .kep as a Kepler Script file type."
+
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
@@ -151,6 +164,7 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${InstallDotNet} $(DESC_InstallDotNet)
     ; !insertmacro MUI_DESCRIPTION_TEXT ${RegisterFileExtension} $(DESC_RegisterExtension)
     !insertmacro MUI_DESCRIPTION_TEXT ${AppendPath} $(DESC_AppendPath)
+  !insertmacro MUI_DESCRIPTION_TEXT ${FileAssociation} $(DESC_FileAssociation)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;--------------------------------
