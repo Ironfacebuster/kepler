@@ -133,7 +133,7 @@ namespace Kepler.Modules
             public KeplerVariable GetProperty(string key)
             {
                 if (!properties.ContainsKey(key))
-                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object does not contain ${key}." });
+                    throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { $"Object does not contain key \"{key}\"." });
 
                 return properties[key];
             }
