@@ -32,29 +32,6 @@ start Header
     snake_head_x is 4
     snake_head_y is board_size_y / 2
     
-    sb1_x is snake_head_x - 1
-    sb1_y is snake_head_y
-    sb2_x is snake_head_x - 2
-    sb2_y is sb1_y
-    sb3_x is snake_head_x - 3
-    sb3_y is sb2_y
-    sb4_x is snake_head_x
-    sb4_y is sb3_y
-    sb5_x is snake_head_x
-    sb5_y is sb4_y
-    sb6_x is snake_head_x
-    sb6_y is sb5_y
-    sb7_x is snake_head_x
-    sb7_y is sb6_y
-    sb8_x is snake_head_x
-    sb8_y is sb6_y
-    sb9_x is snake_head_x
-    sb9_y is sb6_y
-    sb10_x is snake_head_x
-    sb10_y is sb6_y
-    sb11_x is snake_head_x
-    sb11_y is sb6_y
-    
     drawn_parts is 0
     
     ! snake_max_length is 12
