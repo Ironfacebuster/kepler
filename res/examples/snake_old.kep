@@ -1,0 +1,455 @@
+start Header
+    if $_VERSION < "v1a1.5"
+        throw "Alpha 1.5 minimum required!"
+    endif
+    
+    link "input"
+    link "objects"
+    link "random"
+    link "console"
+    
+    get_input returns Boolean
+    print_board returns Int
+    calc_line returns String
+    calc_border returns String
+    check_collision returns Float
+    apple_collision returns Boolean
+    update_segments returns Int
+    reset_game returns Int
+    move_apple returns Int
+    
+    board_size_x is 12
+    board_size_y is 6
+    
+    do_random_board is False
+    min_board_x is 12
+    max_board_x is 24
+    min_board_y is 6
+    max_board_y is 12
+    
+    snake_score is 0
+    
+    snake_head_x is 4
+    snake_head_y is board_size_y / 2
+    
+    sb1_x is snake_head_x - 1
+    sb1_y is snake_head_y
+    sb2_x is snake_head_x - 2
+    sb2_y is sb1_y
+    sb3_x is snake_head_x - 3
+    sb3_y is sb2_y
+    sb4_x is snake_head_x
+    sb4_y is sb3_y
+    sb5_x is snake_head_x
+    sb5_y is sb4_y
+    sb6_x is snake_head_x
+    sb6_y is sb5_y
+    sb7_x is snake_head_x
+    sb7_y is sb6_y
+    sb8_x is snake_head_x
+    sb8_y is sb6_y
+    sb9_x is snake_head_x
+    sb9_y is sb6_y
+    sb10_x is snake_head_x
+    sb10_y is sb6_y
+    sb11_x is snake_head_x
+    sb11_y is sb6_y
+    
+    drawn_parts is 0
+    
+    ! snake_max_length is 12
+    snake_length is 3
+    snake_dead is False
+    
+    apple_x is 1.0 * board_size_x / 2.0
+    apple_y is 1.0 * board_size_y / 2.0
+    
+    last_move is "RightArrow"
+    
+    ! segment management
+    seg_id is call object_create
+    
+    create_segment returns Int
+    create_segment uses Int as index
+    
+    set_segment returns Int
+    set_segment uses Int as index
+    set_segment uses Int as x
+    set_segment uses Int as y
+    
+    get_seg_x returns Int
+    get_seg_x uses Int as index
+    
+    get_seg_y returns Int
+    get_seg_y uses Int as index
+    
+    call cursor_visible with False as state
+end Header
+
+! start segment management
+start create_segment
+    str_x is index + "_x"
+    str_y is index + "_y"
+    
+    print str_x + ", " + str_y
+    
+    call object_set with seg_id as id, str_x as key, 0 as value
+    call object_set with seg_id as id, str_y as key, 0 as value
+end create_segment
+
+start set_segment
+    str_x is index + "_x"
+    str_y is index + "_y"
+    
+    call object_set with seg_id as id, str_x as key, x as value
+    call object_set with seg_id as id, str_y as key, y as value
+end set_segment
+
+start get_seg_x
+    str_x is index + "_x"
+    
+    pos_x is call object_get with seg_id as id, str_x as key
+    
+    return pos_x
+end get_seg_x
+
+start get_seg_y
+    str_y is index + "_y"
+    
+    pos_y is call object_get with seg_id as id, str_y as key
+    
+    return pos_y
+end get_seg_y
+! end segment management
+
+start get_input
+    ! print "Enter a direction to move (u, d, l, r)"
+    ! print "Leave empty for '" + last_move + "'"
+    valid is False
+    str is call getkey
+    
+    if str equals "UpArrow" or str equals "DownArrow" or str equals "LeftArrow" or str equals "RightArrow"
+        valid is True
+    elseif str equals ""
+        valid is True
+        str is last_move
+    endif
+    
+    if valid
+        last_move is str
+    endif
+    
+    return valid
+end get_input
+
+start print_board
+    ! clear the screen
+    clr is call console_clear
+    
+    drawn_parts is 0
+    
+    print ""
+    ! print "X" + snake_head_x + " Y" + snake_head_y + " L" + snake_length
+    print "SCORE " + snake_score
+    print "LENGTH " + snake_length
+    
+    cur_y is 0
+    
+    print top
+    
+    start forever
+        line is call calc_line
+        print line
+        ! time is call gettime
+        ! print line + " " + time
+        
+        cur_y is cur_y + 1
+        
+        if cur_y >= board_size_y
+            breakout
+        endif
+    end forever
+    
+    print top
+end print_board
+
+start calc_line
+    snake_head_char is "#"
+    snake_body_char is "%"
+    line is "|"
+    cur_x is 0
+    
+    start forever
+        draw_empty is True
+        
+        if cur_x equals apple_x and cur_y equals apple_y
+            line is line + "@"
+            draw_empty is False
+        elseif drawn_parts < snake_length
+            if cur_x equals snake_head_x and cur_y equals snake_head_y
+                line is line + snake_head_char
+                draw_empty is False
+                drawn_parts is drawn_parts + 1
+            else
+                count is 1
+                start forever
+                    if count >= snake_length
+                        breakout
+                    endif
+                    
+                    new_x is call get_seg_x with count as index
+                    new_y is call get_seg_y with count as index
+                    
+                    if cur_x equals new_x and cur_y equals new_y
+                        line is line + snake_body_char
+                        draw_empty is False
+                        drawn_parts is drawn_parts + 1
+                        breakout
+                    endif
+                    
+                    count is count + 1
+                end forever
+            endif
+        endif
+        
+        if draw_empty equals True
+            line is line + " "
+        endif
+        
+        cur_x is cur_x + 1
+        
+        if cur_x >= board_size_x
+            breakout
+        endif
+    end forever
+    
+    return line + "|"
+end calc_line
+
+start check_collision
+    
+    if snake_head_x equals apple_x and snake_head_y equals apple_y
+        return 2.0
+    elseif snake_head_x < 0 or snake_head_x >= board_size_x
+        return 1.0
+    elseif snake_head_y < 0 or snake_head_y >= board_size_y
+        return 1.0
+    endif
+    
+    col_type is 0.0
+    
+    count is 1
+    start forever
+        if count >= snake_length
+            breakout
+        endif
+        
+        new_x is call get_seg_x with count as index
+        new_y is call get_seg_y with count as index
+        
+        if snake_head_x equals new_x and snake_head_y equals new_y
+            col_type is 1.0
+            breakout
+        endif
+        
+        count is count + 1
+    end forever
+    
+    return col_type
+end check_collision
+
+start update_segments
+    count is snake_length
+    
+    start forever
+        if count < 1
+            breakout
+        endif
+        
+        if count equals 1
+            call set_segment with count as index, snake_head_x as x, snake_head_y as y
+        elseif count > 1
+            ! get the next position
+            offset is count - 1
+            new_x is call get_seg_x with offset as index
+            new_y is call get_seg_y with offset as index
+            
+            call set_segment with count as index, new_x as x, new_y as y
+        endif
+        
+        count is count - 1
+    end forever
+end update_segments
+
+start move_apple
+    min_x is board_size_x - 1
+    x_rand is call random
+    apple_x is x_rand * min_x
+    
+    min_y is board_size_y - 1
+    y_rand is call random
+    apple_y is y_rand * board_size_y
+end move_apple
+
+start calc_border
+    line is ""
+    cur_x is 0
+    n_size is board_size_x + 1
+    
+    start forever
+        line is line + "-"
+        
+        cur_x is cur_x + 1
+        
+        if cur_x > n_size
+            breakout
+        endif
+    end forever
+    
+    return line
+end calc_border
+
+start reset_game
+    
+    if do_random_board
+        ! randomize board size
+        scalex is max_board_x - min_board_x
+        scaley is max_board_y - min_board_y
+        
+        new_x is call random
+        new_x is new_x * scalex
+        board_size_x is 1 * board_size_x + min_board_x
+        
+        new_y is call random
+        new_y is new_y * scaley
+        board_size_y is 1 * board_size_y + min_board_y
+        
+        top is call calc_border
+    endif
+    
+    apple_x is 1.0 * board_size_x / 2.0
+    apple_y is 1.0 * board_size_y / 2.0
+    
+    snake_head_x is 4
+    snake_head_y is board_size_y / 2
+    
+    call create_segment with 1 as index
+    call create_segment with 2 as index
+    
+    call set_segment with 1 as index, snake_head_x - 1 as x, snake_head_y as y
+    call set_segment with 2 as index, snake_head_x - 2 as x, snake_head_y as y
+    
+    last_move is "RightArrow"
+    
+    snake_score is 0
+    snake_length is 3
+    
+    ! reset pressed key
+    call reset_key
+    
+    call print_board
+end reset_game
+
+quit is False
+
+top is call calc_border
+call reset_game
+! start every 25
+!     if quit
+!         breakout
+!     endif
+
+!     call print_board
+! end every
+
+start every 500
+    coll_type is call check_collision
+    
+    if coll_type equals 1.0
+        clr is call console_clear
+        
+        print ""
+        print ""
+        print ""
+        print ""
+        print " ###  ##   # #  ####   ##  #  # #### ###"
+        print "#    #  # # # # #     #  # #  # #    #  #"
+        print "# ## #### # # # ###   #  # #  # ###  ###"
+        print "#  # #  # # # # #     #  # #  # #    #  #"
+        print " ### #  # # # # ####   ##   ##  #### #  #"
+        print ""
+        print "Your final score: " + snake_score
+        print "Your final length: " + snake_length
+        print ""
+        print ""
+        print "Play again? [Y/n]"
+        
+        pg is call input
+        
+        if pg equals "n"
+            quit is True
+            print ""
+            print "Sorry to see you go!"
+            breakout
+        endif
+        
+        call reset_game
+    endif
+    
+    print ""
+    
+    ! reset pressed key
+    call reset_key
+    str is call get_key
+    
+    valid_move is True
+    if str equals ""
+        valid_move is False
+    endif
+    
+    if valid_move
+        last_move is str
+    endif
+    
+    ! do movement
+    call update_segments
+    
+    if last_move equals "UpArrow"
+        snake_head_y is snake_head_y - 1
+    elseif last_move equals "DownArrow"
+        snake_head_y is snake_head_y + 1
+    elseif last_move equals "LeftArrow"
+        snake_head_x is snake_head_x - 1
+    elseif last_move equals "RightArrow"
+        snake_head_x is snake_head_x + 1
+    endif
+    
+    ! collision type 2 is apple
+    if coll_type equals 2
+        n_points is 50 * snake_length / 2
+        snake_score is snake_score + n_points
+        snake_length is snake_length + 1
+        
+        ! if snake_length > snake_max_length
+        !     snake_length is snake_max_length
+        ! endif
+        
+        index is snake_length - 1
+        
+        call create_segment with index as index
+        
+        ! n_x is call get_seg_x with index - 1 as index
+        ! n_y is call get_seg_y with index - 1 as index
+        ! n is call set_segment with index as index, 0 as x, 0 as y
+        
+        call move_apple
+    endif
+    
+    snake_score is snake_score - 1
+    
+    if snake_score < 0
+        snake_score is 0
+    endif
+    
+    call print_board
+end every
