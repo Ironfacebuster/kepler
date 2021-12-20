@@ -83,12 +83,28 @@ namespace Kepler.Modules
             };
 
             KeplerFunction abs = new KeplerFunction("abs", true);
-            abs.SetType(KeplerType.Int);
+            abs.SetType(KeplerType.Any);
             abs.AssignNonPositional("value", KeplerType.Any);
             abs.internal_call = (interpreter, args) =>
             {
+                KeplerVariable val = args.GetArgument("value");
                 KeplerVariable res = new KeplerVariable();
-                // res.SetIntValue((int)Math.Abs((double)args.GetArgument("value").GetValueAsFloat()));
+                double absolute = (double)Math.Abs(val.GetValueAsFloat());
+
+                switch (val.type)
+                {
+                    case KeplerType.Float:
+                        res.SetFloatValue((decimal)absolute);
+                        break;
+                    case KeplerType.Int:
+                        res.SetIntValue((int)absolute);
+                        break;
+                    case KeplerType.uInt:
+                        res.SetUnsignedIntValue((uint)absolute);
+                        break;
+                    default:
+                        break;
+                }
                 res.SetModifier(KeplerModifier.Constant);
 
                 return res;
