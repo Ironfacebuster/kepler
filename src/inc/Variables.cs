@@ -36,8 +36,8 @@ namespace KeplerVariables
 
         public KeplerVariable DeclareVariable(string name, bool global_override)
         {
-            if (global.local.ContainsKey(name)) return global.local[name];
             if (local.ContainsKey(name)) return local[name];
+            else if (global.local.ContainsKey(name)) return global.local[name];
 
             // variables are created the first time they're seen
             KeplerVariable n_var = new KeplerVariable();
@@ -48,15 +48,6 @@ namespace KeplerVariables
 
         public KeplerVariable GetVariable(string name, bool no_error = false)
         {
-            if (global.local.ContainsKey(name))
-            {
-                // Console.WriteLine("GLOBAL VAR " + name);
-                KeplerVariable found = global.local[name];
-
-                if (found.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.UNASSIGNED_TYPE, new string[] { name });
-
-                return global.local[name];
-            }
             if (local.ContainsKey(name))
             {
                 // Console.WriteLine("LOCAL VAR " + name);
@@ -65,6 +56,15 @@ namespace KeplerVariables
                 if (found.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.UNASSIGNED_TYPE, new string[] { name });
 
                 return local[name];
+            }
+            else if (global.local.ContainsKey(name))
+            {
+                // Console.WriteLine("GLOBAL VAR " + name);
+                KeplerVariable found = global.local[name];
+
+                if (found.type == KeplerType.Unassigned) throw new KeplerError(KeplerErrorCode.UNASSIGNED_TYPE, new string[] { name });
+
+                return global.local[name];
             }
 
             if (!no_error)
@@ -371,8 +371,8 @@ namespace KeplerVariables
 
         public KeplerFunction DeclareFunction(string name, bool global_override, bool is_internal = false)
         {
-            if (global.ContainsKey(name)) return global[name];
             if (local.ContainsKey(name)) return local[name];
+            else if (global.ContainsKey(name)) return global[name];
 
             // functions are created the first time they're seen
             KeplerFunction n_funct = new KeplerFunction(name);
@@ -393,13 +393,12 @@ namespace KeplerVariables
         public KeplerFunction GetFunction(string name, bool no_error = false)
         {
             KeplerFunction res = null;
-            if (global.ContainsKey(name)) res = global[name];
             if (local.ContainsKey(name)) res = local[name];
+            else if (global.ContainsKey(name)) res = global[name];
 
             if (no_error && res != null)
                 res.Reset();
-
-            if (!no_error && res == null)
+            else if (!no_error && res == null)
                 throw new KeplerError(KeplerErrorCode.UNDECLARED, new string[] { name });
 
             return res;
@@ -408,7 +407,8 @@ namespace KeplerVariables
         public KeplerFunctionManager Copy()
         {
             KeplerFunctionManager copy = new KeplerFunctionManager();
-            copy.global = new Dictionary<string, KeplerFunction>(this.global);
+            // copy.global = new Dictionary<string, KeplerFunction>(this.global);
+            copy.global = this.global;
             copy.local = new Dictionary<string, KeplerFunction>(this.local);
             return copy;
         }
@@ -436,7 +436,7 @@ namespace KeplerVariables
         // public IDictionary<string, KeplerType> non_positional_arguments = new Dictionary<string, KeplerType>(); // name = type, assigned by name ref
         // public IDictionary<string, KeplerVariable> arguments = new Dictionary<string, KeplerVariable>();
         public KeplerArguments arguments;
-        public KeplerVariable target = new KeplerVariable();
+        public KeplerVariable target;
         bool has_target = false;
         public KeplerType type;
         public string name;
@@ -499,8 +499,8 @@ namespace KeplerVariables
             // foreach(LineIterator line in lines) line.m_num = 0;
 
             this.arguments.Reset();
-            target = new KeplerVariable(); // reset target to empty variable
-            has_target = true;
+            target = null; // reset target to empty variable
+            has_target = false;
         }
 
         public void SetTarget(KeplerVariable target)
@@ -648,7 +648,6 @@ namespace KeplerVariables
     }
     public class KeplerInterrupt
     {
-        Stopwatch stopWatch = new Stopwatch();
 
         public int id = -1; // unassigned ID
         int interval = -1; // unassigned interval
@@ -667,9 +666,9 @@ namespace KeplerVariables
             this.function = function;
         }
 
-        public void Reset()
+        public void Reset(long last_check = 0)
         {
-            this.last_check = this.stopWatch.ElapsedMilliseconds;
+            this.last_check = (last_check == 0 ? this.last_check + this.interval : last_check);
             this.desired_time = this.last_check + this.interval;
         }
 
@@ -678,7 +677,6 @@ namespace KeplerVariables
             interval = Math.Max(1, interval);
             if (!this.validated)
             {
-                this.stopWatch.Start();
                 this.validated = true;
             }
             this.interval = interval;
@@ -692,33 +690,29 @@ namespace KeplerVariables
             this.validated = true;
         }
 
-        public bool isValidInterrupt()
+        public bool isValidInterrupt(long elapsed)
         {
-            // Console.WriteLine(string.Format("CHECKING IF {0} IS VALID", this.id));
             if (this.disabled) return false;
             if (!this.validated) return false;
             if (this.interval == -2) return true;
 
-            return this.stopWatch.ElapsedMilliseconds >= this.desired_time;
+            return elapsed >= this.desired_time;
         }
 
-        public int Overage()
+        public int Overage(long elapsed)
         {
-            return (int)(this.stopWatch.ElapsedMilliseconds - this.last_check);
+            return (int)(elapsed - this.last_check);
         }
 
 
         public void Disable()
         {
             this.disabled = true;
-            this.stopWatch.Stop();
         }
 
         public void Enable()
         {
             this.disabled = false;
-
-            this.stopWatch.Start();
         }
 
         public bool IsDisabled()
@@ -737,23 +731,32 @@ namespace KeplerVariables
         public List<KeplerInterrupt> interrupts = new List<KeplerInterrupt>();
         public KeplerInterruptManager global;
         public KeplerInterruptManager parent;
+
+        Stopwatch stopWatch = new Stopwatch();
         // public Interpreter global;
 
         public void Add(KeplerInterrupt interrupt)
         {
+            if (!stopWatch.IsRunning) stopWatch.Start();
+
+            interrupt.Reset(this.stopWatch.ElapsedMilliseconds);
             this.interrupts.Insert(0, interrupt);
         }
 
         public bool HasAnyInterrupts()
         {
+            if (this.interrupts.Count == 0) return false;
+
             this.CleanInterrupts();
             return this.interrupts.Count > 0;
         }
         public bool HasInterrupts()
         {
+            if (this.interrupts.Count == 0) return false;
+
             for (int i = 0; i < this.interrupts.Count; ++i)
             {
-                if (this.interrupts[i].isValidInterrupt()) return true;
+                if (this.interrupts[i].isValidInterrupt(this.stopWatch.ElapsedMilliseconds)) return true;
             }
 
             return false;
@@ -761,9 +764,11 @@ namespace KeplerVariables
 
         public bool HasInterrupt(int id)
         {
+            if (this.interrupts.Count == 0) return false;
+
             for (int i = 0; i < this.interrupts.Count; ++i)
             {
-                if (this.interrupts[i].id == id && this.interrupts[i].isValidInterrupt()) return true;
+                if (this.interrupts[i].id == id && this.interrupts[i].isValidInterrupt(this.stopWatch.ElapsedMilliseconds)) return true;
             }
 
             return false;
@@ -800,7 +805,7 @@ namespace KeplerVariables
             int i = 0;
             while (i < this.interrupts.Count)
             {
-                if (this.interrupts[i].isValidInterrupt())
+                if (this.interrupts[i].isValidInterrupt(this.stopWatch.ElapsedMilliseconds))
                 {
                     if (this.interrupts[i].isInfinite())
                     {
@@ -827,11 +832,12 @@ namespace KeplerVariables
             {
                 if (this.interrupts[i].IsDisabled())
                 {
-                    // Console.WriteLine("REMOVING " + this.interrupts[i].id);
                     this.interrupts.RemoveAt(i);
                 }
                 else i++;
             }
+
+            if (this.interrupts.Count == 0) stopWatch.Reset();
         }
 
         public int Count
