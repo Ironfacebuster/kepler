@@ -32,6 +32,7 @@ namespace Kepler.Interpreting
         public Token c_token = null;
         bool inside_function = false;
         bool inside_conditional = false, inside_conditional_else = false, inside_conditional_elseif = false;
+        bool skip_to_end_of_conditional = false;
         bool inside_interrupt = false;
         bool inside_loop = false;
         // bool has_return_value = false;
@@ -88,12 +89,11 @@ namespace Kepler.Interpreting
                 c_interrupt.parent = this;
 
             this.statemachine = new StateMachine(this);
-            // this.statemachine.interpreter = this;
+            this.statemachine.verbose_debug = this.verbose_debug;
         }
 
         public TokenState Interpret(LineIterator line)
         {
-            statemachine.verbose_debug = verbose_debug;
             // statemachine.debug = debug;
 
             try
@@ -133,21 +133,17 @@ namespace Kepler.Interpreting
                 this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
                 throw new KeplerException(this.c_line, e.GetErrorString(), this.tracer, start_offset);
             }
-            catch (KeplerException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                if (verbose_debug) this.DUMP();
-                else Console.WriteLine("");
+            // catch (Exception e)
+            // {
+            //     if (verbose_debug) this.DUMP();
+            //     else Console.WriteLine("");
 
-                Console.WriteLine(e);
+            //     Console.WriteLine(e);
 
-                // this.tracer.PopStack();
-                this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
-                throw new KeplerException(this.c_line, "Exception: " + e.Message, this.tracer);
-            }
+            //     // this.tracer.PopStack();
+            //     this.tracer.PushStack(String.Format("at ({0}:{1}:{2})", this.filename, line.line, line.CurrentToken().start + 1));
+            //     throw new KeplerException(this.c_line, "Exception: " + e.Message, this.tracer);
+            // }
         }
 
         public void DUMP()
@@ -235,8 +231,7 @@ namespace Kepler.Interpreting
 
                 return c_state;
             }
-
-            if (inside_function)
+            else if (inside_function)
             {
 
                 c_line.m_num = 0;
@@ -255,39 +250,40 @@ namespace Kepler.Interpreting
 
                 return c_state;
             }
-
-            if (skip_conditional)
+            else if (skip_conditional)
             {
                 // check for "endif"
                 if (c_line.CurrentToken().type == TokenType.EndConditional && c_line.indentation == desired_intendation) skip_conditional = false;
 
                 return c_state;
             }
-
-            if (inside_conditional || inside_conditional_else)
+            else if (inside_conditional || inside_conditional_else)
             {
-                c_line.m_num = 0;
-
-                if (line.CurrentToken().type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
-                if (line.CurrentToken().type == TokenType.ConditionalElse && c_line.indentation == desired_intendation)
+                if (!skip_to_end_of_conditional)
                 {
-                    if (line.tokens.Count > 1 && line.tokens[1].type != TokenType.EOL) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { line.tokens[1].type.ToString() }).GetErrorString(), this.tracer, 1);
-                    inside_conditional_else = true;
-                }
-                if (line.CurrentToken().type == TokenType.ConditionalElseIf && c_line.indentation == desired_intendation)
-                {
-                    if (line.tokens.Count < 2) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), this.tracer, 2);
-                    if (line.tokens[1].type != TokenType.GenericOperation) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { line.tokens[1].type.ToString() }).GetErrorString(), this.tracer, 1);
-                    c_conditional.elseifs.Add(new KeplerFunction(c_line.line.ToString()));
-                    inside_conditional_elseif = true;
-                }
+                    c_line.m_num = 0;
 
-                if (inside_conditional_else)
-                    c_conditional.else_function.lines.Add(c_line);
-                else if (inside_conditional_elseif)
-                    c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.Add(c_line);
-                else
-                    c_conditional.main_function.lines.Add(c_line);
+                    if (line.CurrentToken().type == TokenType.EOP) throw new KeplerError(KeplerErrorCode.UNEXP_EOP);
+                    if (line.CurrentToken().type == TokenType.ConditionalElse && c_line.indentation == desired_intendation)
+                    {
+                        if (line.tokens.Count > 1 && line.tokens[1].type != TokenType.EOL) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { line.tokens[1].type.ToString() }).GetErrorString(), this.tracer, 1);
+                        inside_conditional_else = true;
+                    }
+                    if (line.CurrentToken().type == TokenType.ConditionalElseIf && c_line.indentation == desired_intendation)
+                    {
+                        if (line.tokens.Count < 2) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), this.tracer, 2);
+                        if (line.tokens[1].type != TokenType.GenericOperation) throw new KeplerException(c_line, new KeplerError(KeplerErrorCode.UNEXP_TOKEN, new string[] { line.tokens[1].type.ToString() }).GetErrorString(), this.tracer, 1);
+                        c_conditional.elseifs.Add(new KeplerFunction(c_line.line.ToString()));
+                        inside_conditional_elseif = true;
+                    }
+
+                    if (inside_conditional_else)
+                        c_conditional.else_function.lines.Add(c_line);
+                    else if (inside_conditional_elseif)
+                        c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.Add(c_line);
+                    else
+                        c_conditional.main_function.lines.Add(c_line);
+                }
 
                 if (c_line.CurrentToken().type == TokenType.EndConditional && line.indentation == desired_intendation)
                 {
@@ -303,7 +299,6 @@ namespace Kepler.Interpreting
                     {
                         this.statemachine.interpreter_cache[line_id] = new Interpreter(this.global, this);
                         conditional_int = this.statemachine.interpreter_cache[line_id];
-
                     }
 
                     if (this.is_function)
@@ -324,19 +319,22 @@ namespace Kepler.Interpreting
                     conditional_int.statemachine.variables = statemachine.variables.Copy();
                     conditional_int.statemachine.functions = statemachine.functions.Copy();
 
-                    if (inside_conditional_else)
-                        // if we're still in an "else" statement, remove the "endif" in the else statement
-                        c_conditional.else_function.lines.RemoveAt(c_conditional.else_function.lines.Count - 1);
-                    else if (inside_conditional_elseif)
-                        // if we're in an elseif remove the "endif" in the last elseif
-                        c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.RemoveAt(c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.Count - 1);
-                    else
-                        // otherwise remove the "endif" in the main conditional
-                        c_conditional.main_function.lines.RemoveAt(c_conditional.main_function.lines.Count - 1);
+                    if (!skip_to_end_of_conditional)
+                    {
+                        if (inside_conditional_else)
+                            // if we're still in an "else" statement, remove the "endif" in the else statement
+                            c_conditional.else_function.lines.RemoveAt(c_conditional.else_function.lines.Count - 1);
+                        else if (inside_conditional_elseif)
+                            // if we're in an elseif remove the "endif" in the last elseif
+                            c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.RemoveAt(c_conditional.elseifs[c_conditional.elseifs.Count - 1].lines.Count - 1);
+                        else
+                            // otherwise remove the "endif" in the main conditional
+                            c_conditional.main_function.lines.RemoveAt(c_conditional.main_function.lines.Count - 1);
+                    }
 
                     bool do_main = this.statemachine.DoGenericOperation(c_conditional.main_function.lines[0].tokens[1]).BoolValue;
                     bool check_elseifs = c_conditional.elseifs.Count > 0;
-                    bool do_else = (!do_main && c_conditional.else_function.lines.Count > 1);
+                    bool do_else = (!do_main && c_conditional.else_function.lines.Count >= 1);
 
                     if (do_main)
                     {
@@ -355,7 +353,6 @@ namespace Kepler.Interpreting
                                 bool do_elseif = this.statemachine.DoGenericOperation(c_conditional.elseifs[i].lines[0].tokens[1]).BoolValue;
                                 if (do_elseif)
                                 {
-                                    c_conditional.elseifs[i].Reset();
                                     for (int j = 1; j < c_conditional.elseifs[i].lines.Count; j++)
                                     {
                                         conditional_int.Interpret(c_conditional.elseifs[i].lines[j]);
@@ -369,7 +366,7 @@ namespace Kepler.Interpreting
                         if (do_else)
                         {
                             c_conditional.else_function.Reset();
-                            for (int i = 1; i < c_conditional.else_function.lines.Count; i++)
+                            for (int i = 1; i < c_conditional.else_function.lines.Count; ++i)
                                 conditional_int.Interpret(c_conditional.else_function.lines[i]);
                         }
                     }
@@ -377,6 +374,7 @@ namespace Kepler.Interpreting
                     inside_conditional = false;
                     inside_conditional_else = false;
                     inside_conditional_elseif = false;
+                    skip_to_end_of_conditional = false;
                 }
 
                 return c_state;
@@ -423,8 +421,7 @@ namespace Kepler.Interpreting
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_function.name));
                 }
-
-                if (c_state.booleans["inside_interval"] && c_token.token_string == "start")
+                else if (c_state.booleans["inside_interval"] && c_token.token_string == "start")
                 {
                     int int_id = this.interrupts.Count;
                     KeplerInterrupt interrupt = new KeplerInterrupt(int_id, new KeplerFunction("interval_" + int_id), this);
@@ -440,8 +437,7 @@ namespace Kepler.Interpreting
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
                 }
-
-                if (c_state.booleans["inside_loop"] && c_token.token_string == "start")
+                else if (c_state.booleans["inside_loop"] && c_token.token_string == "start")
                 {
                     int int_id = this.interrupts.Count;
                     KeplerInterrupt interrupt = new KeplerInterrupt(int_id, new KeplerFunction("loop_" + int_id), this);
@@ -455,31 +451,48 @@ namespace Kepler.Interpreting
 
                     if (verbose_debug) Console.WriteLine(string.Format("ENTER <{0}>", c_interrupt.id));
                 }
-
-                if (c_state.type == TokenType.EOL)
+                else if (c_state.type == TokenType.EOL)
                 {
                     c_state.DoAction(c_token, c_line.Peek());
 
                     if (c_state.booleans["throw_error"]) throw new KeplerError(KeplerErrorCode.GENERIC_ERROR, new string[] { c_state.strings["error_string"] });
-                    if (c_state.booleans["console_print"]) Console.WriteLine(c_state.strings["print_string"]);
-                    if (c_state.booleans["inside_conditional"])
-                    {
-
-                        this.c_conditional.main_function = new KeplerFunction("conditional_main");
-                        this.c_conditional.else_function = new KeplerFunction("conditional_else");
-                        this.c_conditional.elseifs.Clear();
-
-                        inside_conditional = true;
-                        inside_conditional_else = false;
-
-                        this.c_conditional.main_function.lines.Add(c_line);
-
-                        desired_intendation = c_line.indentation;
-                    }
-                    if (c_state.booleans["validate_conditional"] && !c_state.booleans["inside_conditional"])
+                    else if (c_state.booleans["console_print"]) Console.WriteLine(c_state.strings["print_string"]);
+                    else if (c_state.booleans["validate_conditional"] && !c_state.booleans["inside_conditional"])
                     {
                         desired_intendation = c_line.indentation;
                         skip_conditional = true;
+                    }
+                    else if (c_state.booleans["inside_conditional"])
+                    {
+                        // TODO: cache conditionals
+                        string conditional_id = this.filename + "_" + c_line.line + ":" + c_line.indentation;
+                        if (this.statemachine.conditional_cache.ContainsKey(conditional_id))
+                        {
+                            this.c_conditional = this.statemachine.conditional_cache[conditional_id];
+
+                            this.c_conditional.main_function.Reset();
+                            for (int i = 0; i < this.c_conditional.elseifs.Count; ++i)
+                                this.c_conditional.elseifs[i].Reset();
+                            this.c_conditional.else_function.Reset();
+                            skip_to_end_of_conditional = true;
+                            inside_conditional = true;
+                            inside_conditional_else = false;
+                            inside_conditional_elseif = false;
+                        }
+                        else
+                        {
+                            KeplerConditional n_conditional = new KeplerConditional();
+
+                            inside_conditional = true;
+                            inside_conditional_else = false;
+                            inside_conditional_elseif = false;
+
+                            this.c_conditional = n_conditional;
+                            this.c_conditional.main_function.lines.Add(c_line);
+                            this.statemachine.conditional_cache[conditional_id] = n_conditional;
+                        }
+
+                        desired_intendation = c_line.indentation;
                     }
 
                     break;
