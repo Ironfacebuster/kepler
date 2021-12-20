@@ -16,6 +16,8 @@ using Kepler.Versioning;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
+
 
 namespace KeplerCompiler
 {
@@ -25,8 +27,19 @@ namespace KeplerCompiler
         static bool verbose_debug = false;
         static bool debug = false;
 
+        static Interpreter g_interpreter;
+
+        static ConsoleEventDelegate handler;   // Keeps it from getting garbage collected
+                                               // Pinvoke
+        private delegate bool ConsoleEventDelegate(int eventType);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
+
         static void Main(string[] args)
         {
+            handler = new ConsoleEventDelegate(ConsoleEventCallback);
+            SetConsoleCtrlHandler(handler, true);
+
             ArgumentList arguments = new ArgumentList();
 
             arguments.AddArgument(new ArgType("file", ArgType.AnyValue));
@@ -116,6 +129,8 @@ namespace KeplerCompiler
             interpreter.verbose_debug = verbose_debug;
             interpreter.tracer = tracer;
 
+            g_interpreter = interpreter;
+
             // "load" required static values
             LoadStaticValues(interpreter);
 
@@ -165,6 +180,8 @@ namespace KeplerCompiler
 
             interpreter.verbose_debug = verbose_debug;
             interpreter.debug = debug;
+
+            g_interpreter = interpreter;
 
             // "load" required static values
             LoadStaticValues(interpreter);
@@ -383,6 +400,7 @@ namespace KeplerCompiler
         {
             // load "main" module
             interpreter.statemachine.LoadModule("main");
+            // interpreter.statemachine.LoadModule("graphics");
         }
 
         // static void LoadStaticFile(Interpreter interpreter)
@@ -462,6 +480,30 @@ namespace KeplerCompiler
 
             Console.ResetColor(); // reset the color back to default
             Console.WriteLine("");
+        }
+
+
+        static bool ConsoleEventCallback(int eventType)
+        {
+            if (eventType == 2)
+            {
+                ApplicationCleanup();
+            }
+            return false;
+        }
+
+        static void ApplicationCleanup()
+        {
+            // Environment.Exit(0);
+            try
+            {
+                // module cleanup
+                g_interpreter.statemachine.UnloadModules();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }
