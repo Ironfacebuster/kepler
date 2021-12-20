@@ -197,9 +197,12 @@ namespace Kepler.Lexer
                     if (tokenized.StartsWith("\"") && !tokenized.EndsWith("\""))
                     {
                         // this is not graceful but it'll have to do
-                        this.tokens = m_tokens;
-                        this.m_num = this.tokens.Count - 1;
-                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.UNEXP_EOL).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
+                        this.tokens.Clear();
+                        for (int j = 0; j < final_split.Count; ++j)
+                        {
+                            this.tokens.Add(new Token(TokenType.Generic, j, final_split[j]));
+                        }
+                        throw new KeplerException(this, new KeplerError(KeplerErrorCode.MAL_STRING).GetErrorString(), new Kepler.Tracing.KeplerErrorStack(), i);
                     }
                 }
 
@@ -495,8 +498,9 @@ namespace Kepler.Lexer
                     current_token = "";
                     append_token = false;
                 }
-
             }
+
+            if (built_string.Length > 0) tokens.Add(built_string);
 
             return tokens;
         }
