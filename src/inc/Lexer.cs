@@ -116,25 +116,26 @@ namespace Kepler.Lexer
             this.line = index;
             this.indentation = indentation;
 
-            Regex inline_comment = new Regex("((!--)[\\w|\\s]*(--!))"); // remove inline comments
-            string math_chars = "[\\/\\+\\*\\%\\^](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // math character selector
-            string comp_chars = "(\\>\\=)|(\\<\\=)|(\\>)|(\\<)(?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // comparison character selector
-            string singlets = "[\\,\\!\\@\\#\\&\\(\\)](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // single character selector
-                                                                                       // string single_quote = "\"((?![\\S\\s]*\")|(?=[\\S\\s]*\"))";
+            // Regex inline_comment = new Regex("((!--)[\\w|\\s]*(--!))"); // remove inline comments
+            // string math_chars = "[\\/\\+\\*\\%\\^](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // math character selector
+            // string comp_chars = "(\\>\\=)|(\\<\\=)|(\\>)|(\\<)(?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // comparison character selector
+            // string singlets = "[\\,\\!\\@\\#\\&\\(\\)](?=([^\"]*\"[^\"]*\")*[^\"]*$)"; // single character selector
+            // string single_quote = "\"((?![\\S\\s]*\")|(?=[\\S\\s]*\"))";
 
             // Transform code so that it's actually parseable
-            string modified_line = line.Replace("\t", " "); // replace tabs with spaces
-            modified_line = inline_comment.Replace(modified_line, ""); // remove inline block comments
-            modified_line = Regex.Replace(modified_line, math_chars, " $0 "); // select math characters and add spaces
-            modified_line = Regex.Replace(modified_line, comp_chars, " $0 "); // select math characters and add spaces
-            modified_line = Regex.Replace(modified_line, singlets, " $0 "); // select singlet characters and add spaces
-                                                                            // modified_line = Regex.Replace(modified_line, single_quote, " $0 ");
+            // string modified_line = line.Replace("\t", " "); // replace tabs with spaces
+            // modified_line = inline_comment.Replace(modified_line, ""); // remove inline block comments
+            // modified_line = Regex.Replace(modified_line, math_chars, " $0 "); // select math characters and add spaces
+            // modified_line = Regex.Replace(modified_line, comp_chars, " $0 "); // select math characters and add spaces
+            // modified_line = Regex.Replace(modified_line, singlets, " $0 "); // select singlet characters and add spaces
+            // modified_line = Regex.Replace(modified_line, single_quote, " $0 ");
 
             // split by spaces, unless inside quotation marks.
-            List<string> final_split = Regex.Matches(modified_line, @"[\""].+?[\""]|[^ ]+")
-                            .Cast<Match>()
-                            .Select(m => m.Value)
-                            .ToList();
+            // List<string> final_split = Regex.Matches(modified_line, @"[\""].+?[\""]|[^ ]+")
+            //                 .Cast<Match>()
+            //                 .Select(m => m.Value)
+            //                 .ToList();
+            List<string> final_split = SplitTokens(line);
 
             List<Token> m_tokens = new List<Token>();
 
@@ -382,6 +383,124 @@ namespace Kepler.Lexer
             }
         }
 
+        private List<string> SplitTokens(string line)
+        {
+            List<string> tokens = new List<string>();
+
+            string current_token = "";
+            string built_string = "";
+            bool in_string = false;
+            bool in_comment = false;
+            bool append_token = false;
+
+            // splits the line into tokens
+            for (int i = 0; i < line.Length; ++i)
+            {
+                string current = line[i].ToString();
+                string peek = i + 1 < line.Length ? line[i + 1].ToString() : "";
+                string peek2 = i + 2 < line.Length ? line[i + 2].ToString() : "";
+
+                // if all combined characters are a start comment block token
+                if ((current + peek + peek2) == "!--" && !in_string)
+                {
+                    in_comment = true;
+                    i += 2;
+                    continue;
+                }
+                // if all combined characters are an end comment block token
+                if ((current + peek + peek2) == "--!" && !in_string)
+                {
+                    in_comment = false;
+                    i += 2;
+                    continue;
+                }
+
+                // if we encounter a "start comment" token, and we're not in a string
+                if (current == "!" && !in_string) in_comment = true;
+
+                if (!in_comment)
+                {
+                    if (current == "\"" && !in_comment)
+                    {
+                        if (in_string)
+                        {
+                            if (current_token.Length > 0) tokens.Add(current_token);
+                            current_token = built_string;
+                            built_string = "";
+                        }
+                        in_string = !in_string;
+                    }
+
+                    if (in_string) built_string = built_string + current;
+                    else if (current != " ") current_token = current_token + current;
+
+                    // if the current character is a math token, and the next character is not an equals sign,
+                    // then we need to add it to the list
+                    switch (current)
+                    {
+                        case "+":
+                        case "-":
+                        case "*":
+                        case "/":
+                        case "%":
+                        case "^":
+                            append_token = true;
+                            break;
+                        case ">":
+                        case "<":
+                        case "=":
+                            if (peek != "=") append_token = true;
+                            break;
+                    }
+                    // if we've hit a double wide operator, we need to append the token
+                    switch (current + peek)
+                    {
+                        case ">=":
+                        case "<=":
+                        case "==":
+                            append_token = true;
+                            current_token = current_token + peek;
+                            i++;
+                            break;
+                    }
+                    // catch math characters
+                    // if a math character is directly next, we need to stop appending to the current token
+                    switch (peek)
+                    {
+                        case "+":
+                        case "-":
+                        case "*":
+                        case "/":
+                        case "%":
+                        case "^":
+                            append_token = true;
+                            break;
+                        case ">":
+                        case "<":
+                        case "=":
+                            append_token = true;
+                            break;
+                    }
+
+
+                    if (!in_string && (current == " " || current == "" || peek == ""))
+                    {
+                        append_token = true;
+                    }
+                }
+
+                if (append_token)
+                {
+                    tokens.Add(current_token);
+                    current_token = "";
+                    append_token = false;
+                }
+
+            }
+
+            return tokens;
+        }
+
         private bool IsValidToCompare(Token token)
         {
             switch (token.type)
@@ -593,7 +712,9 @@ namespace Kepler.Lexer
 
                 // operations
                 new TokenMatch(TokenType.GenericAdd, "+", TokenMatch.any_string, TokenMatch.any_string, 0),
+                // new TokenMatch(TokenType.GenericAdd, "plus", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericSubtract, "-", TokenMatch.any_string, TokenMatch.any_string, 0),
+                // new TokenMatch(TokenType.GenericSubtract, "minus", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericMultiply, "*", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericPower, "^", TokenMatch.any_string, TokenMatch.any_string, 0),
                 new TokenMatch(TokenType.GenericDivide, "/", TokenMatch.any_string, TokenMatch.any_string, 0),
