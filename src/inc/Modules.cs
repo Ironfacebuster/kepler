@@ -18,12 +18,16 @@ namespace Kepler.Modules
         public KeplerFunction[] functions;
         public Dictionary<string, KeplerVariable> variables;
 
+        public EventManager events;
+
         public Module(string name, KeplerFunction[] functions = null, Dictionary<string, KeplerVariable> variables = null, Module[] required_modules = null)
         {
             this.name = name;
             this.functions = functions;
             this.variables = variables;
             this.required_modules = required_modules;
+
+            this.events = new EventManager();
         }
 
         public void AddFunctions(KeplerFunction[] functions)
@@ -109,7 +113,7 @@ namespace Kepler.Modules
             Module main = new Module("main", null, main_vars);
 
             // assign all modules
-            modules = new Module[] { main, KMath.module, KInput.module, KTime.module, KRandom.module, KFilesystem.module, KObjects.module, KUtilities.module, KConsole.module };
+            modules = new Module[] { main, KMath.module, KInput.module, KTime.module, KRandom.module, KFilesystem.module, KObjects.module, KUtilities.module, KConsole.module, KGraphics.module };
         }
 
         public static bool HasModule(string name)
@@ -132,6 +136,46 @@ namespace Kepler.Modules
             }
 
             return modules[0];
+        }
+    }
+
+    public class EventManager
+    {
+        public IDictionary<string, List<Func<int>>> events = new Dictionary<string, List<Func<int>>>();
+
+        public void AddListener(string e, Func<int> function)
+        {
+            // events.Add(func);
+            if (!events.ContainsKey(e)) events.Add(e, new List<Func<int>>());
+            events[e].Add(function);
+        }
+
+        public void Remove(string e, Func<int> function)
+        {
+            events[e].Remove(function);
+        }
+
+        public void RemoveAll(string e)
+        {
+            events.Remove(e);
+        }
+
+        public void Activate(string e)
+        {
+            if (!events.ContainsKey(e) || events[e].Count == 0)
+            {
+                return;
+            }
+
+            foreach (Func<int> func in events[e])
+            {
+                int result = func();
+
+                if (result != 0)
+                {
+                    throw new Exception($"A listener for event \"{e}\" returned {result}");
+                }
+            }
         }
     }
 }
