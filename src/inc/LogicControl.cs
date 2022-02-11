@@ -284,24 +284,22 @@ namespace Kepler.LogicControl
                     {
                         case KeplerType.Float:
                             result.SetFloatValue(a_operand.GetValueAsFloat(true));
-                            break;
+                            return result;
                         case KeplerType.Int:
                             result.SetIntValue(a_operand.GetValueAsInt(true));
-                            break;
+                            return result;
                         case KeplerType.uInt:
                             result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt(true));
-                            break;
+                            return result;
                         case KeplerType.Boolean:
                             result.SetBoolValue(a_operand.GetValueAsBool(true));
-                            break;
+                            return result;
                         case KeplerType.String:
                             result.SetStringValue(a_operand.GetValueAsString(true));
-                            break;
+                            return result;
                         default:
                             throw new KeplerError(KeplerErrorCode.EXPLICIT_CAST, new string[] { a_operand.type.ToString(), m_type.ToString() });
                     }
-
-                    return result;
                 case OperationType.Invert:
                     result.SetBoolValue(!a_operand.GetValueAsBool());
                     return result;
@@ -314,56 +312,53 @@ namespace Kepler.LogicControl
                         {
                             case KeplerType.Float:
                                 result.SetBoolValue(a_operand.FloatValue == b_operand.FloatValue);
-                                break;
+                                return result;
                             case KeplerType.Int:
                                 result.SetBoolValue(a_operand.IntValue == b_operand.IntValue);
-                                break;
+                                return result;
                             case KeplerType.uInt:
                                 result.SetBoolValue(a_operand.uIntValue == b_operand.uIntValue);
-                                break;
+                                return result;
                             case KeplerType.Boolean:
                                 result.SetBoolValue(a_operand.BoolValue == b_operand.BoolValue);
-                                break;
+                                return result;
                             case KeplerType.String:
                                 result.SetBoolValue(a_operand.StringValue == b_operand.StringValue);
-                                break;
+                                return result;
                             case KeplerType.NaN:
-                                result.SetBoolValue(true);
-                                break;
+                                result.SetBoolValue(false);
+                                return result;
                             default:
                                 result.SetBoolValue(false);
-                                break;
+                                return result;
                         }
                     }
 
-                    return result;
                 case OperationType.Equality:
                     switch (a_operand.type)
                     {
                         case KeplerType.Float:
                             result.SetBoolValue(a_operand.GetValueAsFloat() == b_operand.GetValueAsFloat());
-                            break;
+                            return result;
                         case KeplerType.Int:
                             result.SetBoolValue(a_operand.GetValueAsInt() == b_operand.GetValueAsInt());
-                            break;
+                            return result;
                         case KeplerType.uInt:
                             result.SetBoolValue(a_operand.GetValueAsUnsignedInt() == b_operand.GetValueAsUnsignedInt());
-                            break;
+                            return result;
                         case KeplerType.Boolean:
                             result.SetBoolValue(a_operand.GetValueAsBool() == b_operand.GetValueAsBool());
-                            break;
+                            return result;
                         case KeplerType.String:
                             result.SetBoolValue(a_operand.GetValueAsString() == b_operand.GetValueAsString());
-                            break;
+                            return result;
                         case KeplerType.NaN:
-                            result.SetBoolValue(true);
-                            break;
+                            result.SetBoolValue(false);
+                            return result;
                         default:
                             result.SetBoolValue(false);
-                            break;
+                            return result;
                     }
-
-                    return result;
                 default:
                     if (a_operand.type == KeplerType.NaN || b_operand.type == KeplerType.NaN)
                     {
@@ -398,57 +393,57 @@ namespace Kepler.LogicControl
                             {
                                 case KeplerType.Float:
                                     result.SetFloatValue(a_operand.GetValueAsFloat() + b_operand.GetValueAsFloat());
-                                    break;
+                                    return result;
                                 case KeplerType.Int:
                                     result.SetIntValue(a_operand.GetValueAsInt() + b_operand.GetValueAsInt());
-                                    break;
+                                    return result;
                                 case KeplerType.uInt:
                                     result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() + b_operand.GetValueAsUnsignedInt());
-                                    break;
+                                    return result;
                             }
-                            break;
+                            return result;
                         case OperationType.Subtract:
                             switch (a_operand.type)
                             {
                                 case KeplerType.Float:
                                     result.SetFloatValue(a_operand.GetValueAsFloat() - b_operand.GetValueAsFloat());
-                                    break;
+                                    return result;
                                 case KeplerType.Int:
                                     result.SetIntValue(a_operand.GetValueAsInt() - b_operand.GetValueAsInt());
-                                    break;
+                                    return result;
                                 case KeplerType.uInt:
                                     result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() - b_operand.GetValueAsUnsignedInt());
-                                    break;
+                                    return result;
                             }
-                            break;
+                            return result;
                         case OperationType.Multiply:
                             switch (a_operand.type)
                             {
                                 case KeplerType.Float:
                                     result.SetFloatValue(a_operand.GetValueAsFloat() * b_operand.GetValueAsFloat());
-                                    break;
+                                    return result;
                                 case KeplerType.Int:
                                     result.SetIntValue(a_operand.GetValueAsInt() * b_operand.GetValueAsInt());
-                                    break;
+                                    return result;
                                 case KeplerType.uInt:
                                     result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() * b_operand.GetValueAsUnsignedInt());
-                                    break;
+                                    return result;
                             }
-                            break;
+                            return result;
                         case OperationType.Power:
                             switch (a_operand.type)
                             {
                                 case KeplerType.Float:
                                     result.SetFloatValue((decimal)Math.Pow((double)a_operand.GetValueAsFloat(), (double)b_operand.GetValueAsFloat()));
-                                    break;
+                                    return result;
                                 case KeplerType.Int:
                                     result.SetIntValue((int)Math.Pow(a_operand.GetValueAsInt(), b_operand.GetValueAsInt()));
-                                    break;
+                                    return result;
                                 case KeplerType.uInt:
                                     result.SetUnsignedIntValue((uint)Math.Pow(a_operand.GetValueAsUnsignedInt(), b_operand.GetValueAsUnsignedInt()));
-                                    break;
+                                    return result;
                             }
-                            break;
+                            return result;
                         case OperationType.Divide:
                             // check for divide by zero
                             if (b_operand.GetValueAsFloat() == 0)
@@ -460,25 +455,25 @@ namespace Kepler.LogicControl
                             {
                                 case KeplerType.Float:
                                     result.SetFloatValue(a_operand.GetValueAsFloat() / b_operand.GetValueAsFloat());
-                                    break;
+                                    return result;
                                 case KeplerType.Int:
                                     result.SetIntValue(a_operand.GetValueAsInt() / b_operand.GetValueAsInt());
-                                    break;
+                                    return result;
                                 case KeplerType.uInt:
                                     result.SetUnsignedIntValue(a_operand.GetValueAsUnsignedInt() / b_operand.GetValueAsUnsignedInt());
-                                    break;
+                                    return result;
                             }
-                            break;
+                            return result;
                         case OperationType.Modulo:
                             result.SetFloatValue(a_operand.GetValueAsFloat() % b_operand.GetValueAsFloat());
-                            break;
+                            return result;
                         case OperationType.GreaterThan:
                             result.SetBoolValue(a_operand.type == KeplerType.String ?
                                 (string.Compare(a_operand.GetValueAsString(), b_operand.GetValueAsString()) == 1) :
                                 (a_operand.GetValueAsFloat() > b_operand.GetValueAsFloat()));
                             // if (a_operand.type == KeplerType.String) result.SetBoolValue();
                             // else result.SetBoolValue();
-                            break;
+                            return result;
                         case OperationType.GreaterThanEqual:
                             if (a_operand.type == KeplerType.String)
                             {
@@ -486,11 +481,11 @@ namespace Kepler.LogicControl
                                 result.SetBoolValue(comp == 1 || comp == 0);
                             }
                             else result.SetBoolValue(a_operand.GetValueAsFloat() >= b_operand.GetValueAsFloat());
-                            break;
+                            return result;
                         case OperationType.LessThan:
                             if (a_operand.type == KeplerType.String) result.SetBoolValue(string.Compare(a_operand.GetValueAsString(), b_operand.GetValueAsString()) == -1);
                             else result.SetBoolValue(a_operand.GetValueAsFloat() < b_operand.GetValueAsFloat());
-                            break;
+                            return result;
                         case OperationType.LessThanEqual:
                             if (a_operand.type == KeplerType.String)
                             {
@@ -498,13 +493,13 @@ namespace Kepler.LogicControl
                                 result.SetBoolValue(comp == -1 || comp == 0);
                             }
                             else result.SetBoolValue(a_operand.GetValueAsFloat() <= b_operand.GetValueAsFloat());
-                            break;
+                            return result;
                         case OperationType.And:
                             result.SetBoolValue(a_operand.GetValueAsBool() && b_operand.GetValueAsBool());
-                            break;
+                            return result;
                         case OperationType.Or:
                             result.SetBoolValue(a_operand.GetValueAsBool() || b_operand.GetValueAsBool());
-                            break;
+                            return result;
                     }
 
                     return result;
@@ -1074,24 +1069,22 @@ namespace Kepler.LogicControl
                     return variables.GetVariable(token.token_string);
                 case TokenType.StaticInt:
                     var.SetIntValue(int.Parse(token.token_string));
-                    break;
+                    return var;
                 case TokenType.StaticUnsignedInt:
                     var.SetUnsignedIntValue(uint.Parse(token.token_string.Substring(1)));
-                    break;
+                    return var;
                 case TokenType.StaticFloat:
                     var.SetFloatValue(decimal.Parse(token.token_string));
-                    break;
+                    return var;
                 case TokenType.StaticBoolean:
                     var.SetBoolValue(bool.Parse(token.token_string));
-                    break;
+                    return var;
                 case TokenType.StaticString:
                     var.SetStringValue(token.token_string.Substring(1, token.token_string.Length - 2));
-                    break;
+                    return var;
                 default:
                     throw new KeplerError(KeplerErrorCode.NULL_TEMP_VAR, new string[] { token.type.ToString() });
             }
-
-            return var;
         }
 
         public bool HasReturnValue()
@@ -1249,7 +1242,7 @@ namespace Kepler.LogicControl
         public string prev;
         public int increment = 1;
 
-        public TokenMatch(TokenType type, string string_token, string peek, string prev, int increment)
+        public TokenMatch(TokenType type, string string_token = null, string peek = null, string prev = null, int increment = 0)
         {
             this.type = type;
             this.string_token = string_token;
